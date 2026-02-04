@@ -1,0 +1,116 @@
+#ifndef TACO_H
+#define TACO_H
+
+#include <ctype.h>
+
+#include <gc.h>
+#include <gmp.h>
+
+  // Override standard memory allocation functions
+#define malloc(n) GC_malloc(n)
+#define free(p) GC_free(p)
+#define realloc(p, n) GC_realloc(p, n)
+
+// We can currently have 256 types. 
+#define TYPE_BIT_MASK 0xFF
+#define TYPE_FLAGS_BIT_MASK (~TYPE_BIT_MASK)
+
+// Define bit masks
+#define EVENT_FLAG (1<<31)
+#define RED_BLACK_FLAG (1<<30)
+
+// Set the event flag
+void set_event_flag(void* value);
+// Clear the event flag
+void clear_event_flag(void* value);
+// Check if the event flag is set
+int is_event_flag_set(void* value);
+// Set the red/black flag
+void set_red_black_flag(void* value);
+// Clear the red/black flag
+void clear_red_black_flag(void* value);
+// Check if the red/black flag is set
+int is_red_black_flag_set(void* value);
+
+  typedef enum {
+    TYPE_NULL = 0,
+	TYPE_CONS = 1,
+	TYPE_SYMBOL,
+	TYPE_NATIVE,
+	TYPE_NATIVE_INT,
+	TYPE_TRUE,
+	/* TYPE_CHAR, */
+	/* TYPE_STRING, */
+	/* TYPE_RESIZABLE_STRING, */
+	/* TYPE_INT, */
+	/* TYPE_RATIONAL, */
+	/* TYPE_FLOAT, */
+	/* TYPE_FUNC, */
+	/* TYPE_RAW, */
+	/* TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8, */
+	/* TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16, */
+	/* TYPE_INT32, TYPE_UINT32, TYPE_FLOAT32, TYPE_DOUBLE32, TYPE_LONG_DOUBLE32, */
+	/* TYPE_INT64, TYPE_UINT64, TYPE_FLOAT64, TYPE_DOUBLE64, TYPE_LONG_DOUBLE64, */
+	/* TYPE_INT128, TYPE_UINT128, TYPE_FLOAT128, TYPE_DOUBLE128, TYPE_LONG_DOUBLE128, */
+	/* TYPE_CHAR_ARRAY, */
+	/* TYPE_POINTER, */
+	/* TYPE_RB_TREE, */
+	/* TYPE_QUOTE, */
+	/* TYPE_BACKTICK, */
+	/* TYPE_COMMA, */
+	/* TYPE_SPLICE, */
+	/* TYPE_ERROR */
+  } ValueType;
+
+
+#define get_type(ptr) (*(ValueType*)(ptr) & TYPE_BIT_MASK)
+#define get_flags(ptr) (*(ValueType*)(ptr) & TYPE_FLAGS_BIT_MASK)
+//#define get_size(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>8)
+#define get_getctype(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>12)
+#define is_type(ptr, ty) (get_type(ptr) == (ty))
+#define is_cons(ptr) (is_type(ptr, TYPE_CONS))
+#define is_rb_tree(ptr) (is_type(ptr, TYPE_RB_TREE))
+#define is_str(ptr) (is_type(ptr, TYPE_STRING))
+#define car(o) (((cons_cell*)o)->car)
+#define cdr(o) (((cons_cell*)o)->cdr)
+#define to_cons(o) ((cons_cell*)o)
+#define to_quote(o) ((quote_type*)o)
+#define to_string(o) ((strtype*)o)
+#define to_raw(o) ((rawtype*)o)
+#define to_int(o) ((inttype*)o)
+#define to_float(o) ((floattype*)o)
+#define to_pointer(o) ((pointertype*)o)
+#define to_char(o) ((chartype*)o)
+#define to_native(o) ((native_type*)o)
+  
+typedef struct cons_cell {
+  ValueType type;
+  void* car;
+  void* cdr;
+} cons_cell;
+
+typedef cons_cell *cc;
+
+typedef struct {
+  ValueType type;
+  void* func;
+} native_type;
+
+
+// Cons cell functions
+cc cons(void* car, void* cdr);
+int list_length(void* list);
+int is_list(void* list);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // TACO_H
+
+

@@ -96,8 +96,8 @@ extern "C" {
 #define to_cons(o) ((cons_cell*)o)
 #define to_string(o) ((string_type*)o)
 #define to_raw(o) ((rawtype*)o)
-#define to_int(o) ((inttype*)o)
-#define to_float(o) ((floattype*)o)
+#define to_int(o) ((int_type*)o)
+#define to_float(o) ((float_type*)o)
 #define to_pointer(o) ((pointertype*)o)
 #define to_char(o) ((chartype*)o)
 #define to_native(o) ((native_type*)o)
@@ -136,7 +136,17 @@ extern "C" {
 	ValueType type;
 	char c;
   } char_type;
-  
+
+  typedef struct {
+	ValueType type;
+	mpz_t num;
+  } int_type;
+
+  typedef struct {
+	ValueType type;
+	mpf_t num;
+  } float_type;
+
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
@@ -174,6 +184,11 @@ extern "C" {
   // native function and data functions
   char_type* create_native_int_type(nativeType type);
 
+  // Functions to create and manage integer and float types
+  int_type* create_int_type(double i);
+  float_type* create_float_type();
+
+  
 #ifdef __cplusplus
 }
 #endif

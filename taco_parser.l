@@ -55,42 +55,42 @@ return ATOM;
 
 [+-]?{digit}+    {
 
-// inttype* newint = create_inttype(0);
-// yylval->p = newint;
-// mpz_set_str(newint->num, yytext, 10);
-return ATOM;
+   int_type* newint = create_int_type(0);
+   yylval->p = newint;
+   mpz_set_str(newint->num, yytext, 10);
+   return ATOM;
 
 }
 
 
 {float}     {
 
-// floattype* newfloat = create_floattype();
-// yylval->p = newfloat;
-// mpf_set_str(newfloat->num, yytext, 10);
-return ATOM;
+ float_type* newfloat = create_float_type();
+ yylval->p = newfloat;
+ mpf_set_str(newfloat->num, yytext, 10);
+ return ATOM;
 
 }
 
 [cC][oO][nN][sS] {
 
-    //yylval->p = create_nativetype(N_CONS);
+    yylval->p = create_native_int_type(N_CONS);
     return ATOM;
 }
 
 [Ll][Ii][Ss][Tt]  {
 
-    //yylval->p = create_nativetype(N_LIST);
+    yylval->p = create_native_int_type(N_LIST);
     return ATOM;
 }
 [Ii][Ff]          {
 
-    //yylval->p = create_nativetype(N_IF);
+    yylval->p = create_native_int_type(N_IF);
     return ATOM;
 }
 [Tt][Yy][Pp][Ee]  {
 
-    //yylval->p = create_nativetype(N_TYPE);
+    yylval->p = create_native_int_type(N_TYPE);
     return ATOM;
 }
 

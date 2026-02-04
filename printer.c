@@ -94,9 +94,9 @@ void print(FILE* output, void* o, int base) {
     printf("%s", ((string_type*)o)->str);
     break;
 	
-  /* case TYPE_INT: */
-  /* 	mpz_out_str(output, base, to_int(o)->num); */
-  /* 	break; */
+  case TYPE_INT:
+	mpz_out_str(output, base, to_int(o)->num);
+	break;
 
   case TYPE_NATIVE:
 	// Placeholder until we get a real native print list.
@@ -157,7 +157,7 @@ void print(FILE* output, void* o, int base) {
 	break;
 	
   case TYPE_FLOAT:
-    //mpf_out_str(output, base, 0, to_float(o)->num);
+    mpf_out_str(output, base, 0, to_float(o)->num);
     break;
 		
   case TYPE_STRING:

@@ -268,3 +268,21 @@ char_type* create_native_int_type(nativeType type) {
   ret->c = type;
   return ret;
 }
+
+
+int_type* create_int_type(double i) {
+  int_type* ret = GC_malloc(sizeof(int_type));
+
+  ret->type = TYPE_INT;
+  mpz_init(ret->num);
+  mpz_set_d(ret->num, i);
+  return ret;
+}
+
+float_type* create_float_type() {
+  float_type* ret = GC_malloc(sizeof(float_type));
+
+  ret->type = TYPE_FLOAT;
+  mpf_init(ret->num);
+  return ret;
+}

@@ -99,7 +99,7 @@ extern "C" {
 #define to_int(o) ((int_type*)o)
 #define to_float(o) ((float_type*)o)
 #define to_pointer(o) ((pointertype*)o)
-#define to_char(o) ((chartype*)o)
+#define to_char(o) ((char_type*)o)
 #define to_native(o) ((native_type*)o)
 
   typedef struct {

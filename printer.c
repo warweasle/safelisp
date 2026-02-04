@@ -34,23 +34,23 @@ void print(FILE* output, void* o, int base) {
 	fprintf(output, ")");
 	}
 	  
-    /* while (o && is_cons(o)) {  // Iterate through each cons cell */
-    /*   if (car(o)) {  // If there's a value in car, print it */
-	/* 	void* tmp = car(o); */
-	/* 	print(output, tmp, base); */
-    /*   } */
+    while (o && is_cons(o)) {  // Iterate through each cons cell
+      if (car(o)) {  // If there's a value in car, print it
+		void* tmp = car(o);
+		print(output, tmp, base);
+      }
 
-    /*   o = cdr(o);  // Move to the next element in the list */
+      o = cdr(o);  // Move to the next element in the list
 
-    /*   // Check if there's another cons cell after this one */
-    /*   if (o && is_cons(o)) { */
-	/* 	fprintf(output, " "); */
-    /*   } else if (o) {  // Handle improper list (dotted pair) */
-	/* 	fprintf(output, " . "); */
-	/* 	print(output, o, base); */
-	/* 	break;  // Exit the loop after printing the last element */
-    /*   } */
-    /* } */
+      // Check if there's another cons cell after this one
+      if (o && is_cons(o)) {
+		fprintf(output, " ");
+      } else if (o) {  // Handle improper list (dotted pair)
+		fprintf(output, " . ");
+		print(output, o, base);
+		break;  // Exit the loop after printing the last element
+      }
+    }
 
     break;
 
@@ -85,10 +85,9 @@ void print(FILE* output, void* o, int base) {
     print(output, to_cons(o)->car, base);
     break;
 	
-  /* case TYPE_TRUE: */
-  /* 	if(to_char(o)->c) fprintf(output, "TRUE"); */
-  /* 	else              fprintf(output, "FALSE"); */
-  /* 	break; */
+  case TYPE_TRUE:
+    fprintf(output, "TRUE");
+    break;
 	
   case TYPE_SYMBOL:
     printf("%s", ((string_type*)o)->str);
@@ -98,61 +97,58 @@ void print(FILE* output, void* o, int base) {
 	mpz_out_str(output, base, to_int(o)->num);
 	break;
 
-  case TYPE_NATIVE:
+  case TYPE_NATIVE_INT:
 	// Placeholder until we get a real native print list.
 	{
-	  /* native_type* n = to_native(o); */
+	  char_type* n = to_char(o);
 
-	  /* switch(n->func) { */
+	  switch(n->c) {
 
-	  /* case N_CONS: */
-	  /* 	fprintf(output, "CONS"); */
-	  /* 	break; */
+	  case N_CONS:
+		fprintf(output, "CONS");
+		break;
 
-	  /* 	case N_LIST: */
-	  /* 	fprintf(output, "LIST"); */
-	  /* 	break; */
+		case N_LIST:
+		fprintf(output, "LIST");
+		break;
 
-	  /* 	case N_IF: */
-	  /* 	fprintf(output, "IF"); */
-	  /* 	break; */
+		case N_IF:
+		fprintf(output, "IF");
+		break;
 
-	  /* 	case N_TYPE: */
-	  /* 	fprintf(output, "TYPE"); */
-	  /* 	break; */
+		case N_TYPE:
+		fprintf(output, "TYPE");
+		break;
 
-	  /* case N_NULL: */
-	  /* 	fprintf(output, "NULL"); */
-	  /* 	break; */
+	  case N_NULL:
+		fprintf(output, "NULL");
+		break;
 		
-	  /* case N_AND: */
-	  /* 	fprintf(output, "AND"); */
-	  /* 	break; */
+	  case N_AND:
+		fprintf(output, "AND");
+		break;
 		
-	  /* case N_NOT: */
-	  /* 	fprintf(output, "NOT"); */
-	  /* 	break; */
+	  case N_NOT:
+		fprintf(output, "NOT");
+		break;
 		
-	  /* case N_APPEND: */
-	  /* 	fprintf(output, "APPEND"); */
-	  /* 	break; */
+	  case N_APPEND:
+		fprintf(output, "APPEND");
+		break;
 		
-	  /* case N_ASSOC: */
-	  /* 	fprintf(output, "ASSOC"); */
-	  /* 	break; */
+	  case N_ASSOC:
+		fprintf(output, "ASSOC");
+		break;
 		
-	  /* case N_EVAL: */
-	  /* 	fprintf(output, "EVAL"); */
-	  /* 	break; */
+	  case N_EVAL:
+		fprintf(output, "EVAL");
+		break;
 		
-	  /* default: */
+	  default:
 
-	  /* 	fprintf(output, "UNKNOW_NATIVE"); */
+		fprintf(output, "UNKNOW_NATIVE");
 		
-	  /* } */
-
-	  fprintf(output, "%p", (void*) o);
-	  
+	  }
 	}
 	break;
 	

@@ -72,6 +72,11 @@ return ATOM;
 
 }
 
+[nN][uU][lL][lL] {
+    yylval->p = NULL;
+    return ATOM;
+}
+
 [cC][oO][nN][sS] {
 
     yylval->p = create_native_int_type(N_CONS);

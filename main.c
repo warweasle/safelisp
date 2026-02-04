@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "taco.h"
 
-#include "taco.tab.h" // Include Bison-generated headers, which might vary by your setup
-#include "taco.yy.h"
+#include "taco_parser.tab.h" // Include Bison-generated headers, which might vary by your setup
+#include "taco_parser.yy.h"
 
 
 int main(int argc, char* argv[]) {

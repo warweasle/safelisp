@@ -16,7 +16,7 @@ float_number_types ("f"|"d"|"ld")
 %x COMMENT
 
 %{
-#include "taco.tab.h"
+#include "taco_parser.tab.h"
 #include "taco.h"
 %}
 

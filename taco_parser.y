@@ -45,32 +45,33 @@ start: sexpr {$$ = $1;
 sexpr: ATOM      {$$ = $1;}
 | list           {$$ = $1;}
 | QUOTE sexpr    {
-  //$$ = create_quotetype(TYPE_QUOTE, $2);
+  $$ = create_quotetype(TYPE_QUOTE, $2);
  }
 | BACKTICK sexpr {
-  //$$ = create_quotetype(TYPE_BACKTICK, $2);
+  $$ = create_quotetype(TYPE_BACKTICK, $2);
  }
 | SPLICE sexpr   {
-  //$$ = create_quotetype(TYPE_SPLICE, $2);
+  $$ = create_quotetype(TYPE_SPLICE, $2);
   }
 | COMMA sexpr    {
-     //$$ = create_quotetype(TYPE_COMMA, $2);
+     $$ = create_quotetype(TYPE_COMMA, $2);
    }
 ; 
 
 list: LPAREN members RPAREN {$$ = $2;}
 | LPAREN RPAREN         {
-     //$$ = cons(NULL, NULL);
+     $$ = cons(NULL, NULL);
    }
-| LPAREN members DOT sexpr RPAREN { //last($2)->cdr = $4; 
-$$ = $2;}
+| LPAREN members DOT sexpr RPAREN {
+  last($2)->cdr = $4; 
+  $$ = $2;}
 ; 
 
 members: sexpr          {
-     //$$ = cons($1, NULL);
+     $$ = cons($1, NULL);
      }
 | sexpr members         {
-     //$$ = cons($1, $2);
+     $$ = cons($1, $2);
    }
 
 ;

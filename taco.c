@@ -39,8 +39,6 @@ cc cons(void* car, void* cdr) {
   return ret;
 }
 
-
-
 int is_list(void* list) {
   return is_cons(list);
 }
@@ -72,4 +70,69 @@ int list_length(void* list) {
   }
 
   return length;
+}
+
+cc last(void* lst) {
+
+  if(!is_cons(lst)) {
+	printf("ERROR, You sent a non-list to LAST!!!\n");
+	return NULL;
+  }
+
+  cons_cell* i;
+  for(i=lst; i != NULL && get_type(i) == TYPE_CONS && cdr(i); i=cdr(i)) {/* Nothing here on purpose */}
+
+  return i;
+  
+}
+
+cc create_quotetype(ValueType Type, void* car) {
+
+  cc ret = (cc) GC_malloc(sizeof(cons_cell));
+  ret->type = Type;
+  ret->car = car;
+  return ret;
+}
+
+
+string_type* create_string_type(size_t len, ValueType Type) {
+  string_type* sym = (string_type*)GC_malloc(sizeof(string_type) + len + 1); // +1 for null terminator
+  if (!sym) return NULL; // Check for allocation failure
+  sym->type = Type;
+  sym->size = len;
+  return sym;
+}
+
+string_type* create_string_type_and_copy(size_t len, const char* str, ValueType Type) {
+  size_t strLen = strlen(str);
+  if (strLen < len) {
+    len = strLen; // Adjust len to the actual string length if it's shorter
+  }
+  string_type* sym = (string_type*)GC_malloc(sizeof(string_type) + len + 1); // +1 for null terminator
+  if (!sym) return NULL; // Check for allocation failure
+
+  sym->type = Type;
+  strncpy(sym->str, str, len); // Copy up to len characters
+  sym->str[len] = '\0'; // Ensure null termination
+
+  return sym;
+}
+
+string_type* create_string_type_from_string(const char* str, ValueType Type) {
+  return create_string_type_and_copy(strlen(str), str, Type);
+}
+
+resizable_string_type* create_resizable_string_type_and_copy(size_t len, const char* str, ValueType Type) {
+  size_t strLen = strlen(str);
+  if (strLen < len) {
+    len = strLen; // Adjust len to the actual string length if it's shorter
+  }
+  resizable_string_type* sym = (resizable_string_type*)GC_malloc(sizeof(resizable_string_type) + len + 1); // +1 for null terminator
+  if (!sym) return NULL; // Check for allocation failure
+
+  sym->type = Type;
+  strncpy(sym->str, str, len); // Copy up to len characters
+  sym->str[len] = '\0'; // Ensure null termination
+
+  return sym;
 }

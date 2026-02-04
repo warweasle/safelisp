@@ -5,28 +5,26 @@ LEX=flex
 YACC=bison
 YFLAGS=-d
 
+taco:  main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o
+	$(CC) $(CFLAGS) -o taco main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o $(LDFLAGS)
 
-
-taco:  main.o taco.yy.o taco.tab.o taco.o
-	$(CC) $(CFLAGS) -o taco main.o taco.yy.o taco.tab.o $(LDFLAGS)
-
-main.o: main.c taco.tab.c taco.tab.h taco.yy.o
+main.o: main.c taco_parser.tab.c taco_parser.tab.h taco_parser.yy.o
 	$(CC) $(CFLAGS) -c main.c -o main.o 
 
 %.o: %.c %.h 
 	$(CC) $(CFLAGS) -c $< -o $@
 
-taco.yy.o: taco.yy.c taco.tab.h
-	$(CC) $(CFLAGS) -c taco.yy.c
+taco_parser.yy.o: taco_parser.yy.c taco_parser.tab.h
+	$(CC) $(CFLAGS) -c taco_parser.yy.c
 
-taco.tab.o: taco.tab.c
-	$(CC) $(CFLAGS) -c taco.tab.c
+taco_parser.tab.o: taco_parser.tab.c
+	$(CC) $(CFLAGS) -c taco_parser.tab.c
 
-taco.yy.c: taco.l
-	$(LEX) -o taco.yy.c --header-file=taco.yy.h taco.l
+taco_parser.yy.c: taco_parser.l
+	$(LEX) -o taco_parser.yy.c --header-file=taco_parser.yy.h taco_parser.l
 
-taco.tab.c taco.tab.h: taco.y 
-	$(YACC) $(YFLAGS) taco.y
+taco_parser.tab.c taco_parser.tab.h: taco_parser.y 
+	$(YACC) $(YFLAGS) taco_parser.y
 
 clean:
-	rm -f taco taco.tab.* taco.yy.* main.o *.o
+	rm -f taco taco_parser.tab.* taco_parser.yy.* main.o *.o

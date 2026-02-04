@@ -21,8 +21,22 @@ int main(int argc, char* argv[]) {
   void* atom = NULL;
 
   int parseResult = yyparse(scanner, &atom);
+  
+  if (parseResult == 0) {
+    printf("Parsing successful %p.\n", atom);
+    print(stdout, atom, 10);
+    printf("\n");
+    //printf("\nNow evaling...\n");
+    
+    //void* ret = eval(atom, NULL);
+    
+    //print(stdout, ret, 10);
+    //printf("\n");
+    
+  } else {
+    printf("Parsing failed. (%p)\n", atom);
+  }
 
-  printf("parseResult = %i\n", parseResult);
   
   // Clean up
   yylex_destroy(scanner);

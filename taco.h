@@ -2,9 +2,16 @@
 #define TACO_H
 
 #include <ctype.h>
+#include <string.h>
+#include <stdio.h>
 
 #include <gc.h>
 #include <gmp.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
   // Override standard memory allocation functions
 #define malloc(n) GC_malloc(n)
@@ -39,27 +46,27 @@ int is_red_black_flag_set(void* value);
 	TYPE_NATIVE,
 	TYPE_NATIVE_INT,
 	TYPE_TRUE,
-	/* TYPE_CHAR, */
-	/* TYPE_STRING, */
-	/* TYPE_RESIZABLE_STRING, */
-	/* TYPE_INT, */
-	/* TYPE_RATIONAL, */
-	/* TYPE_FLOAT, */
-	/* TYPE_FUNC, */
-	/* TYPE_RAW, */
-	/* TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8, */
-	/* TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16, */
-	/* TYPE_INT32, TYPE_UINT32, TYPE_FLOAT32, TYPE_DOUBLE32, TYPE_LONG_DOUBLE32, */
-	/* TYPE_INT64, TYPE_UINT64, TYPE_FLOAT64, TYPE_DOUBLE64, TYPE_LONG_DOUBLE64, */
-	/* TYPE_INT128, TYPE_UINT128, TYPE_FLOAT128, TYPE_DOUBLE128, TYPE_LONG_DOUBLE128, */
-	/* TYPE_CHAR_ARRAY, */
-	/* TYPE_POINTER, */
-	/* TYPE_RB_TREE, */
-	/* TYPE_QUOTE, */
-	/* TYPE_BACKTICK, */
-	/* TYPE_COMMA, */
-	/* TYPE_SPLICE, */
-	/* TYPE_ERROR */
+	TYPE_CHAR,
+	TYPE_STRING,
+	TYPE_RESIZABLE_STRING,
+	TYPE_INT,
+	TYPE_RATIONAL,
+	TYPE_FLOAT,
+	TYPE_FUNC,
+	TYPE_RAW,
+	TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8,
+	TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16,
+	TYPE_INT32, TYPE_UINT32, TYPE_FLOAT32, TYPE_DOUBLE32, TYPE_LONG_DOUBLE32,
+	TYPE_INT64, TYPE_UINT64, TYPE_FLOAT64, TYPE_DOUBLE64, TYPE_LONG_DOUBLE64,
+	TYPE_INT128, TYPE_UINT128, TYPE_FLOAT128, TYPE_DOUBLE128, TYPE_LONG_DOUBLE128,
+	TYPE_CHAR_ARRAY,
+	TYPE_POINTER,
+	TYPE_RB_TREE,
+	TYPE_QUOTE,
+	TYPE_BACKTICK,
+	TYPE_COMMA,
+	TYPE_SPLICE,
+	TYPE_ERROR
   } ValueType;
 
 
@@ -74,8 +81,7 @@ int is_red_black_flag_set(void* value);
 #define car(o) (((cons_cell*)o)->car)
 #define cdr(o) (((cons_cell*)o)->cdr)
 #define to_cons(o) ((cons_cell*)o)
-#define to_quote(o) ((quote_type*)o)
-#define to_string(o) ((strtype*)o)
+#define to_string(o) ((string_type*)o)
 #define to_raw(o) ((rawtype*)o)
 #define to_int(o) ((inttype*)o)
 #define to_float(o) ((floattype*)o)
@@ -96,20 +102,43 @@ typedef struct {
   void* func;
 } native_type;
 
+typedef struct {
+  ValueType type;
+  int size;
+  char str[];
+} string_type;
+
+typedef struct {
+  ValueType type;
+  size_t pos;
+  size_t len;
+  char* str;
+} resizable_string_type;
 
 // Cons cell functions
 cc cons(void* car, void* cdr);
 int list_length(void* list);
 int is_list(void* list);
+cc last(void* lst);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// Quote is handled with a cons cell...
+cc create_quotetype(ValueType Type, void* car);
+
+// String_type functions
+string_type* create_string_type(size_t len, ValueType Type);
+string_type* create_string_type_and_copy(size_t len, const char* str, ValueType Type);
+string_type* create_string_type_from_string(const char* str, ValueType Type);
+int string_compare(const void* a, const void* b);
+int raw_string_compare(const void* a, const void* b);
+
+// resizable_string_type functions
 
 
 #ifdef __cplusplus
 }
 #endif
+
+#include "printer.h"
 
 #endif // TACO_H
 

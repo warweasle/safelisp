@@ -103,11 +103,8 @@ for(i=0; i<yyleng; i++) {
     yytext[i] = toupper(yytext[i]);
 }
 
-//yylval->p = create_strtype_and_copy(yyleng, yytext, TYPE_SYMBOL);
+yylval->p = create_string_type_and_copy(yyleng, yytext, TYPE_SYMBOL);
 return ATOM;
 }
 
 
-. {
-    
-}

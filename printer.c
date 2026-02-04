@@ -1,0 +1,225 @@
+#include <gmp.h>
+#include "printer.h"
+
+void print(FILE* output, void* o, int base) {
+  
+  if(o == NULL) {
+    fprintf(output, "NULL");
+    return;
+  }
+
+  int t = get_type(o);
+
+  switch(t) {
+  case TYPE_CONS:
+	{
+    fprintf(output, "(");
+
+	char first = 1;
+	for(; o != NULL && is_cons(o); o=cdr(o)) {
+
+	  void* tmp = car(o);
+	  if(first) {first = 0;}
+	  else {fprintf(output, " ");}
+	  
+	  print(output, tmp, base);
+	  //if so that's fine move along. But if cdr != cons then dot notation.
+	  
+	  if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
+		fprintf(output, " . ");
+		print(output, to_cons(o)->cdr, base);
+		break;
+	  }
+	}
+	fprintf(output, ")");
+	}
+	  
+    /* while (o && is_cons(o)) {  // Iterate through each cons cell */
+    /*   if (car(o)) {  // If there's a value in car, print it */
+	/* 	void* tmp = car(o); */
+	/* 	print(output, tmp, base); */
+    /*   } */
+
+    /*   o = cdr(o);  // Move to the next element in the list */
+
+    /*   // Check if there's another cons cell after this one */
+    /*   if (o && is_cons(o)) { */
+	/* 	fprintf(output, " "); */
+    /*   } else if (o) {  // Handle improper list (dotted pair) */
+	/* 	fprintf(output, " . "); */
+	/* 	print(output, o, base); */
+	/* 	break;  // Exit the loop after printing the last element */
+    /*   } */
+    /* } */
+
+    break;
+
+  /* case TYPE_RB_TREE: */
+
+  /* 	{ */
+  /* 	  //fprintf(output, "(RB:"); */
+	
+  /* 	  print(output, ((rb_treetype*) car(o))->root, base); */
+
+  /* 	//fprintf(output, ")"); */
+  /* 	} */
+  /* break; */
+	
+  case TYPE_QUOTE:
+    fprintf(output, "'");
+    print(output, to_cons(o)->car, base);
+    break;
+
+  case TYPE_BACKTICK:
+    fprintf(output, "`");
+    print(output, to_cons(o)->car, base);
+    break;
+
+  case TYPE_COMMA:
+    fprintf(output, ",");
+    print(output, to_cons(o)->car, base);
+    break;
+
+  case TYPE_SPLICE:
+    fprintf(output, ",@");
+    print(output, to_cons(o)->car, base);
+    break;
+	
+  /* case TYPE_TRUE: */
+  /* 	if(to_char(o)->c) fprintf(output, "TRUE"); */
+  /* 	else              fprintf(output, "FALSE"); */
+  /* 	break; */
+	
+  case TYPE_SYMBOL:
+    printf("%s", ((string_type*)o)->str);
+    break;
+	
+  /* case TYPE_INT: */
+  /* 	mpz_out_str(output, base, to_int(o)->num); */
+  /* 	break; */
+
+  case TYPE_NATIVE:
+	// Placeholder until we get a real native print list.
+	{
+	  /* native_type* n = to_native(o); */
+
+	  /* switch(n->func) { */
+
+	  /* case N_CONS: */
+	  /* 	fprintf(output, "CONS"); */
+	  /* 	break; */
+
+	  /* 	case N_LIST: */
+	  /* 	fprintf(output, "LIST"); */
+	  /* 	break; */
+
+	  /* 	case N_IF: */
+	  /* 	fprintf(output, "IF"); */
+	  /* 	break; */
+
+	  /* 	case N_TYPE: */
+	  /* 	fprintf(output, "TYPE"); */
+	  /* 	break; */
+
+	  /* case N_NULL: */
+	  /* 	fprintf(output, "NULL"); */
+	  /* 	break; */
+		
+	  /* case N_AND: */
+	  /* 	fprintf(output, "AND"); */
+	  /* 	break; */
+		
+	  /* case N_NOT: */
+	  /* 	fprintf(output, "NOT"); */
+	  /* 	break; */
+		
+	  /* case N_APPEND: */
+	  /* 	fprintf(output, "APPEND"); */
+	  /* 	break; */
+		
+	  /* case N_ASSOC: */
+	  /* 	fprintf(output, "ASSOC"); */
+	  /* 	break; */
+		
+	  /* case N_EVAL: */
+	  /* 	fprintf(output, "EVAL"); */
+	  /* 	break; */
+		
+	  /* default: */
+
+	  /* 	fprintf(output, "UNKNOW_NATIVE"); */
+		
+	  /* } */
+
+	  fprintf(output, "%p", (void*) o);
+	  
+	}
+	break;
+	
+  case TYPE_FLOAT:
+    //mpf_out_str(output, base, 0, to_float(o)->num);
+    break;
+		
+  case TYPE_STRING:
+    fprintf(output, "\"%s\"", to_string(o)->str);
+    break;
+
+  /* case TYPE_CHAR: */
+  /*   fprintf(output, "#\\%c", to_string(o)->str[0]); */
+  /* 	break; */
+
+  /* case TYPE_POINTER: */
+  /* 	fprintf(output, "%p\n", to_pointer(o)->p); */
+  /* 	break; */
+	
+  case TYPE_INT8:
+  case TYPE_UINT8:
+  case TYPE_FLOAT8:
+  case TYPE_DOUBLE8:
+  case TYPE_LONG_DOUBLE8:
+  case TYPE_INT16:
+  case TYPE_UINT16:
+  case TYPE_FLOAT16:
+  case TYPE_DOUBLE16:
+  case TYPE_LONG_DOUBLE16:
+  case TYPE_INT32:
+  case TYPE_UINT32:
+  case TYPE_FLOAT32:
+  case TYPE_DOUBLE32:
+  case TYPE_LONG_DOUBLE32:
+  case TYPE_INT64:
+  case TYPE_UINT64:
+  case TYPE_FLOAT64:
+  case TYPE_DOUBLE64:
+  case TYPE_LONG_DOUBLE64:
+  case TYPE_INT128:
+  case TYPE_UINT128:
+  case TYPE_FLOAT128:
+  case TYPE_DOUBLE128:
+  case TYPE_LONG_DOUBLE128:
+  case TYPE_CHAR_ARRAY:
+
+	printf("Specialized array type data isn't printable yet, defaulting to hex.\n");
+  /* case TYPE_RAW: */
+  /* 	fprintf(output, "#x"); */
+  /* 	{ */
+  /* 	  rawtype* raw = to_raw(o); */
+
+  /*     for (size_t i = 0; i < raw->size; ++i) { */
+  /* 		fprintf(output, "%02x", (unsigned char)raw->data[i]); */
+  /*     } */
+  /*   } */
+  /*   break; */
+
+  case TYPE_ERROR:
+    fprintf(output, "<ERROR: ");
+    print(output, to_cons(o)->car, base);
+	fprintf(output, ">");
+    break;
+
+	
+  default:
+    printf("We have no idea what %p is.\n", o);
+  }
+}
+

@@ -95,6 +95,27 @@ cc create_quotetype(ValueType Type, void* car) {
 }
 
 
+char_type* create_char_type(char c) {
+  char_type* o = (char_type*)GC_malloc(sizeof(char_type));
+  if(!o) return NULL; // Check for allocation failure
+  o->type = TYPE_CHAR;
+  o->c = c;
+  return o;
+}
+
+true_type ttrue = {TYPE_TRUE};
+
+void* create_true_type() {
+
+  return &ttrue;
+}
+
+void* create_false_type() {
+
+  return NULL;
+}
+
+
 string_type* create_string_type(size_t len, ValueType Type) {
   string_type* sym = (string_type*)GC_malloc(sizeof(string_type) + len + 1); // +1 for null terminator
   if (!sym) return NULL; // Check for allocation failure
@@ -135,4 +156,115 @@ resizable_string_type* create_resizable_string_type_and_copy(size_t len, const c
   sym->str[len] = '\0'; // Ensure null termination
 
   return sym;
+}
+
+resizable_string_type* create_resizable_string_type(size_t len, ValueType Type) {
+  resizable_string_type* sym = (resizable_string_type*)GC_malloc(sizeof(resizable_string_type));
+  if (!sym) return NULL; // Check for allocation failure
+  sym->type = Type;
+  sym->len = 1 > len ? 1 : len;
+  sym->pos = 0;
+  sym->str = (char*)GC_malloc(sym->len); // +1 for null terminator
+  if (sym->str) {
+	sym->str[0] = '\0'; // Initialize empty string
+  } else {
+	GC_free(sym); // Clean up if string allocation fails
+	return NULL;
+  }
+  return sym;
+}
+
+
+char* resize_string(char* str, size_t size) {
+
+  char* ret;
+  if(str) {
+	 ret = GC_realloc(str, size);
+  }
+  else {
+	ret = GC_malloc(size);
+  }
+  
+  if(!ret) {
+	printf("Out of memory for resizable string!\n");
+	return NULL;
+  }
+
+  return ret;
+}
+
+resizable_string_type* resize_resizable_array(resizable_string_type* arr, size_t size) {
+  char* newStr = resize_string(arr->str, size);
+  if(!newStr) {
+	return NULL;
+  }
+
+  arr->str = newStr;
+  arr->len = size;
+  return arr;  
+}
+
+string_type* create_string_type_from_resizable_string(resizable_string_type* resizeable) {
+  return create_string_type_and_copy(resizeable->pos, resizeable->str, TYPE_STRING);
+}
+
+resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c) {
+  
+  if(!is_type(arr, TYPE_RESIZABLE_STRING)) {
+	
+	printf("Error, not a resizeable string!\n");
+	return NULL;
+  }
+
+  // Is there enough space? 
+  if(arr->pos >= arr->len - 2) {
+	
+	// Gotta make some room...
+	resize_resizable_array(arr, arr->len * 2);
+  }
+
+  if(arr->str != NULL) {
+  
+	arr->str[arr->pos] = c;
+	arr->pos++;
+  }
+  
+  return arr;
+}
+
+resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* s) {
+
+  if(!is_type(arr, TYPE_RESIZABLE_STRING)) {
+	
+	printf("Error, not a resizeable string!\n");
+	return NULL;
+  }
+
+  size_t strl = strlen(s);
+  size_t totalRequired = arr->pos + strl;
+						 
+  if(totalRequired >= arr->len - 1) {
+
+	// Gotta make some room...
+		
+	arr->len = totalRequired * totalRequired; 
+	arr->str = resize_string(arr->str, arr->len);
+  }
+
+  if(arr->str != NULL) {
+  
+	strncpy(arr->str + arr->pos, s, strl);
+	arr->pos = totalRequired;
+  }
+  
+  return arr;
+}
+
+
+char_type* create_native_int_type(nativeType type) {
+
+  char_type* ret = (char_type*) GC_malloc(sizeof(char_type));
+  ret->type = TYPE_NATIVE_INT;
+  ret->c = type;
+  return ret;
 }

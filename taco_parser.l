@@ -40,15 +40,15 @@ float_number_types ("f"|"d"|"ld")
 
 
 "\""                    { BEGIN(STRING); 
-//yylval->p = create_resizable_strtype(1024, TYPE_RESIZABLE_STRING);
+yylval->p = create_resizable_string_type(1024, TYPE_RESIZABLE_STRING);
 }
 
 <STRING>"\""            { BEGIN(INITIAL);
-//yylval->p = create_strtype_from_resizable_string(yylval->p);
+yylval->p = create_string_type_from_resizable_string(yylval->p);
 return ATOM;
 }
 <STRING>.|\n               { //printf("Just got a string char!!!: %c in string: %s\n", yytext[0], yytext);
-                          //yylval->p = putch_resizable_array(yylval->p, yytext[0]);
+                          yylval->p = putch_resizable_array(yylval->p, yytext[0]);
                           }
 <STRING><<EOF>>         { /* Handle EOF during string for error reporting, possibly flag error */ }
 

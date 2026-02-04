@@ -18,61 +18,74 @@ extern "C" {
 #define free(p) GC_free(p)
 #define realloc(p, n) GC_realloc(p, n)
 
-// We can currently have 256 types. 
+  // We can currently have 256 types. 
 #define TYPE_BIT_MASK 0xFF
 #define TYPE_FLAGS_BIT_MASK (~TYPE_BIT_MASK)
 
-// Define bit masks
+  // Define bit masks
 #define EVENT_FLAG (1<<31)
 #define RED_BLACK_FLAG (1<<30)
 
-// Set the event flag
-void set_event_flag(void* value);
-// Clear the event flag
-void clear_event_flag(void* value);
-// Check if the event flag is set
-int is_event_flag_set(void* value);
-// Set the red/black flag
-void set_red_black_flag(void* value);
-// Clear the red/black flag
-void clear_red_black_flag(void* value);
-// Check if the red/black flag is set
-int is_red_black_flag_set(void* value);
+  // Set the event flag
+  void set_event_flag(void* value);
+  // Clear the event flag
+  void clear_event_flag(void* value);
+  // Check if the event flag is set
+  int is_event_flag_set(void* value);
+  // Set the red/black flag
+  void set_red_black_flag(void* value);
+  // Clear the red/black flag
+  void clear_red_black_flag(void* value);
+  // Check if the red/black flag is set
+  int is_red_black_flag_set(void* value);
 
   typedef enum {
     TYPE_NULL = 0,
-	TYPE_CONS = 1,
-	TYPE_SYMBOL,
-	TYPE_NATIVE,
-	TYPE_NATIVE_INT,
-	TYPE_TRUE,
-	TYPE_CHAR,
-	TYPE_STRING,
-	TYPE_RESIZABLE_STRING,
-	TYPE_INT,
-	TYPE_RATIONAL,
-	TYPE_FLOAT,
-	TYPE_FUNC,
-	TYPE_RAW,
-	TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8,
-	TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16,
-	TYPE_INT32, TYPE_UINT32, TYPE_FLOAT32, TYPE_DOUBLE32, TYPE_LONG_DOUBLE32,
-	TYPE_INT64, TYPE_UINT64, TYPE_FLOAT64, TYPE_DOUBLE64, TYPE_LONG_DOUBLE64,
-	TYPE_INT128, TYPE_UINT128, TYPE_FLOAT128, TYPE_DOUBLE128, TYPE_LONG_DOUBLE128,
-	TYPE_CHAR_ARRAY,
-	TYPE_POINTER,
-	TYPE_RB_TREE,
-	TYPE_QUOTE,
-	TYPE_BACKTICK,
-	TYPE_COMMA,
-	TYPE_SPLICE,
-	TYPE_ERROR
+    TYPE_CONS = 1,
+    TYPE_SYMBOL,
+    TYPE_NATIVE,
+    TYPE_NATIVE_INT,
+    TYPE_TRUE,
+    TYPE_CHAR,
+    TYPE_STRING,
+    TYPE_RESIZABLE_STRING,
+    TYPE_INT,
+    TYPE_RATIONAL,
+    TYPE_FLOAT,
+    TYPE_FUNC,
+    TYPE_RAW,
+    TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8,
+    TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16,
+    TYPE_INT32, TYPE_UINT32, TYPE_FLOAT32, TYPE_DOUBLE32, TYPE_LONG_DOUBLE32,
+    TYPE_INT64, TYPE_UINT64, TYPE_FLOAT64, TYPE_DOUBLE64, TYPE_LONG_DOUBLE64,
+    TYPE_INT128, TYPE_UINT128, TYPE_FLOAT128, TYPE_DOUBLE128, TYPE_LONG_DOUBLE128,
+    TYPE_CHAR_ARRAY,
+    TYPE_POINTER,
+    TYPE_RB_TREE,
+    TYPE_QUOTE,
+    TYPE_BACKTICK,
+    TYPE_COMMA,
+    TYPE_SPLICE,
+    TYPE_ERROR
   } ValueType;
 
+  typedef enum {
+	N_CONS,
+	N_LIST,
+	N_IF,
+	N_TYPE,
+	N_NULL,
+	N_AND,
+	N_NOT,
+	N_APPEND,
+	N_ASSOC,
+	N_EVAL
+  } nativeType;
+  
 
 #define get_type(ptr) (*(ValueType*)(ptr) & TYPE_BIT_MASK)
 #define get_flags(ptr) (*(ValueType*)(ptr) & TYPE_FLAGS_BIT_MASK)
-//#define get_size(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>8)
+  //#define get_size(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>8)
 #define get_getctype(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>12)
 #define is_type(ptr, ty) (get_type(ptr) == (ty))
 #define is_cons(ptr) (is_type(ptr, TYPE_CONS))
@@ -88,51 +101,78 @@ int is_red_black_flag_set(void* value);
 #define to_pointer(o) ((pointertype*)o)
 #define to_char(o) ((chartype*)o)
 #define to_native(o) ((native_type*)o)
+
+  typedef struct {
+    ValueType type; 
+  } true_type;
   
-typedef struct cons_cell {
-  ValueType type;
-  void* car;
-  void* cdr;
-} cons_cell;
+  typedef struct cons_cell {
+    ValueType type;
+    void* car;
+    void* cdr;
+  } cons_cell;
 
-typedef cons_cell *cc;
+  typedef cons_cell *cc;
 
-typedef struct {
-  ValueType type;
-  void* func;
-} native_type;
+  typedef struct {
+    ValueType type;
+    void* func;
+  } native_type;
 
-typedef struct {
-  ValueType type;
-  int size;
-  char str[];
-} string_type;
+  typedef struct {
+    ValueType type;
+    int size;
+    char str[];
+  } string_type;
 
-typedef struct {
-  ValueType type;
-  size_t pos;
-  size_t len;
-  char* str;
-} resizable_string_type;
+  typedef struct {
+    ValueType type;
+    size_t pos;
+    size_t len;
+    char* str;
+  } resizable_string_type;
 
-// Cons cell functions
-cc cons(void* car, void* cdr);
-int list_length(void* list);
-int is_list(void* list);
-cc last(void* lst);
+  typedef struct {
+	ValueType type;
+	char c;
+  } char_type;
+  
+  
+  // Cons cell functions
+  cc cons(void* car, void* cdr);
+  int list_length(void* list);
+  int is_list(void* list);
+  cc last(void* lst);
 
-// Quote is handled with a cons cell...
-cc create_quotetype(ValueType Type, void* car);
+  // Bool functions
+  // Why is this chartype? 
+  void* create_true_type();
+  void* create_false_type();
+    
+  // Char functions
+  char_type* create_char_type(char c);
 
-// String_type functions
-string_type* create_string_type(size_t len, ValueType Type);
-string_type* create_string_type_and_copy(size_t len, const char* str, ValueType Type);
-string_type* create_string_type_from_string(const char* str, ValueType Type);
-int string_compare(const void* a, const void* b);
-int raw_string_compare(const void* a, const void* b);
+  // Quote is handled with a cons cell...
+  cc create_quotetype(ValueType Type, void* car);
+  
+  // String_type functions
+  string_type* create_string_type(size_t len, ValueType Type);
+  string_type* create_string_type_and_copy(size_t len, const char* str, ValueType Type);
+  string_type* create_string_type_from_string(const char* str, ValueType Type);
+  int string_compare(const void* a, const void* b);
+  int raw_string_compare(const void* a, const void* b);
+  
+  // resizable_string_type functions
+  // Functions to create and manage resizable string types
+  resizable_string_type* create_resizable_string_type(size_t buff_size, ValueType Type);
+  resizable_string_type* create_resizable_string_type_and_copy(size_t len, const char* str, ValueType Type);
+  resizable_string_type* create_resizable_string_type_from_string(const char* str, ValueType Type);
+  string_type* create_string_type_from_resizable_string(resizable_string_type* resizeable);
+  resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c);
+  resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* s);
 
-// resizable_string_type functions
-
+  // native function and data functions
+  char_type* create_native_int_type(nativeType type);
 
 #ifdef __cplusplus
 }

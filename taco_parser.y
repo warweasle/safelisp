@@ -9,8 +9,8 @@
 
 
 %code top {
-#include "taco.tab.h"
-#include "taco.yy.h"
+#include "taco_parser.tab.h"
+#include "taco_parser.yy.h"
 #include "taco.h"
 
  }

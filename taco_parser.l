@@ -72,6 +72,11 @@ return ATOM;
 
 }
 
+[tT][rR][uU][eE] {
+    yylval->p = create_true_type();
+    return ATOM;
+}
+
 [nN][uU][lL][lL] {
     yylval->p = NULL;
     return ATOM;

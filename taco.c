@@ -52,6 +52,28 @@ int is_red_black_flag_set(void* value) {
   return (*((int*) value) & RED_BLACK_FLAG) != 0;
 }
 
+int is_true(void* o) {
+
+  if(!o) return 0;
+  
+  ValueType type = get_type(o);
+
+  switch(type) {
+
+  case TYPE_INT:
+    if(mpz_cmp_ui(to_int(o)->num, 0) == 0) return 0;
+    else return -1;
+
+  case TYPE_FLOAT: 
+    if(mpf_cmp_ui(to_float(o)->num, 0) == 0) return 0;
+    else return -1;
+    
+  default:
+  
+  }
+  return -1;
+}
+
 cc cons(void* car, void* cdr) {
   cc ret = (cc) GC_malloc(sizeof(cons_cell));
 
@@ -654,7 +676,6 @@ void* eval_list(void* list, void* env) {
     printf("Function calling not yet available!!!\n");
     break;
 
-    
   case TYPE_NATIVE_INT:
 
     switch(to_char(o)->c) {
@@ -674,7 +695,29 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_LIST:
-      return eval_rest(cdr(list), env);
+
+      // this doesn't work!!!!
+      {
+	cc ret = NULL;
+	cc next = NULL;
+
+	for(cc i=cdr(list); i; i=cdr(i)) {
+	  void* tmp = eval(car(i), env);
+
+	  if(ret) {
+	    cc c = cons(tmp, NULL);
+	    next->cdr = c;
+	    next = c;
+	  }
+	  else {
+	  
+	    ret = cons(tmp, NULL);
+	    next = ret;
+	  }
+	}
+	
+	return ret;
+      }
       break;
   
     case N_IF:
@@ -693,7 +736,10 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* predicate = eval(car(pred), env);
-	if(predicate) {
+	printf("returned: %p\n", predicate);
+	print(stdout, predicate, 10);
+	
+	if(is_true(predicate)) {
 	  return eval(car(truth), env);
 	}
 	else {
@@ -742,10 +788,10 @@ void* eval_list(void* list, void* env) {
 
       {
 	void* result = create_true_type();
-	for(void* i; (i = cdr(list)); i = cdr(i)) {
-	  result = eval(cdr(i), env);
+	for(void* i=cdr(list); i; i = cdr(i)) {
+	  result = eval(car(i), env);
 
-	  if(result == NULL) return NULL;
+	  if(!is_true(result)) return NULL;
 	}
 
 	return result;
@@ -756,10 +802,10 @@ void* eval_list(void* list, void* env) {
       
       {
 	void* result = create_true_type();
-	for(void* i; (i = cdr(list)); i = cdr(i)) {
-	  result = eval(cdr(i), env);
+	for(void* i=cdr(list); i; i = cdr(i)) {
+	  result = eval(car(i), env);
 
-	  if(result) return result;
+	  if(is_true(result)) return result;
 	}
 
 	return NULL;
@@ -767,7 +813,6 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_APPEND:
-
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
 	  printf("ERROR: APPEND requires TWO arguments!\n");
@@ -780,7 +825,7 @@ void* eval_list(void* list, void* env) {
 
 	l->cdr = car(cdr(tmp));
 
-	return tmp;
+	return car(tmp);
 	
       }
       

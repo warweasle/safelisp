@@ -126,6 +126,10 @@ void print(FILE* output, void* o, int base) {
 	  case N_EVAL:
 		fprintf(output, "EVAL");
 		break;
+
+	  case N_PRINT:
+	    fprintf(output, "PRINT");
+	    break;
 		
 	  default:
 

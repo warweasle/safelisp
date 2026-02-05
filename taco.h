@@ -81,7 +81,9 @@ extern "C" {
 	N_ASSOC,
 	N_EVAL,
 	N_EQL,
-	N_COND
+	N_COND,
+	N_TO_STRING,
+	N_PRINT
   } nativeType;
   
 

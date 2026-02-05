@@ -67,6 +67,10 @@ int is_true(void* o) {
   case TYPE_FLOAT: 
     if(mpf_cmp_ui(to_float(o)->num, 0) == 0) return 0;
     else return -1;
+
+  case TYPE_CONS:
+    if(car(o) || cdr(o)) return -1;
+    else return 0;
     
   default:
   
@@ -378,6 +382,8 @@ float_type* create_float_type() {
 
 void* equal(void* a, void* b) {
 
+  if(a == b) return create_true_type();
+  
   ValueType at = get_type(a);
   ValueType bt = get_type(b);
 
@@ -801,7 +807,7 @@ void* eval_list(void* list, void* env) {
       }
 
       void* result = eval(car(cdr(list)), env);
-      if(result) return NULL;
+      if(is_true(result)) return NULL;
       else return create_true_type();
       break;
       
@@ -887,6 +893,33 @@ void* eval_list(void* list, void* env) {
 	return equal(a, b);
       }
       break;
+
+    case N_TO_STRING:
+      {
+	char *buf = NULL;
+	size_t size = 0;
+	
+	void* p = eval(car(cdr(list)), env);
+	
+	FILE *f = open_memstream(&buf, &size);
+	print(f, p, 10);
+	fclose(f);   // IMPORTANT: finalizes buffer
+	
+	void* ret = create_string_type_and_copy(size, buf, TYPE_STRING);
+
+	// This isn't working. causes a segfault.
+	//free(buf);
+	return ret;
+      }
+      break;
+      
+    case N_PRINT:
+      {
+	printf("PRINTGINT EHF FUCK OUT OF IT!!\n");
+	void* ret = eval(car(cdr(list)), env);
+	print(stdout, ret, 10);
+	return ret;
+      }
       
     default:
 

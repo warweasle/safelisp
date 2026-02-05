@@ -124,6 +124,16 @@ return ATOM;
     yylval->p = create_native_int_type(N_OR);
     return ATOM;
 }
+[pP][rR][iI][nN][tT]          {
+
+    yylval->p = create_native_int_type(N_PRINT);
+    return ATOM;
+}
+[tT][oO][-][sT][tT][rR][iI][nN][gG]          {
+
+    yylval->p = create_native_int_type(N_TO_STRING);
+    return ATOM;
+}
 
 
 [a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 

@@ -562,8 +562,24 @@ void* return_type(void* o) {
   }
 }
 
+void* assoc(void* item, void* list) {
+  if(list == NULL) return NULL;
+
+  if(car(list) && 
+     car(car(list)) && 
+     equal(item, car(car(list)))) {
+    return car(list);
+  }
+
+  return assoc(item, cdr(list));
+}
+
 void* eval(void* list, void* env) {
-  if(get_type(list) == TYPE_CONS) {
+
+  
+  
+  if(get_type(list) == TYPE_CONS
+     ) {
     return eval_list(list, env);
   }
 
@@ -600,10 +616,21 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(to_cons(list));
   ValueType type = get_type(o);
+  printf("TYpe = %i\n", type);
   
   switch(type) {
   case TYPE_CONS:
     printf("Function calling not yet available!!!\n");
+    break;
+
+  case TYPE_QUOTE:
+    printf("QUOTE!!!\n");
+    if(!cdr(list)) {
+      printf("Error: quote requires something after it!\n");
+      return NULL;
+    }
+    
+    return car(car(list));
     break;
     
   case TYPE_NATIVE_INT:
@@ -627,7 +654,7 @@ void* eval_list(void* list, void* env) {
     case N_LIST:
       return eval_rest(cdr(list), env);
       break;
-      
+  
     case N_IF:
       {
 	void* pred = cdr(list);
@@ -721,15 +748,39 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_ASSOC:
+
+      {
+	if(!cdr(list) || !cdr(cdr(list))) {
+	  printf("ERROR: ASSOC requires at least TWO arguments!\n");
+	  return NULL;
+	}
+	
+	void* item = eval(car(cdr(list)), env);
+	void* db = eval(car(cdr(cdr(list))), env);
+
+	return assoc(item, db);
+      }
       break;
       
     case N_EVAL:
       break;
       
     case N_EQL:
-      break;
+      {
+	if(!cdr(list)) {
+	  printf("ERROR: EQL requires 2 arguements!");
+	  return NULL;
+	}
+	if(!cdr(cdr(list))) {
+	  printf("ERROR: EQL requires 2 arguements!");
+	  return NULL;
+	}
 
-    case N_QUOTE:
+	void* tmp = cdr(list);
+	void* a = eval(car(tmp), env);
+	void* b = eval(car(cdr(tmp)), env);
+	return equal(a, b);
+      }
       break;
       
     default:

@@ -178,8 +178,7 @@ extern "C" {
   string_type* create_symbol(const char* str);
   string_type* create_symbol_and_copy(size_t len, const char* str);
 
-  
-  // resizable_string_type functions
+    // resizable_string_type functions
   // Functions to create and manage resizable string types
   resizable_string_type* create_resizable_string_type(size_t buff_size, ValueType Type);
   resizable_string_type* create_resizable_string_type_and_copy(size_t len, const char* str, ValueType Type);
@@ -208,5 +207,4 @@ extern "C" {
 #include "printer.h"
 
 #endif // TACO_H
-
 

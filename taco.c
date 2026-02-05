@@ -480,59 +480,64 @@ void* equal(void* a, void* b) {
   return create_true_type();
 }
 
-void* return_type(void* o) {
-  switch(get_type(o)) {
+char* return_type_c_string(void* o) {
+
+  ValueType type = get_type(o);
+
+  printf("return_type_c_string = %i\n", type);
+  
+  switch(type) {
 
   case TYPE_NULL:
-    return create_symbol("NULL");
+    return "NULL";
   case TYPE_CONS:
-    return create_symbol("CONS");
+    return "CONS";
   case TYPE_SYMBOL:
-    return create_symbol("SYMBOL");
+    return "SYMBOL";
   case TYPE_STRING:
-    return create_symbol("STRING");
+    return "STRING";
   case TYPE_TRUE:
-    return create_symbol("TRUE");
+    return "TRUE";
   case TYPE_QUOTE:
-    return create_symbol("QUOTE");
+    return "QUOTE";
   case TYPE_BACKTICK:
-    return create_symbol("BACKTICK");
+    return "BACKTICK";
   case TYPE_COMMA:
-    return create_symbol("COMMA");
+    return "COMMA";
   case TYPE_SPLICE:
-    return create_symbol("SPLICE");
+    return "SPLICE";
   case TYPE_INT:
-    return create_symbol("INTEGER");
+    return "INTEGER";
   case TYPE_FLOAT:
-    return create_symbol("FLOAT");
+    return "FLOAT";
   case TYPE_RATIONAL:
-    return create_symbol("RATIONAL");
+    return "RATIONAL";
   case TYPE_NATIVE_INT:
-    return create_symbol("NATIVE_FUNC");
+    return "NATIVE_FUNC";
   case TYPE_POINTER:
-    return create_symbol("POINTER");
+    return "POINTER";
   case TYPE_RB_TREE:
-    return create_symbol("RB_TREE");
+    return "RB_TREE";
   case TYPE_ERROR:
-    return create_symbol("ERROR");
+    return "ERROR";
   case TYPE_CHAR:
-    return create_symbol("CHAR");
+    return "CHAR";
   case TYPE_RESIZABLE_STRING:
-    return create_symbol("RESIZABLE_STRING");
+    return "RESIZABLE_STRING";
   case TYPE_NATIVE:
-    return create_symbol("NATIVE_POINTER");
+    return "NATIVE_POINTER";
   case TYPE_FUNC:
-    return create_symbol("FUNCTION");
+    return "FUNCTION";
   case TYPE_RAW:
-    return create_symbol("RAW");
+    return "RAW";
   case TYPE_INT8:
-    return create_symbol("INT8");
+    return "INT8";
   case TYPE_UINT8:
-    return create_symbol("UINT8");
+    return "UINT8";
   case TYPE_FLOAT8:
-    return create_symbol("FLOAT8");
+    return "FLOAT8";
   case TYPE_DOUBLE8:
-    return create_symbol("DOUBLE8");
+    return "DOUBLE8";
   case TYPE_LONG_DOUBLE8:
   case TYPE_INT16:
   case TYPE_UINT16:
@@ -557,9 +562,15 @@ void* return_type(void* o) {
   case TYPE_CHAR_ARRAY:
     
   default:
-    return create_symbol("UNKNOWN");
+    return "UNKNOWN";
     
   }
+  
+}
+
+void* return_type(void* o) {
+  
+  return create_symbol(return_type_c_string(o));
 }
 
 void* assoc(void* item, void* list) {
@@ -576,10 +587,12 @@ void* assoc(void* item, void* list) {
 
 void* eval(void* list, void* env) {
 
+  printf("eval: TYPE: %s\n", return_type_c_string(list));
+
+  ValueType type = get_type(list);
   
-  
-  if(get_type(list) == TYPE_CONS
-     ) {
+  if(type == TYPE_CONS ||
+     type == TYPE_QUOTE) {
     return eval_list(list, env);
   }
 
@@ -615,8 +628,8 @@ void* eval_rest(void* list, void* env) {
 void* eval_list(void* list, void* env) {
   
   void* o = car(to_cons(list));
-  ValueType type = get_type(o);
-  printf("TYpe = %i\n", type);
+  ValueType type = get_type(list);
+  printf("Type = %s\n", return_type_c_string(list));
   
   switch(type) {
   case TYPE_CONS:
@@ -625,12 +638,12 @@ void* eval_list(void* list, void* env) {
 
   case TYPE_QUOTE:
     printf("QUOTE!!!\n");
-    if(!cdr(list)) {
+    if(!car(list)) {
       printf("Error: quote requires something after it!\n");
       return NULL;
     }
     
-    return car(car(list));
+    return car(list);
     break;
     
   case TYPE_NATIVE_INT:

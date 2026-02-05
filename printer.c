@@ -34,25 +34,8 @@ void print(FILE* output, void* o, int base) {
     fprintf(output, ")");
 	}
 	
-    /* while (o && is_cons(o)) {  // Iterate through each cons cell */
-    /*   if (car(o)) {  // If there's a value in car, print it */
-    /* 		void* tmp = car(o); */
-    /* 		print(output, tmp, base); */
-    /*   } */
-
-    /*   o = cdr(o);  // Move to the next element in the list */
-
-    /*   // Check if there's another cons cell after this one */
-    /*   if (o && is_cons(o)) { */
-    /* 		fprintf(output, " "); */
-    /*   } else if (o) {  // Handle improper list (dotted pair) */
-    /* 		fprintf(output, " . "); */
-    /* 		print(output, o, base); */
-    /* 		break;  // Exit the loop after printing the last element */
-    /*   } */
-    /* } */
-
-    break;
+	
+	break;
 
   /* case TYPE_RB_TREE: */
 

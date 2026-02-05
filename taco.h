@@ -188,6 +188,8 @@ extern "C" {
   int_type* create_int_type(double i);
   float_type* create_float_type();
 
+  // Important functions
+  void* equal(void* a, void* b); 
   
 #ifdef __cplusplus
 }

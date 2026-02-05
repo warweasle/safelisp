@@ -260,6 +260,36 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
   return arr;
 }
 
+int string_compare(const void* a, const void* b) {
+  const string_type* str1 = (const string_type*)a;
+  const string_type* str2 = (const string_type*)b;
+
+  // Ensure both are valid strings using is_str
+  if (!is_str(str1) || !is_str(str2)) {
+	return 0; // Consider returning 0 or handle the error as appropriate
+  }
+
+  //printf("Comparing: %s vs %s\n", str1->str, str2->str);
+  
+  // Compare the strings
+  return strcmp(str1->str, str2->str);
+}
+
+int raw_string_compare(const void* a, const void* b) {
+  const string_type* str1 = (const string_type*)a;
+  const char* str2 = (const char*)b;
+
+  // Ensure both are valid strings using is_str
+  if (!is_str(str1)) {
+	return 0; // Consider returning 0 or handle the error as appropriate
+  }
+
+  printf("Comparing: %s vs %s\n", str1->str, str2);
+  
+  // Compare the strings
+  return strcmp(str1->str, str2);
+}
+
 
 char_type* create_native_int_type(nativeType type) {
 
@@ -285,4 +315,119 @@ float_type* create_float_type() {
   ret->type = TYPE_FLOAT;
   mpf_init(ret->num);
   return ret;
+}
+
+void* equal(void* a, void* b) {
+
+  ValueType at = get_type(a);
+  ValueType bt = get_type(b);
+
+  if(at != bt) return NULL;
+
+  switch(at) {
+  
+  case TYPE_NULL:
+    return create_true_type(); 
+    break;
+    
+  case TYPE_CONS:
+    {
+      cc ac = to_cons(a);
+      cc bc = to_cons(b);
+      if(equal(ac->car, bc->car) &&
+	 equal(ac->cdr, bc->cdr)) {
+
+	return create_true_type(); 
+      }
+      else {
+	return NULL;
+      }
+    }
+    break;
+    
+  case TYPE_SYMBOL:
+  case TYPE_STRING:
+  
+    if(string_compare(a, b) == 0) {
+      return create_true_type(); 
+    }
+    else {
+      return NULL;
+    }
+    break;
+
+  case TYPE_TRUE:
+  case TYPE_QUOTE:
+  case TYPE_BACKTICK:
+  case TYPE_COMMA:
+  case TYPE_SPLICE:
+  
+    return create_true_type();
+    break;
+
+  case TYPE_INT:
+    if(mpz_cmp(to_int(a)->num, to_int(b)->num)) {
+      return create_true_type();
+    }
+    else {
+      return NULL;
+    }
+    break;
+    
+  case TYPE_FLOAT:
+    if(mpf_cmp(to_float(a)->num, to_float(b)->num)) {
+      return create_true_type();
+    }
+    else {
+      return NULL;
+    }
+    break;
+
+  case TYPE_RATIONAL:
+    
+  case TYPE_CHAR:
+  case TYPE_RESIZABLE_STRING:
+  case TYPE_NATIVE:
+  case TYPE_NATIVE_INT:
+  case TYPE_FUNC:
+  case TYPE_RAW:
+  case TYPE_INT8:
+  case TYPE_UINT8:
+  case TYPE_FLOAT8:
+  case TYPE_DOUBLE8:
+  case TYPE_LONG_DOUBLE8:
+  case TYPE_INT16:
+  case TYPE_UINT16:
+  case TYPE_FLOAT16:
+  case TYPE_DOUBLE16:
+  case TYPE_LONG_DOUBLE16:
+  case TYPE_INT32:
+  case TYPE_UINT32:
+  case TYPE_FLOAT32:
+  case TYPE_DOUBLE32:
+  case TYPE_LONG_DOUBLE32:
+  case TYPE_INT64:
+  case TYPE_UINT64:
+  case TYPE_FLOAT64:
+  case TYPE_DOUBLE64:
+  case TYPE_LONG_DOUBLE64:
+  case TYPE_INT128:
+  case TYPE_UINT128:
+  case TYPE_FLOAT128:
+  case TYPE_DOUBLE128:
+  case TYPE_LONG_DOUBLE128:
+  case TYPE_CHAR_ARRAY:
+  case TYPE_POINTER:
+  case TYPE_RB_TREE:
+  case TYPE_ERROR:
+
+    return NULL;
+    break;
+    
+  
+  default:
+  }
+  
+
+  return create_true_type();
 }

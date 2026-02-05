@@ -15,42 +15,42 @@ void print(FILE* output, void* o, int base) {
 	{
     fprintf(output, "(");
 
-	char first = 1;
-	for(; o != NULL && is_cons(o); o=cdr(o)) {
-
-	  void* tmp = car(o);
-	  if(first) {first = 0;}
-	  else {fprintf(output, " ");}
-	  
-	  print(output, tmp, base);
-	  //if so that's fine move along. But if cdr != cons then dot notation.
-	  
-	  if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
-		fprintf(output, " . ");
-		print(output, to_cons(o)->cdr, base);
-		break;
-	  }
-	}
-	fprintf(output, ")");
-	}
-	  
-    while (o && is_cons(o)) {  // Iterate through each cons cell
-      if (car(o)) {  // If there's a value in car, print it
-		void* tmp = car(o);
-		print(output, tmp, base);
-      }
-
-      o = cdr(o);  // Move to the next element in the list
-
-      // Check if there's another cons cell after this one
-      if (o && is_cons(o)) {
-		fprintf(output, " ");
-      } else if (o) {  // Handle improper list (dotted pair)
-		fprintf(output, " . ");
-		print(output, o, base);
-		break;  // Exit the loop after printing the last element
+    char first = 1;
+    for(; o != NULL && is_cons(o); o=cdr(o)) {
+      
+      void* tmp = car(o);
+      if(first) {first = 0;}
+      else {fprintf(output, " ");}
+      
+      print(output, tmp, base);
+      //if so that's fine move along. But if cdr != cons then dot notation.
+      
+      if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
+	fprintf(output, " . ");
+	print(output, to_cons(o)->cdr, base);
+	break;
       }
     }
+    fprintf(output, ")");
+	}
+	
+    /* while (o && is_cons(o)) {  // Iterate through each cons cell */
+    /*   if (car(o)) {  // If there's a value in car, print it */
+    /* 		void* tmp = car(o); */
+    /* 		print(output, tmp, base); */
+    /*   } */
+
+    /*   o = cdr(o);  // Move to the next element in the list */
+
+    /*   // Check if there's another cons cell after this one */
+    /*   if (o && is_cons(o)) { */
+    /* 		fprintf(output, " "); */
+    /*   } else if (o) {  // Handle improper list (dotted pair) */
+    /* 		fprintf(output, " . "); */
+    /* 		print(output, o, base); */
+    /* 		break;  // Exit the loop after printing the last element */
+    /*   } */
+    /* } */
 
     break;
 
@@ -128,8 +128,8 @@ void print(FILE* output, void* o, int base) {
 		fprintf(output, "AND");
 		break;
 		
-	  case N_NOT:
-		fprintf(output, "NOT");
+	  case N_OR:
+		fprintf(output, "OR");
 		break;
 		
 	  case N_APPEND:

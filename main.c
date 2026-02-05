@@ -7,7 +7,9 @@
 
 int main(int argc, char* argv[]) {
 
-    // Initialize a scanner instance for Flex
+  init_taco();
+  
+  // Initialize a scanner instance for Flex
   yyscan_t scanner;
   yylex_init(&scanner);
   
@@ -26,12 +28,12 @@ int main(int argc, char* argv[]) {
     printf("Parsing successful %p.\n", atom);
     print(stdout, atom, 10);
     printf("\n");
-    //printf("\nNow evaling...\n");
+    printf("\nNow evaling...\n");
     
-    //void* ret = eval(atom, NULL);
+    void* ret = eval(atom, NULL);
     
-    //print(stdout, ret, 10);
-    //printf("\n");
+    print(stdout, ret, 10);
+    printf("\n");
     
   } else {
     printf("Parsing failed. (%p)\n", atom);

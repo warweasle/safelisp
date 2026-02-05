@@ -1,2 +1,8 @@
+*.o
 *~
 *.bak
+*.tab.c
+*.tab.h
+*.tab.o
+*.yy.c
+*.yy.h

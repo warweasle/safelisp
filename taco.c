@@ -1,5 +1,27 @@
 #include "taco.h"
 
+
+void *gmp_gc_malloc(size_t size) {
+  return GC_malloc(size);
+}
+
+void *gmp_gc_realloc(void *ptr, size_t old_size, size_t new_size) {
+  (void)old_size; // This explicitly marks the unused parameter to avoid warnings
+  return GC_realloc(ptr, new_size);
+}
+
+void gmp_gc_free(void *ptr, size_t size) {
+  (void)size; // Mark unused, as GC_FREE doesn't use size
+  GC_free(ptr);
+}
+
+void* init_taco() {
+  GC_INIT();
+  mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
+
+  return NULL;
+}
+
 // Set the event flag
 void set_event_flag(void* value) {
   *((int*) value) |= EVENT_FLAG;
@@ -141,6 +163,21 @@ string_type* create_string_type_and_copy(size_t len, const char* str, ValueType 
 
 string_type* create_string_type_from_string(const char* str, ValueType Type) {
   return create_string_type_and_copy(strlen(str), str, Type);
+}
+
+
+// This is here so I can cache symbols...
+void add_symbol(string_type* symbol) {
+  return;
+}
+
+string_type* create_symbol(const char* str) {
+
+  return create_string_type_from_string(str, TYPE_SYMBOL); 
+}
+
+string_type* create_symbol_and_copy(size_t len, const char* str) {
+  return create_string_type_and_copy(len, str, TYPE_SYMBOL);
 }
 
 resizable_string_type* create_resizable_string_type_and_copy(size_t len, const char* str, ValueType Type) {
@@ -441,4 +478,271 @@ void* equal(void* a, void* b) {
   
 
   return create_true_type();
+}
+
+void* return_type(void* o) {
+  switch(get_type(o)) {
+
+  case TYPE_NULL:
+    return create_symbol("NULL");
+  case TYPE_CONS:
+    return create_symbol("CONS");
+  case TYPE_SYMBOL:
+    return create_symbol("SYMBOL");
+  case TYPE_STRING:
+    return create_symbol("STRING");
+  case TYPE_TRUE:
+    return create_symbol("TRUE");
+  case TYPE_QUOTE:
+    return create_symbol("QUOTE");
+  case TYPE_BACKTICK:
+    return create_symbol("BACKTICK");
+  case TYPE_COMMA:
+    return create_symbol("COMMA");
+  case TYPE_SPLICE:
+    return create_symbol("SPLICE");
+  case TYPE_INT:
+    return create_symbol("INTEGER");
+  case TYPE_FLOAT:
+    return create_symbol("FLOAT");
+  case TYPE_RATIONAL:
+    return create_symbol("RATIONAL");
+  case TYPE_NATIVE_INT:
+    return create_symbol("NATIVE_FUNC");
+  case TYPE_POINTER:
+    return create_symbol("POINTER");
+  case TYPE_RB_TREE:
+    return create_symbol("RB_TREE");
+  case TYPE_ERROR:
+    return create_symbol("ERROR");
+  case TYPE_CHAR:
+    return create_symbol("CHAR");
+  case TYPE_RESIZABLE_STRING:
+    return create_symbol("RESIZABLE_STRING");
+  case TYPE_NATIVE:
+    return create_symbol("NATIVE_POINTER");
+  case TYPE_FUNC:
+    return create_symbol("FUNCTION");
+  case TYPE_RAW:
+    return create_symbol("RAW");
+  case TYPE_INT8:
+    return create_symbol("INT8");
+  case TYPE_UINT8:
+    return create_symbol("UINT8");
+  case TYPE_FLOAT8:
+    return create_symbol("FLOAT8");
+  case TYPE_DOUBLE8:
+    return create_symbol("DOUBLE8");
+  case TYPE_LONG_DOUBLE8:
+  case TYPE_INT16:
+  case TYPE_UINT16:
+  case TYPE_FLOAT16:
+  case TYPE_DOUBLE16:
+  case TYPE_LONG_DOUBLE16:
+  case TYPE_INT32:
+  case TYPE_UINT32:
+  case TYPE_FLOAT32:
+  case TYPE_DOUBLE32:
+  case TYPE_LONG_DOUBLE32:
+  case TYPE_INT64:
+  case TYPE_UINT64:
+  case TYPE_FLOAT64:
+  case TYPE_DOUBLE64:
+  case TYPE_LONG_DOUBLE64:
+  case TYPE_INT128:
+  case TYPE_UINT128:
+  case TYPE_FLOAT128:
+  case TYPE_DOUBLE128:
+  case TYPE_LONG_DOUBLE128:
+  case TYPE_CHAR_ARRAY:
+    
+  default:
+    return create_symbol("UNKNOWN");
+    
+  }
+}
+
+void* eval(void* list, void* env) {
+  if(get_type(list) == TYPE_CONS) {
+    return eval_list(list, env);
+  }
+
+  return list;
+}
+
+void* eval_rest(void* list, void* env) {
+
+  void* o = car(to_cons(list));
+  ValueType type = get_type(o);
+  
+  switch(type) {
+  case TYPE_CONS:
+    return eval_list(list, env);
+    break;
+    
+  case TYPE_SYMBOL:
+    // look up symbols...
+    
+    //break;
+
+  default:
+
+    return list;
+    
+    
+  }
+
+  
+  return NULL;
+}
+
+void* eval_list(void* list, void* env) {
+  
+  void* o = car(to_cons(list));
+  ValueType type = get_type(o);
+  
+  switch(type) {
+  case TYPE_CONS:
+    printf("Function calling not yet available!!!\n");
+    break;
+    
+  case TYPE_NATIVE_INT:
+
+    switch(to_char(o)->c) {
+    case N_CONS:
+      {
+	void* tmp = cdr(list);
+	void* a = eval(car(tmp), env);
+	void* b = NULL;
+
+	tmp = cdr(tmp);
+	if(tmp) {
+	  b = car(tmp);
+	}
+
+	return cons(a, b);
+      }
+      break;
+      
+    case N_LIST:
+      return eval_rest(cdr(list), env);
+      break;
+      
+    case N_IF:
+      {
+	void* pred = cdr(list);
+	void* truth = cdr(cdr(list));
+	
+	if(!pred) {
+	  printf("ERROR: nothing to IF!\n");
+	  return NULL;
+	}
+
+	if(!truth) {
+	  printf("Nothing to execute in IF statement!\n");
+	  return NULL;
+	}
+	
+	void* predicate = eval(car(pred), env);
+	if(predicate) {
+	  return eval(car(truth), env);
+	}
+	else {
+	  void* falsehood = cdr(truth);
+	  if(falsehood) {
+	    return eval(car(falsehood), env);
+	  }
+	  else {
+	    return NULL;
+	  }
+	}
+      }
+      break;
+      
+    case N_TYPE:
+      if(!cdr(list)) {
+	printf("TYPE requires ONE argument!\n");
+	return NULL;
+      }
+
+      if(cdr(cdr(list))) {
+	printf("TYPE requires only ONE argument!\n");
+	return NULL;
+      }
+      
+      return return_type(eval(car(cdr(list)), env));
+      break;
+      
+    case N_NULL:
+      if(!cdr(list)) {
+	printf("NULL requires ONE argument!\n");
+	return NULL;
+      }
+
+      if(cdr(cdr(list))) {
+	printf("NULL requires only ONE argument!\n");
+	return NULL;
+      }
+
+      void* result = eval(car(cdr(list)), env);
+      if(result) return NULL;
+      else return create_true_type();
+      break;
+      
+    case N_AND:
+
+      {
+	void* result = create_true_type();
+	for(void* i; (i = cdr(list)); i = cdr(i)) {
+	  result = eval(cdr(i), env);
+
+	  if(result == NULL) return NULL;
+	}
+
+	return result;
+      }
+      break;
+
+    case N_OR:
+      
+      {
+	void* result = create_true_type();
+	for(void* i; (i = cdr(list)); i = cdr(i)) {
+	  result = eval(cdr(i), env);
+
+	  if(result) return result;
+	}
+
+	return NULL;
+      }
+      break;
+      
+    case N_APPEND:
+      break;
+      
+    case N_ASSOC:
+      break;
+      
+    case N_EVAL:
+      break;
+      
+    case N_EQL:
+      break;
+
+    case N_QUOTE:
+      break;
+      
+    default:
+
+      printf("Unknown native int function!!!\n");
+      return NULL;
+    }
+
+  default:
+
+    printf("This type doesn't have a function handler!!!\n");
+    break;
+  }
+  
+  return NULL;
 }

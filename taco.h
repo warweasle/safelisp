@@ -76,10 +76,12 @@ extern "C" {
 	N_TYPE,
 	N_NULL,
 	N_AND,
-	N_NOT,
+	N_OR,
 	N_APPEND,
 	N_ASSOC,
-	N_EVAL
+	N_EVAL,
+	N_EQL,
+	N_QUOTE
   } nativeType;
   
 
@@ -147,6 +149,9 @@ extern "C" {
 	mpf_t num;
   } float_type;
 
+
+  // Init and other...
+  void* init_taco();
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
@@ -171,6 +176,9 @@ extern "C" {
   string_type* create_string_type_from_string(const char* str, ValueType Type);
   int string_compare(const void* a, const void* b);
   int raw_string_compare(const void* a, const void* b);
+  string_type* create_symbol(const char* str);
+  string_type* create_symbol_and_copy(size_t len, const char* str);
+
   
   // resizable_string_type functions
   // Functions to create and manage resizable string types
@@ -190,6 +198,9 @@ extern "C" {
 
   // Important functions
   void* equal(void* a, void* b); 
+  void* eval_list(void* list, void* env);
+  void* return_type(void* o); 
+  void* eval(void* list, void* env);
   
 #ifdef __cplusplus
 }

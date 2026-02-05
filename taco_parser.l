@@ -98,6 +98,22 @@ return ATOM;
     yylval->p = create_native_int_type(N_TYPE);
     return ATOM;
 }
+[aA][pP][pP][eE][nN][dD]  {
+
+    yylval->p = create_native_int_type(N_APPEND);
+    return ATOM;
+}
+[aA][nN][dD]  {
+
+    yylval->p = create_native_int_type(N_AND);
+    return ATOM;
+}
+[oO][rR]  {
+
+    yylval->p = create_native_int_type(N_OR);
+    return ATOM;
+}
+
 
 [a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 
 

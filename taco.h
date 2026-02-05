@@ -198,6 +198,7 @@ extern "C" {
   void* equal(void* a, void* b); 
   void* eval_list(void* list, void* env);
   void* return_type(void* o); 
+  void* assoc(void* item, void* list);
   void* eval(void* list, void* env);
   
 #ifdef __cplusplus

@@ -590,12 +590,29 @@ void* eval(void* list, void* env) {
   printf("eval: TYPE: %s\n", return_type_c_string(list));
 
   ValueType type = get_type(list);
-  
-  if(type == TYPE_CONS ||
-     type == TYPE_QUOTE) {
-    return eval_list(list, env);
-  }
 
+  switch(type) {
+
+  case TYPE_CONS:
+    return eval_list(list, env);
+
+  case TYPE_QUOTE:
+    if(!car(list)) {
+      printf("Error: quote requires something after it!\n");
+      return NULL;
+    }
+    
+    return car(list);
+    break;
+  
+    
+  case TYPE_SYMBOL:
+    return assoc(list, env);
+
+  default: 
+    return list;
+  }
+  
   return list;
 }
 
@@ -627,24 +644,16 @@ void* eval_rest(void* list, void* env) {
 
 void* eval_list(void* list, void* env) {
   
-  void* o = car(to_cons(list));
-  ValueType type = get_type(list);
-  printf("Type = %s\n", return_type_c_string(list));
+  void* o = car(list);
+  ValueType type = get_type(o);
+
+  printf("Type = %i or %s\n", type, return_type_c_string(o));
   
   switch(type) {
   case TYPE_CONS:
     printf("Function calling not yet available!!!\n");
     break;
 
-  case TYPE_QUOTE:
-    printf("QUOTE!!!\n");
-    if(!car(list)) {
-      printf("Error: quote requires something after it!\n");
-      return NULL;
-    }
-    
-    return car(list);
-    break;
     
   case TYPE_NATIVE_INT:
 
@@ -758,6 +767,23 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_APPEND:
+
+      {
+	if(!cdr(list) || !cdr(cdr(list))) {
+	  printf("ERROR: APPEND requires TWO arguments!\n");
+	  return NULL;
+	}
+
+	cc tmp = cdr(list); 
+	
+	cc l = last(car(tmp));
+
+	l->cdr = car(cdr(tmp));
+
+	return tmp;
+	
+      }
+      
       break;
       
     case N_ASSOC:

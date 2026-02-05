@@ -80,7 +80,8 @@ extern "C" {
 	N_APPEND,
 	N_ASSOC,
 	N_EVAL,
-	N_EQL
+	N_EQL,
+	N_COND
   } nativeType;
   
 

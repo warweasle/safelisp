@@ -626,12 +626,12 @@ void* eval(void* list, void* env) {
     
     return car(list);
     break;
-  
-    
+      
   case TYPE_SYMBOL:
     return assoc(list, env);
 
-  default: 
+  default:
+    printf("default eval!!!\n");
     return list;
   }
   
@@ -695,8 +695,6 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_LIST:
-
-      // this doesn't work!!!!
       {
 	cc ret = NULL;
 	cc next = NULL;
@@ -753,12 +751,35 @@ void* eval_list(void* list, void* env) {
 	}
       }
       break;
-      
-    case N_TYPE:
-      if(!cdr(list)) {
-	printf("TYPE requires ONE argument!\n");
+
+    case N_COND:
+      {
+	if(!cdr(list) || !car(cdr(list))) {
+	  printf("ERROR: COND requires one argument!\n");
+	  return NULL;
+	}
+
+	for(void* i=car(cdr(list)); i; i = cdr(i)) {
+	  
+	  cc pair = car(i);
+	  printf("AAAA\n");
+	  print(stdout, pair, 10);
+	  
+	  if(is_true(eval(car(pair), env))) {
+	    printf("Evaling...");
+	    print(stdout, car(cdr(pair)), 10);
+	    return eval(car(cdr(pair)), env);
+	  }
+	}
 	return NULL;
       }
+    break;
+    
+  case N_TYPE:
+    if(!cdr(list)) {
+      printf("TYPE requires ONE argument!\n");
+      return NULL;
+    }
 
       if(cdr(cdr(list))) {
 	printf("TYPE requires only ONE argument!\n");

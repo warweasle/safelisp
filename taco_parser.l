@@ -98,6 +98,12 @@ return ATOM;
     yylval->p = create_native_int_type(N_IF);
     return ATOM;
 }
+[cC][oO][nN][dD]          {
+
+    yylval->p = create_native_int_type(N_COND);
+    return ATOM;
+}
+
 [Tt][Yy][Pp][Ee]  {
 
     yylval->p = create_native_int_type(N_TYPE);

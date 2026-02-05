@@ -384,11 +384,22 @@ void* equal(void* a, void* b) {
     break;
 
   case TYPE_RATIONAL:
+
+    break;
+
+  case TYPE_NATIVE_INT:
+    if(to_char(a)->c == to_char(b)->c) {
+      return create_true_type();
+    }
+    else {
+      return NULL;
+    }
+
+    break;
     
   case TYPE_CHAR:
   case TYPE_RESIZABLE_STRING:
   case TYPE_NATIVE:
-  case TYPE_NATIVE_INT:
   case TYPE_FUNC:
   case TYPE_RAW:
   case TYPE_INT8:

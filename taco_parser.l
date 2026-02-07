@@ -110,6 +110,21 @@ return ATOM;
     return ATOM;
 }
 
+[cC][aAdD]+[rR] {
+    const char *s = yytext;
+    int n = yyleng;
+   yylval->p = NULL;
+
+   for(int i=n-2; i>1; i--) {
+
+
+
+   }
+
+printf("Can't do it yet!!!\n");
+   return ATOM;
+}
+
 [Ll][Ii][Ss][Tt]  {
 
     yylval->p = create_native_int_type(N_LIST);

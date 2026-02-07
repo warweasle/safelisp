@@ -9,7 +9,7 @@ extern "C" {
 
 
 #define RB_NODE_TYPE       cons_cell
-#define RB_TREE_TYPE       rb_treetype
+#define RB_TREE_TYPE       cons_cell
 #define RB_KEY_TYPE        void*
 #define RB_PREFIX          cc_rb_
   
@@ -23,8 +23,8 @@ extern "C" {
 #define RB_SET_RIGHT(node, val) (car(cdr(cdr(node))) = (val))
 #define RB_SET_PARENT(node, val) (cdr(cdr(cdr(node))) = (val))
 
-#define RB_ROOT(tree)      ((tree) ? (tree)->root : NULL)
-#define RB_SET_ROOT(tree, val) do { if ((tree)) (tree)->root = (val); } while (0)
+#define RB_ROOT(tree)      ((tree) ? (tree)->car : NULL)
+#define RB_SET_ROOT(tree, val) do { if ((tree)) (tree)->cdr = (val); } while (0)
   
   /* #define RB_GET_COLOR(node) ((node) && is_red_black_flag_set(node) ? RB_RED : RB_BLACK) */
 #define RB_GET_COLOR(p)   ((p) ? (is_red_black_flag_set(p) ? 1 : 0)	\

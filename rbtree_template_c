@@ -41,7 +41,7 @@ void RB_FUNC(validate)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node, int dir) {
   RB_NODE_TYPE* parent = RB_PARENT(node);
   
     if (!parent) {
-	tree->root = node;
+        RB_SET_ROOT(tree, node);
 	return;
   }
 
@@ -382,8 +382,10 @@ void RB_FUNC(remove)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node)
 	  }
 
 	  // FIrst crack at makeing this work by checking w...
-	  if (w == NULL || RB_LEFT(w) == NULL || (RB_GET_COLOR(RB_LEFT(w)) == 0) &&
-		  (w == NULL || RB_RIGHT(w) == NULL || RB_GET_COLOR(RB_RIGHT(w)) == 0)) {
+	  if (w == NULL ||
+	      RB_LEFT(w) == NULL ||
+	      ((RB_GET_COLOR(RB_LEFT(w)) == 0) &&
+	       (w == NULL || RB_RIGHT(w) == NULL || RB_GET_COLOR(RB_RIGHT(w)) == 0))) {
 		RB_SET_COLOR(w, 1);
 		x = x_p;
 	  } else {

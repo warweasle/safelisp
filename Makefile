@@ -5,12 +5,14 @@ LEX=flex
 YACC=bison
 YFLAGS=-d
 
-taco:  main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o
+taco:  main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o rb-tree.o
 	$(CC) $(CFLAGS) -o taco main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o $(LDFLAGS)
 
 main.o: main.c taco_parser.tab.c taco_parser.tab.h taco_parser.yy.o
 	$(CC) $(CFLAGS) -c main.c -o main.o 
 
+rb-tree.o: rb-tree.c rb-tree.h rbtree_template_c rbtree_template_h 
+	$(CC) $(CFLAGS) -c rb-tree.c -o rb-tree.o
 %.o: %.c %.h 
 	$(CC) $(CFLAGS) -c $< -o $@
 

@@ -89,7 +89,6 @@ extern "C" {
 
 #define get_type(ptr) (*(ValueType*)(ptr) & TYPE_BIT_MASK)
 #define get_flags(ptr) (*(ValueType*)(ptr) & TYPE_FLAGS_BIT_MASK)
-  //#define get_size(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>8)
 #define get_getctype(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>12)
 #define is_type(ptr, ty) (get_type(ptr) == (ty))
 #define is_cons(ptr) (is_type(ptr, TYPE_CONS))
@@ -209,6 +208,7 @@ extern "C" {
 #endif
 
 #include "printer.h"
+#include "rb-tree.h"
 
 #endif // TACO_H
 

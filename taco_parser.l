@@ -52,6 +52,14 @@ return ATOM;
                           }
 <STRING><<EOF>>         { /* Handle EOF during string for error reporting, possibly flag error */ }
 
+[+-]?{digit}+/{digit}+    {
+
+   rational_type* newrat = create_rational_type();
+   yylval->p = newrat;
+   mpq_set_str(newrat->num, yytext, 10);
+   return ATOM;
+
+}
 
 [+-]?{digit}+    {
 

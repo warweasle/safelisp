@@ -111,6 +111,7 @@ extern "C" {
 #define to_raw(o) ((rawtype*)o)
 #define to_int(o) ((int_type*)o)
 #define to_float(o) ((float_type*)o)
+#define to_rational(o) ((rational_type*)o)
 #define to_pointer(o) ((pointertype*)o)
 #define to_char(o) ((char_type*)o)
 #define to_native(o) ((native_type*)o)
@@ -160,6 +161,11 @@ extern "C" {
 	mpf_t num;
   } float_type;
 
+  typedef struct {
+	ValueType type;
+	mpq_t num;
+  } rational_type;
+
 
   // Init and other...
   void* init_taco();
@@ -205,6 +211,7 @@ extern "C" {
 
   // Functions to create and manage integer and float types
   int_type* create_int_type(double i);
+  rational_type* create_rational_type();
   float_type* create_float_type();
 
   // Important functions

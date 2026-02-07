@@ -157,7 +157,11 @@ void print(FILE* output, void* o, int base) {
   case TYPE_FLOAT:
     mpf_out_str(output, base, 0, to_float(o)->num);
     break;
-		
+
+  case TYPE_RATIONAL:
+    mpq_out_str(output, base, 0, to_rational(o)->num);
+    break;
+    
   case TYPE_STRING:
     fprintf(output, "\"%s\"", to_string(o)->str);
     break;

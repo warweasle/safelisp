@@ -402,6 +402,15 @@ float_type* create_float_type() {
   return ret;
 }
 
+rational_type* create_rational_type() {
+  rational_type* ret = GC_malloc(sizeof(rational_type));
+
+  ret->type = TYPE_RATIONAL;
+  mpq_init(ret->num);
+  
+  return ret;
+}
+
 void* equal(void* a, void* b) {
 
   if(a == b) return create_true_type();

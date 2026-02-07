@@ -512,8 +512,6 @@ char* return_type_c_string(void* o) {
 
   ValueType type = get_type(o);
 
-  //printf("return_type_c_string = %i\n", type);
-  
   switch(type) {
 
   case TYPE_NULL:
@@ -685,6 +683,7 @@ void* eval_list(void* list, void* env) {
   case TYPE_NATIVE_INT:
 
     switch(to_char(o)->c) {
+      
     case N_CONS:
       {
 	void* tmp = cdr(list);
@@ -693,7 +692,7 @@ void* eval_list(void* list, void* env) {
 
 	tmp = cdr(tmp);
 	if(tmp) {
-	  b = car(tmp);
+	  b = eval(car(tmp), env);
 	}
 
 	return cons(a, b);

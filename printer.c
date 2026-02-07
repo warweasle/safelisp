@@ -12,41 +12,40 @@ void print(FILE* output, void* o, int base) {
 
   switch(t) {
   case TYPE_CONS:
-	{
-    fprintf(output, "(");
+    {
+      fprintf(output, "(");
 
-    char first = 1;
-    for(; o != NULL && is_cons(o); o=cdr(o)) {
+      char first = 1;
+      for(; o != NULL && is_cons(o); o=cdr(o)) {
       
-      void* tmp = car(o);
-      if(first) {first = 0;}
-      else {fprintf(output, " ");}
+	void* tmp = car(o);
+	if(first) {first = 0;}
+	else {fprintf(output, " ");}
       
-      print(output, tmp, base);
-      //if so that's fine move along. But if cdr != cons then dot notation.
+	print(output, tmp, base);
+	//if so that's fine move along. But if cdr != cons then dot notation.
       
-      if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
-	fprintf(output, " . ");
-	print(output, to_cons(o)->cdr, base);
-	break;
-      }
-    }
-    fprintf(output, ")");
+	if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
+	  fprintf(output, " . ");
+	  print(output, to_cons(o)->cdr, base);
+	  break;
 	}
-	
-	
-	break;
+      }
+      fprintf(output, ")");
+    }
+    
+    break;
 
-  /* case TYPE_RB_TREE: */
+    /* case TYPE_RB_TREE: */
 
-  /* 	{ */
-  /* 	  //fprintf(output, "(RB:"); */
+    /* 	{ */
+    /* 	  //fprintf(output, "(RB:"); */
 	
-  /* 	  print(output, ((rb_treetype*) car(o))->root, base); */
+    /* 	  print(output, ((rb_treetype*) car(o))->root, base); */
 
-  /* 	//fprintf(output, ")"); */
-  /* 	} */
-  /* break; */
+    /* 	//fprintf(output, ")"); */
+    /* 	} */
+    /* break; */
 	
   case TYPE_QUOTE:
     fprintf(output, "'");
@@ -77,67 +76,79 @@ void print(FILE* output, void* o, int base) {
     break;
 	
   case TYPE_INT:
-	mpz_out_str(output, base, to_int(o)->num);
-	break;
+    mpz_out_str(output, base, to_int(o)->num);
+    break;
 
   case TYPE_NATIVE_INT:
-	// Placeholder until we get a real native print list.
-	{
-	  char_type* n = to_char(o);
+    // Placeholder until we get a real native print list.
+    {
+      char_type* n = to_char(o);
 
-	  switch(n->c) {
+      switch(n->c) {
 
-	  case N_CONS:
-		fprintf(output, "CONS");
-		break;
-
-		case N_LIST:
-		fprintf(output, "LIST");
-		break;
-
-		case N_IF:
-		fprintf(output, "IF");
-		break;
-
-		case N_TYPE:
-		fprintf(output, "TYPE");
-		break;
-
-	  case N_NULL:
-		fprintf(output, "NULL");
-		break;
-		
-	  case N_AND:
-		fprintf(output, "AND");
-		break;
-		
-	  case N_OR:
-		fprintf(output, "OR");
-		break;
-		
-	  case N_APPEND:
-		fprintf(output, "APPEND");
-		break;
-		
-	  case N_ASSOC:
-		fprintf(output, "ASSOC");
-		break;
-		
-	  case N_EVAL:
-		fprintf(output, "EVAL");
-		break;
-
-	  case N_PRINT:
-	    fprintf(output, "PRINT");
-	    break;
-		
-	  default:
-
-		fprintf(output, "UNKNOW_NATIVE");
-		
-	  }
-	}
+      case N_CONS:
+	fprintf(output, "CONS");
 	break;
+
+      case N_LIST:
+	fprintf(output, "LIST");
+	break;
+
+      case N_IF:
+	fprintf(output, "?");
+	break;
+
+      case N_TYPE:
+	fprintf(output, "TYPE");
+	break;
+		
+      case N_NULL:
+	fprintf(output, "NULL");
+	break;
+		
+      case N_AND:
+	fprintf(output, "&&");
+	break;
+		
+      case N_OR:
+	fprintf(output, "||");
+	break;
+		
+      case N_APPEND:
+	fprintf(output, "APPEND");
+	break;
+		
+      case N_ASSOC:
+	fprintf(output, "ASSOC");
+	break;
+		
+      case N_EVAL:
+	fprintf(output, "EVAL");
+	break;
+
+      case N_PRINT:
+	fprintf(output, "PRINT");
+	break;
+
+      case N_SET:
+	fprintf(output, "=");
+	break;
+
+      case N_CAR:
+	fprintf(output, "CAR");
+	break;
+
+      case N_CDR:
+	fprintf(output, "CDR");
+	break;
+	
+      default:
+
+	fprintf(output, "UNKNOW_NATIVE");
+		
+      }
+    }
+    break;
 	
   case TYPE_FLOAT:
     mpf_out_str(output, base, 0, to_float(o)->num);
@@ -147,13 +158,13 @@ void print(FILE* output, void* o, int base) {
     fprintf(output, "\"%s\"", to_string(o)->str);
     break;
 
-  /* case TYPE_CHAR: */
-  /*   fprintf(output, "#\\%c", to_string(o)->str[0]); */
-  /* 	break; */
+    /* case TYPE_CHAR: */
+    /*   fprintf(output, "#\\%c", to_string(o)->str[0]); */
+    /* 	break; */
 
-  /* case TYPE_POINTER: */
-  /* 	fprintf(output, "%p\n", to_pointer(o)->p); */
-  /* 	break; */
+    /* case TYPE_POINTER: */
+    /* 	fprintf(output, "%p\n", to_pointer(o)->p); */
+    /* 	break; */
 	
   case TYPE_INT8:
   case TYPE_UINT8:
@@ -182,22 +193,22 @@ void print(FILE* output, void* o, int base) {
   case TYPE_LONG_DOUBLE128:
   case TYPE_CHAR_ARRAY:
 
-	printf("Specialized array type data isn't printable yet, defaulting to hex.\n");
-  /* case TYPE_RAW: */
-  /* 	fprintf(output, "#x"); */
-  /* 	{ */
-  /* 	  rawtype* raw = to_raw(o); */
+    printf("Specialized array type data isn't printable yet, defaulting to hex.\n");
+    /* case TYPE_RAW: */
+    /* 	fprintf(output, "#x"); */
+    /* 	{ */
+    /* 	  rawtype* raw = to_raw(o); */
 
-  /*     for (size_t i = 0; i < raw->size; ++i) { */
-  /* 		fprintf(output, "%02x", (unsigned char)raw->data[i]); */
-  /*     } */
-  /*   } */
-  /*   break; */
+    /*     for (size_t i = 0; i < raw->size; ++i) { */
+    /* 		fprintf(output, "%02x", (unsigned char)raw->data[i]); */
+    /*     } */
+    /*   } */
+    /*   break; */
 
   case TYPE_ERROR:
     fprintf(output, "<ERROR: ");
     print(output, to_cons(o)->car, base);
-	fprintf(output, ">");
+    fprintf(output, ">");
     break;
 
 	

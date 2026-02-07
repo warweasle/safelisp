@@ -83,7 +83,10 @@ extern "C" {
 	N_EQL,
 	N_COND,
 	N_TO_STRING,
-	N_PRINT
+	N_PRINT,
+	N_SET,
+	N_CAR,
+	N_CDR
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
@@ -202,6 +205,7 @@ extern "C" {
   void* return_type(void* o); 
   void* assoc(void* item, void* list);
   void* eval(void* list, void* env);
+  void* tread(void* env);
   
 #ifdef __cplusplus
 }

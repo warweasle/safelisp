@@ -82,9 +82,31 @@ return ATOM;
     return ATOM;
 }
 
+== {
+    yylval->p = create_native_int_type(N_EQL);
+    return ATOM;
+}
+
+= {
+    yylval->p = create_native_int_type(N_SET);
+    return ATOM;
+}
+
 [cC][oO][nN][sS] {
 
     yylval->p = create_native_int_type(N_CONS);
+    return ATOM;
+}
+
+[cC][aR][rR] {
+
+    yylval->p = create_native_int_type(N_CAR);
+    return ATOM;
+}
+
+[cC][dD][rR] {
+
+    yylval->p = create_native_int_type(N_CDR);
     return ATOM;
 }
 
@@ -93,7 +115,7 @@ return ATOM;
     yylval->p = create_native_int_type(N_LIST);
     return ATOM;
 }
-[Ii][Ff]          {
+[?]          {
 
     yylval->p = create_native_int_type(N_IF);
     return ATOM;
@@ -114,12 +136,12 @@ return ATOM;
     yylval->p = create_native_int_type(N_APPEND);
     return ATOM;
 }
-[aA][nN][dD]  {
+[&][&]  {
 
     yylval->p = create_native_int_type(N_AND);
     return ATOM;
 }
-[oO][rR]  {
+[|][|]  {
 
     yylval->p = create_native_int_type(N_OR);
     return ATOM;

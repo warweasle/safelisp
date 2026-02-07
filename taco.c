@@ -431,7 +431,7 @@ void* equal(void* a, void* b) {
     break;
 
   case TYPE_INT:
-    if(mpz_cmp(to_int(a)->num, to_int(b)->num)) {
+    if(!mpz_cmp(to_int(a)->num, to_int(b)->num)) {
       return create_true_type();
     }
     else {
@@ -440,7 +440,7 @@ void* equal(void* a, void* b) {
     break;
     
   case TYPE_FLOAT:
-    if(mpf_cmp(to_float(a)->num, to_float(b)->num)) {
+    if(!mpf_cmp(to_float(a)->num, to_float(b)->num)) {
       return create_true_type();
     }
     else {
@@ -673,7 +673,7 @@ void* eval_list(void* list, void* env) {
   void* o = car(list);
   ValueType type = get_type(o);
 
-  printf("Type = %i or %s\n", type, return_type_c_string(o));
+  //printf("Type = %i or %s\n", type, return_type_c_string(o));
   
   switch(type) {
   case TYPE_CONS:
@@ -696,6 +696,32 @@ void* eval_list(void* list, void* env) {
 	}
 
 	return cons(a, b);
+      }
+      break;
+
+    case N_CAR:
+      {
+	if(!cdr(list) || !car(cdr(list))) {
+	  printf("CAR: Requires one argument!!!\n");
+	  return NULL;
+	}
+
+	void* target = car(cdr(list)); 
+	target = eval(target, env);
+	return car(target);
+      }
+      break;
+      
+    case N_CDR:
+      {
+	if(!cdr(list) || !car(cdr(list))) {
+	  printf("CDR: Requires one argument!!!\n");
+	  return NULL;
+	}
+
+	void* target = car(cdr(list)); 
+	target = eval(target, env);
+	return cdr(target);
       }
       break;
       
@@ -919,6 +945,12 @@ void* eval_list(void* list, void* env) {
 	print(stdout, ret, 10);
 	return ret;
       }
+      break;
+      
+    case N_SET:
+      printf("setting is not yet implemented!!!\n");
+      return NULL;
+      break;
       
     default:
 
@@ -934,3 +966,9 @@ void* eval_list(void* list, void* env) {
   
   return NULL;
 }
+
+void* tread(void* env) {
+
+  return NULL;
+}
+

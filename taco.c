@@ -496,7 +496,7 @@ void* equal(void* a, void* b) {
   case TYPE_CHAR:
   case TYPE_RESIZABLE_STRING:
   case TYPE_NATIVE:
-  case TYPE_FUNC:
+  case TYPE_LAMBDA:
   case TYPE_RAW:
   case TYPE_INT8:
   case TYPE_UINT8:
@@ -583,8 +583,8 @@ char* return_type_c_string(void* o) {
     return "RESIZABLE_STRING";
   case TYPE_NATIVE:
     return "NATIVE_POINTER";
-  case TYPE_FUNC:
-    return "FUNCTION";
+  case TYPE_LAMBDA:
+    return "LAMBDA";
   case TYPE_RAW:
     return "RAW";
   case TYPE_INT8:

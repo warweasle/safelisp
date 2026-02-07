@@ -7,16 +7,15 @@
 
 int main(int argc, char* argv[]) {
 
-  init_taco();
+  void* env = init_taco();
     
-  // Set up any required input to the scanner here
-  // YY_BUFFER_STATE bufferState = yy_scan_string("your input string", scanner);
-
   // Call the parser
-  void* atom = tread(NULL);
-  atom = eval(atom, NULL);
+  void* atom = tread(env);
+  atom = eval(atom, env);
+
   fprintf(stdout, "\n");
   print(stdout, atom, 10);
   fputc('\n', stdout);
+
   return 0;
 }

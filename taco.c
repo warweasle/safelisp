@@ -1,3 +1,5 @@
+#include <stdlib.h>
+void (*old_free)(void*) = free;
 #include "taco.h"
 
 
@@ -706,8 +708,13 @@ void* eval_list(void* list, void* env) {
 	  return NULL;
 	}
 
-	void* target = car(cdr(list)); 
+	void* target = car(cdr(list));
 	target = eval(target, env);
+
+	if(!is_cons(target)) {
+	  printf("ERROR: CAR only works on cons_cells!");
+	  return NULL;
+	}
 	return car(target);
       }
       break;
@@ -721,6 +728,12 @@ void* eval_list(void* list, void* env) {
 
 	void* target = car(cdr(list)); 
 	target = eval(target, env);
+
+	if(!is_cons(target)) {
+	  printf("ERROR: CAR only works on cons_cells!");
+	  return NULL;
+	}
+
 	return cdr(target);
       }
       break;
@@ -878,9 +891,7 @@ void* eval_list(void* list, void* env) {
 	l->cdr = car(cdr(tmp));
 
 	return car(tmp);
-	
       }
-      
       break;
       
     case N_ASSOC:
@@ -899,6 +910,12 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_EVAL:
+      if(!cdr(list) || !car(cdr(list))) {
+	printf("EVAL requires ONE argument!\n");
+	return NULL;
+      }
+
+      return eval(eval(car(cdr(list)), env), env);
       break;
       
     case N_EQL:
@@ -921,26 +938,36 @@ void* eval_list(void* list, void* env) {
 
     case N_TO_STRING:
       {
+	printf("WARNING: TO-STRING is buggy as hell!");
 	char *buf = NULL;
 	size_t size = 0;
-	
-	void* p = eval(car(cdr(list)), env);
+
+	if(!cdr(list) || !car(cdr(list))) {
+	  printf("TO-STRING requires ONE argument!\n");
+	  return NULL;
+	}
+
+	void* p = cdr(list);
+	//print(stdout, p, 10);
 	
 	FILE *f = open_memstream(&buf, &size);
 	print(f, p, 10);
-	fclose(f);   // IMPORTANT: finalizes buffer
-	
-	void* ret = create_string_type_and_copy(size, buf, TYPE_STRING);
 
-	// This isn't working. causes a segfault.
-	//free(buf);
+	print(f, p, 10);
+	fprintf(f, "\n");
+	
+	fflush(f);
+	fclose(f);   // IMPORTANT: finalizes buffer
+
+	printf("to-string: %s\n", buf);
+	void* ret = create_string_type_and_copy(size, buf, TYPE_STRING);
+	old_free(buf);
 	return ret;
       }
       break;
       
     case N_PRINT:
       {
-	printf("PRINTGINT EHF FUCK OUT OF IT!!\n");
 	void* ret = eval(car(cdr(list)), env);
 	print(stdout, ret, 10);
 	return ret;

@@ -141,6 +141,10 @@ void print(FILE* output, void* o, int base) {
       case N_CDR:
 	fprintf(output, "CDR");
 	break;
+
+      case N_TO_STRING:
+	fprintf(output, "TO-STRING");
+	break;
 	
       default:
 

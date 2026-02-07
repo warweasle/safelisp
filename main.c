@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     printf("\nNow evaling...\n");
     
     void* ret = eval(atom, NULL);
-    
+    printf("eval done...\n");
     print(stdout, ret, 10);
     printf("\n");
     

@@ -86,8 +86,8 @@ extern "C" {
 	N_PRINT
   } nativeType;
   
-
-#define get_type(ptr) (*(ValueType*)(ptr) & TYPE_BIT_MASK)
+#define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
+  //#define get_type(ptr) (*(ValueType*)(ptr) & TYPE_BIT_MASK)
 #define get_flags(ptr) (*(ValueType*)(ptr) & TYPE_FLAGS_BIT_MASK)
 #define get_getctype(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>12)
 #define is_type(ptr, ty) (get_type(ptr) == (ty))

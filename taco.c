@@ -512,7 +512,7 @@ char* return_type_c_string(void* o) {
 
   ValueType type = get_type(o);
 
-  printf("return_type_c_string = %i\n", type);
+  //printf("return_type_c_string = %i\n", type);
   
   switch(type) {
 
@@ -615,10 +615,10 @@ void* assoc(void* item, void* list) {
 
 void* eval(void* list, void* env) {
 
-  printf("eval: TYPE: %s\n", return_type_c_string(list));
+  //printf("eval: TYPE: %s\n", return_type_c_string(list));
 
   ValueType type = get_type(list);
-
+  
   switch(type) {
 
   case TYPE_CONS:

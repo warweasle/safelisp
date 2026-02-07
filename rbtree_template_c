@@ -7,30 +7,30 @@ RB_NODE_TYPE* RB_FUNC(rotate_subtree)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node, in
 
   // Move child subtree into place
   if (right)
-	RB_SET_LEFT(node, new_child);
+    RB_SET_LEFT(node, new_child);
   else
-	RB_SET_RIGHT(node, new_child);
+    RB_SET_RIGHT(node, new_child);
 
   if (new_child)
-	RB_SET_PARENT(new_child, node);
+    RB_SET_PARENT(new_child, node);
 
   // Update rotation pointers
   if (right)
-	RB_SET_RIGHT(new_root, node);
+    RB_SET_RIGHT(new_root, node);
   else
-	RB_SET_LEFT(new_root, node);
+    RB_SET_LEFT(new_root, node);
 
   RB_SET_PARENT(node, new_root);
   RB_SET_PARENT(new_root, sub_parent);
 
   // Update parent’s child pointer or tree root
   if (sub_parent) {
-	if (node == RB_LEFT(sub_parent))
-	  RB_SET_LEFT(sub_parent, new_root);
-	else
-	  RB_SET_RIGHT(sub_parent, new_root);
+    if (node == RB_LEFT(sub_parent))
+      RB_SET_LEFT(sub_parent, new_root);
+    else
+      RB_SET_RIGHT(sub_parent, new_root);
   } else {
-	RB_SET_ROOT(tree, new_root);
+    RB_SET_ROOT(tree, new_root);
   }
 
   return new_root;
@@ -40,9 +40,9 @@ void RB_FUNC(validate)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node, int dir) {
 
   RB_NODE_TYPE* parent = RB_PARENT(node);
   
-    if (!parent) {
-        RB_SET_ROOT(tree, node);
-	return;
+  if (!parent) {
+    RB_SET_ROOT(tree, node);
+    return;
   }
 
   //printf("node=%p parent=%p grandparent=%p\n", node, RB_PARENT(node), RB_PARENT(RB_PARENT(node)));
@@ -53,63 +53,54 @@ void RB_FUNC(validate)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node, int dir) {
 
   // rebalance the tree
   do {
-	// Case #1
-	if(RB_GET_COLOR(parent) == 0) {
+    // Case #1
+    if(RB_GET_COLOR(parent) == 0) {
 
-	  //printf("Case 1\n");
-	  return;
-	}
+      //printf("Case 1\n");
+      return;
+    }
 
 
-	RB_NODE_TYPE* grandparent = RB_PARENT(parent);
-	if (!grandparent) {
-	  // Case #4
-	  //printf("Case 4\n");
-	  RB_SET_COLOR(parent, 0);
-	  return;
-	}
+    RB_NODE_TYPE* grandparent = RB_PARENT(parent);
+    if (!grandparent) {
+      // Case #4
+      //printf("Case 4\n");
+      RB_SET_COLOR(parent, 0);
+      return;
+    }
 
 	
-	dir = RB_DIRECTION(node);
-
-	//printf("parent = %p\nParent Left = %p\ndir = %i\n", RB_PARENT(node), RB_LEFT(RB_PARENT(node)),  dir);
+    dir = RB_DIRECTION(node);
 	
-	//dir = RB_LEFT(RB_PARENT(node)) == node;
-	
-	RB_NODE_TYPE* uncle = dir ? RB_LEFT(grandparent) : RB_RIGHT(grandparent);
-	//printf("dir %i\nuncle = %p\n", dir, uncle);
-	if(!uncle || RB_GET_COLOR(uncle) == 0) {
+    RB_NODE_TYPE* uncle = dir ? RB_LEFT(grandparent) : RB_RIGHT(grandparent);
+    if(!uncle || RB_GET_COLOR(uncle) == 0) {
 
-	  RB_NODE_TYPE* cmp = dir ? RB_LEFT(parent) : RB_RIGHT(parent);
+      RB_NODE_TYPE* cmp = dir ? RB_LEFT(parent) : RB_RIGHT(parent);
 	  
-	  if (node == cmp) {
-		// Case #5
-		//printf("Case 5\n");
-		RB_FUNC(rotate_subtree)(tree, parent, !dir);
+      if (node == cmp) {
+	// Case #5
+	RB_FUNC(rotate_subtree)(tree, parent, !dir);
 		
-		node = parent;
-		parent = dir ? RB_RIGHT(grandparent) : RB_LEFT(grandparent);
-	  }
+	node = parent;
+	parent = dir ? RB_RIGHT(grandparent) : RB_LEFT(grandparent);
+      }
 	  
-	  // Case #6
-	  //printf("Case 6\n");
-	  RB_FUNC(rotate_subtree)(tree, grandparent, !dir);
-	  RB_SET_COLOR(parent, 0);
-	  RB_SET_COLOR(grandparent, 1);
-	  return;
-	}
+      // Case #6
+      RB_FUNC(rotate_subtree)(tree, grandparent, !dir);
+      RB_SET_COLOR(parent, 0);
+      RB_SET_COLOR(grandparent, 1);
+      return;
+    }
 
-	// Case #2
-	//printf("Case 2\n");
-	RB_SET_COLOR(parent, 0);
-	RB_SET_COLOR(uncle, 0);
-	RB_SET_COLOR(grandparent, 1);
-	node = grandparent;
+    // Case #2
+    RB_SET_COLOR(parent, 0);
+    RB_SET_COLOR(uncle, 0);
+    RB_SET_COLOR(grandparent, 1);
+    node = grandparent;
 
   } while ((parent = RB_PARENT(node)));
 
   // Case #3
-  //printf("Case 3\n");
   RB_SET_COLOR(RB_ROOT(tree), RB_BLACK);  // Case 3 - ensure root stays black
   return;
 }
@@ -135,15 +126,15 @@ void RB_FUNC(insert)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void
 
   // Step 2: Walk tree to find parent
   while (current) {
-	parent = current;
-	int cmpVal = cmp(data, key, RB_GET_KEY(current));
-	if (cmpVal < 0) {
-	  current = RB_LEFT(current);
-	  dir = 0;
-	} else {
-	  current = RB_RIGHT(current);
-	  dir = 1;
-	}
+    parent = current;
+    int cmpVal = cmp(data, key, RB_GET_KEY(current));
+    if (cmpVal < 0) {
+      current = RB_LEFT(current);
+      dir = 0;
+    } else {
+      current = RB_RIGHT(current);
+      dir = 1;
+    }
   }
 
   // Step 3: Link node to parent
@@ -153,11 +144,11 @@ void RB_FUNC(insert)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void
   RB_SET_COLOR(node, RB_RED);
 
   if (!parent) {
-	RB_SET_ROOT(tree, node);
+    RB_SET_ROOT(tree, node);
   } else if (dir == 0) {
-	RB_SET_LEFT(parent, node);
+    RB_SET_LEFT(parent, node);
   } else {
-	RB_SET_RIGHT(parent, node);
+    RB_SET_RIGHT(parent, node);
   }
 
   // Step 4: Rebalance from the inserted node
@@ -169,26 +160,26 @@ void RB_FUNC(insert)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void
 
  
 void RB_FUNC(splice)(RB_TREE_TYPE* T, RB_NODE_TYPE* u, RB_NODE_TYPE* v)
- {
-   //assert(u);
-   RB_NODE_TYPE* p = RB_PARENT(u);
-   if (p == NULL) {
-	 //assert(T->root == u);
-	 RB_SET_ROOT(T, v);
-   } else if (u == RB_LEFT(p)) {
-	 RB_SET_LEFT(p, v);
-   } else {
-	 //assert(u == p->right);
-	 RB_SET_RIGHT(p, v);
-   }
-   if (v)
-	 RB_SET_PARENT(v, p);
- }
+{
+  //assert(u);
+  RB_NODE_TYPE* p = RB_PARENT(u);
+  if (p == NULL) {
+    //assert(T->root == u);
+    RB_SET_ROOT(T, v);
+  } else if (u == RB_LEFT(p)) {
+    RB_SET_LEFT(p, v);
+  } else {
+    //assert(u == p->right);
+    RB_SET_RIGHT(p, v);
+  }
+  if (v)
+    RB_SET_PARENT(v, p);
+}
 
 RB_NODE_TYPE* RB_FUNC(minimum)(RB_NODE_TYPE* node)
 {
   while (RB_LEFT(node))
-	node = RB_LEFT(node);
+    node = RB_LEFT(node);
   return node;
 }
 
@@ -310,45 +301,39 @@ void RB_FUNC(remove)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node)
   RB_NODE_TYPE* y = node;
   int y_was_black = RB_GET_COLOR(y);   /* updated later */
 
-  printf("AAAA\n");
-  
   /* ­­­­­­­­­­­­--- 0 or 1 missing-child cases --------------------------- */
   if (RB_LEFT(node) == NULL) {
-	x   = RB_RIGHT(node);
-	x_p = RB_PARENT(node);
-	RB_FUNC(splice)(tree, node, x);
-	printf("BBBB\n");
+    x   = RB_RIGHT(node);
+    x_p = RB_PARENT(node);
+    RB_FUNC(splice)(tree, node, x);
   } else if (RB_RIGHT(node) == NULL) {
-    printf("CCCCCC\n");
-	x   = RB_LEFT(node);
-	x_p = RB_PARENT(node);
-	RB_FUNC(splice)(tree, node, x);
+    x   = RB_LEFT(node);
+    x_p = RB_PARENT(node);
+    RB_FUNC(splice)(tree, node, x);
   }
   /* ­­­­­­­­­­­­--- 2-child case ----------------------------------------- */
   else {
-	y            = RB_FUNC(minimum)(RB_RIGHT(node));
-	y_was_black  = (RB_GET_COLOR(y) == 0);          /* true == black */
+    y            = RB_FUNC(minimum)(RB_RIGHT(node));
+    y_was_black  = (RB_GET_COLOR(y) == 0);          /* true == black */
 
-	x = RB_RIGHT(y);
-	if (RB_PARENT(y) == node) {
-	  x_p = y;
-	} else {
-	  x_p = RB_PARENT(y);
-	  RB_FUNC(splice)(tree, y, x);                /* ←-- FIX #1 */
-	  RB_SET_RIGHT(y, RB_RIGHT(node));
-	  RB_SET_PARENT(RB_RIGHT(y), y);
-	}
+    x = RB_RIGHT(y);
+    if (RB_PARENT(y) == node) {
+      x_p = y;
+    } else {
+      x_p = RB_PARENT(y);
+      RB_FUNC(splice)(tree, y, x);                /* ←-- FIX #1 */
+      RB_SET_RIGHT(y, RB_RIGHT(node));
+      RB_SET_PARENT(RB_RIGHT(y), y);
+    }
 
-	//assert(RB_LEFT(y) == NULL);                     /* ←-- FIX #2 */
+    //assert(RB_LEFT(y) == NULL);                     /* ←-- FIX #2 */
 
-	RB_FUNC(splice)(tree, node, y);
-	RB_SET_LEFT(y, RB_LEFT(node));
-	RB_SET_PARENT(RB_LEFT(y), y);
-	RB_SET_COLOR(y, RB_GET_COLOR(node));
+    RB_FUNC(splice)(tree, node, y);
+    RB_SET_LEFT(y, RB_LEFT(node));
+    RB_SET_PARENT(RB_LEFT(y), y);
+    RB_SET_COLOR(y, RB_GET_COLOR(node));
   }
 
-  printf("DDDDDDD\n");
-  
   /* sanity: x is either NULL or the proper child of x_p */
   /* assert(x_p == NULL || */
   /* 		 x == RB_LEFT(x_p) || */
@@ -356,84 +341,74 @@ void RB_FUNC(remove)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node)
 
   /* if the removed node (y) was red, the tree is already valid */
   if (!y_was_black)
-	return;
+    return;
 
-  printf("EEEEEEEE\n");
-  
   /* ­­­­­­­­­­­­--- RB-delete fix-up loop ------------------------------- */
   while (x != RB_ROOT(tree) && RB_GET_COLOR(x) == 0) {
 
-	printf("FFFFFFFFFFFF\n");
-	
-	if (x == RB_LEFT(x_p)) {
-	  printf("GGGGGGGG\n");
-	  
-	  RB_NODE_TYPE* w = RB_RIGHT(x_p);
+    if (x == RB_LEFT(x_p)) {
+      
+      RB_NODE_TYPE* w = RB_RIGHT(x_p);
 
-	  printf("HHHHHHH\n");
-	  if (RB_GET_COLOR(w)) {
+      if (RB_GET_COLOR(w)) {
 
-		printf("JJJJJJJJJJJJJJ\n");
-		RB_SET_COLOR(w, 0);
-		RB_SET_COLOR(x_p, 1);
-		RB_FUNC(rotate_subtree)(tree, x_p, 0);
-		w = RB_RIGHT(x_p);
-		printf("JJJJJJJJJ-111\n");
-	  }
+	RB_SET_COLOR(w, 0);
+	RB_SET_COLOR(x_p, 1);
+	RB_FUNC(rotate_subtree)(tree, x_p, 0);
+	w = RB_RIGHT(x_p);
+      }
 
-	  // FIrst crack at makeing this work by checking w...
-	  if (w == NULL ||
-	      RB_LEFT(w) == NULL ||
-	      ((RB_GET_COLOR(RB_LEFT(w)) == 0) &&
-	       (w == NULL || RB_RIGHT(w) == NULL || RB_GET_COLOR(RB_RIGHT(w)) == 0))) {
-		RB_SET_COLOR(w, 1);
-		x = x_p;
-	  } else {
-		printf("JJJJJJJJ-44444\n");
-		if (RB_GET_COLOR(RB_RIGHT(w)) == 0) {
-		  RB_SET_COLOR(RB_LEFT(w), 0);
-		  RB_SET_COLOR(w, 1);
-		  RB_FUNC(rotate_subtree)(tree, w, 1);
-		  w = RB_RIGHT(x_p);
-		}
-
-		RB_SET_COLOR(w, RB_GET_COLOR(x_p));
-		RB_SET_COLOR(x_p, 0);
-		RB_SET_COLOR(RB_RIGHT(w), 0);
-		RB_FUNC(rotate_subtree)(tree, x_p, 0);
-		x = RB_ROOT(tree);                       /* ←-- FIX #4 */
-	  }
-	} else {  /* mirror image */
-	  printf("IIIIIIIIIIIII\n");
-	  RB_NODE_TYPE* w = RB_LEFT(x_p);
-	  if (RB_GET_COLOR(w) == 1) {
-		RB_SET_COLOR(w, 0);
-		RB_SET_COLOR(x_p, 1);
-		RB_FUNC(rotate_subtree)(tree, x_p, 1);
-		w = RB_LEFT(x_p);
-	  }
-
-	  if (RB_GET_COLOR(RB_RIGHT(w)) == 0 &&
-		  RB_GET_COLOR(RB_LEFT(w)) == 0) {
-		RB_SET_COLOR(w, 1);
-		x = x_p;
-	  } else {
-		if (RB_GET_COLOR(RB_LEFT(w)) == 0) {
-		  RB_SET_COLOR(RB_RIGHT(w), 0);
-		  RB_SET_COLOR(w, 1);
-		  RB_FUNC(rotate_subtree)(tree, w, 0);
-		  w = RB_LEFT(x_p);
-		}
-
-		RB_SET_COLOR(w, RB_GET_COLOR(x_p));
-		RB_SET_COLOR(x_p, 0);
-		RB_SET_COLOR(RB_LEFT(w), 0);
-		RB_FUNC(rotate_subtree)(tree, x_p, 1);
-		x = RB_ROOT(tree);                       /* mirror side */
-	  }
+      // FIrst crack at makeing this work by checking w...
+      if (w == NULL ||
+	  RB_LEFT(w) == NULL ||
+	  ((RB_GET_COLOR(RB_LEFT(w)) == 0) &&
+	   (w == NULL || RB_RIGHT(w) == NULL || RB_GET_COLOR(RB_RIGHT(w)) == 0))) {
+	RB_SET_COLOR(w, 1);
+	x = x_p;
+      } else {
+	if (RB_GET_COLOR(RB_RIGHT(w)) == 0) {
+	  RB_SET_COLOR(RB_LEFT(w), 0);
+	  RB_SET_COLOR(w, 1);
+	  RB_FUNC(rotate_subtree)(tree, w, 1);
+	  w = RB_RIGHT(x_p);
 	}
 
-	x_p = RB_PARENT(x);
+	RB_SET_COLOR(w, RB_GET_COLOR(x_p));
+	RB_SET_COLOR(x_p, 0);
+	RB_SET_COLOR(RB_RIGHT(w), 0);
+	RB_FUNC(rotate_subtree)(tree, x_p, 0);
+	x = RB_ROOT(tree);                       /* ←-- FIX #4 */
+      }
+    } else {  /* mirror image */
+      RB_NODE_TYPE* w = RB_LEFT(x_p);
+      if (RB_GET_COLOR(w) == 1) {
+	RB_SET_COLOR(w, 0);
+	RB_SET_COLOR(x_p, 1);
+	RB_FUNC(rotate_subtree)(tree, x_p, 1);
+	w = RB_LEFT(x_p);
+      }
+
+      if (RB_GET_COLOR(RB_RIGHT(w)) == 0 &&
+	  RB_GET_COLOR(RB_LEFT(w)) == 0) {
+	RB_SET_COLOR(w, 1);
+	x = x_p;
+      } else {
+	if (RB_GET_COLOR(RB_LEFT(w)) == 0) {
+	  RB_SET_COLOR(RB_RIGHT(w), 0);
+	  RB_SET_COLOR(w, 1);
+	  RB_FUNC(rotate_subtree)(tree, w, 0);
+	  w = RB_LEFT(x_p);
+	}
+
+	RB_SET_COLOR(w, RB_GET_COLOR(x_p));
+	RB_SET_COLOR(x_p, 0);
+	RB_SET_COLOR(RB_LEFT(w), 0);
+	RB_FUNC(rotate_subtree)(tree, x_p, 1);
+	x = RB_ROOT(tree);                       /* mirror side */
+      }
+    }
+
+    x_p = RB_PARENT(x);
   }
 
   if (x) RB_SET_COLOR(x, 0);
@@ -442,10 +417,10 @@ void RB_FUNC(remove)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node)
 RB_NODE_TYPE* RB_FUNC(find)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void* data) {
   RB_NODE_TYPE* node = RB_ROOT(tree);
   while (node) {
-	int c = cmp(data, key, RB_GET_KEY(node));
-	if (c < 0) node = RB_LEFT(node);
-	else if (c > 0) node = RB_RIGHT(node);
-	else return node;
+    int c = cmp(data, key, RB_GET_KEY(node));
+    if (c < 0) node = RB_LEFT(node);
+    else if (c > 0) node = RB_RIGHT(node);
+    else return node;
   }
   return NULL;
 }
@@ -464,7 +439,7 @@ RB_NODE_TYPE* RB_FUNC(find_first)(RB_TREE_TYPE* tree) {
   RB_NODE_TYPE* node = RB_ROOT(tree);
   if (!node) return NULL;
   while (RB_LEFT(node)) {
-	node = RB_LEFT(node);
+    node = RB_LEFT(node);
   }
   return node;
 }
@@ -474,7 +449,7 @@ RB_NODE_TYPE* RB_FUNC(find_last)(RB_TREE_TYPE* tree) {
   RB_NODE_TYPE* node = RB_ROOT(tree);
   if (!node) return NULL;
   while (RB_RIGHT(node)) {
-	node = RB_RIGHT(node);
+    node = RB_RIGHT(node);
   }
   return node;
 }
@@ -485,17 +460,17 @@ RB_NODE_TYPE* RB_FUNC(find_next)(RB_NODE_TYPE* node) {
 
   // If there is a right subtree, go there and find minimum
   if (RB_RIGHT(node)) {
-	node = RB_RIGHT(node);
-	while (RB_LEFT(node))
-	  node = RB_LEFT(node);
-	return node;
+    node = RB_RIGHT(node);
+    while (RB_LEFT(node))
+      node = RB_LEFT(node);
+    return node;
   }
 
   // Else, go up until we come from left
   RB_NODE_TYPE* parent = RB_PARENT(node);
   while (parent && node == RB_RIGHT(parent)) {
-	node = parent;
-	parent = RB_PARENT(parent);
+    node = parent;
+    parent = RB_PARENT(parent);
   }
   return parent;
 }
@@ -506,17 +481,17 @@ RB_NODE_TYPE* RB_FUNC(find_prev)(RB_NODE_TYPE* node) {
 
   // If there is a left subtree, go there and find maximum
   if (RB_LEFT(node)) {
-	node = RB_LEFT(node);
-	while (RB_RIGHT(node))
-	  node = RB_RIGHT(node);
-	return node;
+    node = RB_LEFT(node);
+    while (RB_RIGHT(node))
+      node = RB_RIGHT(node);
+    return node;
   }
 
   // Else, go up until we come from right
   RB_NODE_TYPE* parent = RB_PARENT(node);
   while (parent && node == RB_LEFT(parent)) {
-	node = parent;
-	parent = RB_PARENT(parent);
+    node = parent;
+    parent = RB_PARENT(parent);
   }
   return parent;
 }
@@ -539,14 +514,13 @@ int RB_FUNC(max_depth)(RB_TREE_TYPE* tree) {
 // Print spaces helper
 void rb_print_spaces(int count) {
   while (count-- > 0) {
-	putchar(' ');
+    putchar(' ');
   }
 }
 
 void RB_FUNC(pretty_print)(RB_TREE_TYPE* tree, void (*printFunc)(RB_KEY_TYPE* key)) {
   if (!tree || !RB_ROOT(tree)) {
-	printf("(empty tree)\n");
-	return;
+    return;
   }
 
   int depth = RB_FUNC(max_depth)(tree);
@@ -564,62 +538,60 @@ void RB_FUNC(pretty_print)(RB_TREE_TYPE* tree, void (*printFunc)(RB_KEY_TYPE* ke
   int real_nodes_left = 1;
 
   while (front < back && real_nodes_left > 0) {
-	int nodes_this_level = 0;
-	real_nodes_left = 0;
-	int current_back = back;
+    int nodes_this_level = 0;
+    real_nodes_left = 0;
+    int current_back = back;
 
-	int first = front;
-	while (front < current_back) {
-	  RB_NODE_TYPE* node = queue[front];
-	  front++;
+    int first = front;
+    while (front < current_back) {
+      RB_NODE_TYPE* node = queue[front];
+      front++;
 
-	  if (node) {
-		nodes_this_level++;
-		real_nodes_left += (RB_LEFT(node) != NULL) + (RB_RIGHT(node) != NULL);
-	  }
-	}
+      if (node) {
+	nodes_this_level++;
+	real_nodes_left += (RB_LEFT(node) != NULL) + (RB_RIGHT(node) != NULL);
+      }
+    }
         
-	// Reset front pointer for printing
-	front = first;
+    // Reset front pointer for printing
+    front = first;
 
-	int total_spaces = max_width * 2 / nodes_in_this_level;
-	int printed = 0;
+    int total_spaces = max_width * 2 / nodes_in_this_level;
+    int printed = 0;
 
-	while (front < current_back) {
-	  RB_NODE_TYPE* node = queue[front];
-	  int node_level = level[front++];
+    while (front < current_back) {
+      RB_NODE_TYPE* node = queue[front];
+      int node_level = level[front++];
 
-	  if (node_level != current_level) {
-		printf("\n");
-		current_level = node_level;
-		nodes_in_this_level = 1 << (current_level - 1);
-		printed = 0;
-		total_spaces = max_width * 2 / nodes_in_this_level;
-	  }
+      if (node_level != current_level) {
+	current_level = node_level;
+	nodes_in_this_level = 1 << (current_level - 1);
+	printed = 0;
+	total_spaces = max_width * 2 / nodes_in_this_level;
+      }
 
-	  if (printed == 0) {
-		rb_print_spaces(total_spaces / 2);
-	  } else {
-		rb_print_spaces(total_spaces);
-	  }
-	  printed++;
+      if (printed == 0) {
+	rb_print_spaces(total_spaces / 2);
+      } else {
+	rb_print_spaces(total_spaces);
+      }
+      printed++;
 
-	  if (node) {
-		printFunc(RB_GET_KEY(node));
-		printf("%c", RB_GET_COLOR(node) == RB_RED ? 'R' : 'B');
-		queue[back] = RB_LEFT(node);
-		level[back++] = node_level + 1;
-		queue[back] = RB_RIGHT(node);
-		level[back++] = node_level + 1;
-	  } else {
-		printf(" . ");
-		queue[back] = NULL;
-		level[back++] = node_level + 1;
-		queue[back] = NULL;
-		level[back++] = node_level + 1;
-	  }
-	}
+      if (node) {
+	printFunc(RB_GET_KEY(node));
+	queue[back] = RB_LEFT(node);
+	level[back++] = node_level + 1;
+	queue[back] = RB_RIGHT(node);
+	level[back++] = node_level + 1;
+      } else {
+		
+	queue[back] = NULL;
+	level[back++] = node_level + 1;
+	queue[back] = NULL;
+	level[back++] = node_level + 1;
+      }
+    }
 
-	printf("\n");
+    //printf("\n");
   }
 }

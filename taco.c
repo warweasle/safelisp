@@ -1,5 +1,7 @@
 #include <stdlib.h>
 void (*old_free)(void*) = free;
+#include "taco_parser.tab.h" // Include Bison-generated headers, which might vary by your setup
+#include "taco_parser.yy.h"
 #include "taco.h"
 
 
@@ -17,10 +19,19 @@ void gmp_gc_free(void *ptr, size_t size) {
   GC_free(ptr);
 }
 
+// Initialize a scanner instance for Flex
+yyscan_t scanner;
+  
 void* init_taco() {
   GC_INIT();
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
 
+  yylex_init(&scanner);
+  
+  // Set the input file for the lexer
+  yyset_in(stdin, scanner);
+  
+  
   return NULL;
 }
 
@@ -84,6 +95,15 @@ cc cons(void* car, void* cdr) {
   cc ret = (cc) GC_malloc(sizeof(cons_cell));
 
   ret->type = TYPE_CONS;
+  ret->car = car;
+  ret->cdr = cdr;  
+  return ret;
+}
+
+cc error(void* car, void* cdr) {
+  cc ret = (cc) GC_malloc(sizeof(cons_cell));
+
+  ret->type = TYPE_ERROR;
   ret->car = car;
   ret->cdr = cdr;  
   return ret;
@@ -637,7 +657,6 @@ void* eval(void* list, void* env) {
     return assoc(list, env);
 
   default:
-    printf("default eval!!!\n");
     return list;
   }
   
@@ -688,6 +707,10 @@ void* eval_list(void* list, void* env) {
       
     case N_CONS:
       {
+	if(!cdr(list) || !cdr(cdr(list))) {
+	  return ERROR("CONS requires TWO arguments!");
+	}
+	
 	void* tmp = cdr(list);
 	void* a = eval(car(tmp), env);
 	void* b = NULL;
@@ -704,16 +727,14 @@ void* eval_list(void* list, void* env) {
     case N_CAR:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  printf("CAR: Requires one argument!!!\n");
-	  return NULL;
+	  return ERROR("CONS requires ONE arguments!");
 	}
 
 	void* target = car(cdr(list));
 	target = eval(target, env);
 
 	if(!is_cons(target)) {
-	  printf("ERROR: CAR only works on cons_cells!");
-	  return NULL;
+	  return ERROR("CONS only works on CONS TYPE!");
 	}
 	return car(target);
       }
@@ -722,16 +743,14 @@ void* eval_list(void* list, void* env) {
     case N_CDR:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  printf("CDR: Requires one argument!!!\n");
-	  return NULL;
+	  return ERROR("CDR: Requires one argument!!!\n");
 	}
 
 	void* target = car(cdr(list)); 
 	target = eval(target, env);
 
 	if(!is_cons(target)) {
-	  printf("ERROR: CAR only works on cons_cells!");
-	  return NULL;
+	  return ERROR("ERROR: CAR only works on cons_cells!");
 	}
 
 	return cdr(target);
@@ -996,6 +1015,27 @@ void* eval_list(void* list, void* env) {
 
 void* tread(void* env) {
 
+  void* ret = NULL;
+  
+  // Initialize a scanner instance for Flex
+  yylex_init(&scanner);
+  
+  // Set the input file for the lexer
+  yyset_in(stdin, scanner);
+
+  int parseResult = yyparse(scanner, &ret);
+  
+  if (parseResult != 0) {
+    yylex_destroy(scanner);
+    printf("Parsing failed. (%p)\n", ret);
+    return NULL;
+  }
+
+  
+  // Clean up
+  yylex_destroy(scanner);
+  return ret;
+  
   return NULL;
 }
 

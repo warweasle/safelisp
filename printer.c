@@ -211,7 +211,7 @@ void print(FILE* output, void* o, int base) {
 
   case TYPE_ERROR:
     fprintf(output, "<ERROR: ");
-    print(output, to_cons(o)->car, base);
+    print(output, to_cons(o)->cdr, base);
     fprintf(output, ">");
     break;
 

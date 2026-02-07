@@ -78,6 +78,8 @@ members: sexpr          {
 %%
 
 void yyerror(YYLTYPE* yyllocp, yyscan_t unused, void** out_data, const char* msg) {
-  fprintf(stderr, "[%d:%d]: %s\n",
-		  yyllocp->first_line, yyllocp->first_column, msg);
+  
+  out_data = (void**) ERROR(msg);
+  /* fprintf(stderr, "[%d:%d]: %s\n", */
+  /* 		  yyllocp->first_line, yyllocp->first_col umn, msg); */
  }

@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+  
   // Override standard memory allocation functions
 #define malloc(n) GC_malloc(n)
 #define free(p) GC_free(p)
@@ -26,6 +27,10 @@ extern "C" {
 #define EVENT_FLAG (1<<31)
 #define RED_BLACK_FLAG (1<<30)
 
+#define ERROR(msg)		  \
+  error(create_symbol("ERROR"),					\
+	create_string_type_from_string((msg), TYPE_STRING))
+  
   // Set the event flag
   void set_event_flag(void* value);
   // Clear the event flag
@@ -96,6 +101,7 @@ extern "C" {
 #define get_getctype(ptr) ((*(ValueType*)(ptr) & SIZE_MASK)>>12)
 #define is_type(ptr, ty) (get_type(ptr) == (ty))
 #define is_cons(ptr) (is_type(ptr, TYPE_CONS))
+#define is_error(ptr) (is_type(ptr, TYPE_ERROR))
 #define is_rb_tree(ptr) (is_type(ptr, TYPE_RB_TREE))
 #define is_str(ptr) (is_type(ptr, TYPE_STRING))
 #define car(o) (((cons_cell*)o)->car)
@@ -160,6 +166,7 @@ extern "C" {
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
+  cc error(void* car, void* cdr);
   int list_length(void* list);
   int is_list(void* list);
   cc last(void* lst);

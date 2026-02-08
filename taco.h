@@ -94,6 +94,7 @@ extern "C" {
 	N_CDR,
 	N_CNR,
 	N_LOOP,
+	N_BREAK,
 	N_WHILE
   } nativeType;
   

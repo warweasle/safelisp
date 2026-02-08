@@ -153,6 +153,10 @@ void print(FILE* output, void* o, int base) {
 	fprintf(output, "TO-STRING");
 	break;
 
+      case N_BREAK:
+	fprintf(output, "BREAK");
+	break;
+	
       case N_LOOP:
 	fprintf(output, "LOOP");
 	break;

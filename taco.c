@@ -37,7 +37,7 @@ void* init_taco(FILE* input, FILE* output) {
   // Set the input file for the lexer
   yyset_in(input, s);
     
-  return ret;
+  return cons(NULL, ret);
 }
 
 // Set the event flag
@@ -469,6 +469,14 @@ void* equal(void* a, void* b) {
   case TYPE_SYMBOL:
   case TYPE_STRING:
     {
+      /* printf("equal...\n"); */
+      /* printf("a = "); */
+      /* print(stdout, a, 10); */
+      /* printf("\n"); */
+      /* printf("b = "); */
+      /* print(stdout, b, 10); */
+      /* printf("\n"); */
+      
       if(string_compare(a, b) == 0) {
 	return create_true_type(); 
       }
@@ -659,6 +667,10 @@ void* return_type(void* o) {
 void* assoc(void* item, void* list) {
   if(list == NULL) return NULL;
 
+  printf("item: ");
+  print(stdout, item, 10);
+  printf("\n");
+  
   printf("list: ");
   print(stdout, list, 10);
   printf("\n");
@@ -671,8 +683,8 @@ void* assoc(void* item, void* list) {
 	printf("bbbb..\n");
 	if(equal(item, car(car(list)))){
 	  printf("MATCH!\n");
-	}
-	return car(list);
+	  return car(list);	  
+	}	
       }
   }
   
@@ -716,7 +728,7 @@ void* eval(void* list, void* env) {
     break;
       
   case TYPE_SYMBOL:
-    return assoc(list, env);
+    return assoc(list, car(env));
 
   default:
     return list;
@@ -1054,32 +1066,36 @@ void* eval_list(void* list, void* env) {
 	void* name = car(cdr(list));
 	void* value = car(cdr(cdr(list)));
 
-	print(stdout, name, 10);
-	printf("\n");
-	print(stdout, value, 10);
-	printf("\n");
+	/* print(stdout, name, 10); */
+	/* printf("\n"); */
+	/* print(stdout, value, 10); */
+	/* printf("\n"); */
 	
 	name = eval(name, env);
-	print(stdout, name, 10);
-	printf("\n");
+	/* print(stdout, name, 10); */
+	/* printf("\n"); */
 	
 	value = eval(value, env);
-	print(stdout, value, 10);
-	printf("\n");
+	/* print(stdout, value, 10); */
+	/* printf("\n"); */
 	
-	void* found = assoc(name, env);
-	print(stdout, found, 10);
-	printf("\n");
+	void* found = assoc(name, car(env));
+	/* printf("assoc returned = "); */
+	/* print(stdout, found, 10); */
+	/* printf("\n"); */
+
+	/* printf("name = "); */
+	/* print(stdout, name, 10); */
+	/* printf("\n"); */
+	
 	
 	if(!found) {
-	  printf("NOT FOUND!!!\n");
-	  env = cons(cons(name, value), env);
+	  car(env) = cons(cons(name, value), car(env));
 	}
 	else {
-	  printf("FOUND!!!\n");
 	  car(cdr(cdr(list))) = value;
 	}
-	return env;
+	return value;
       }
       break;
 
@@ -1110,6 +1126,27 @@ void* eval_list(void* list, void* env) {
 	return ret;
       }	
       break;
+
+    case N_BREAK:
+      {
+	
+	void* pair = cassoc("*BREAK*", cdr(env));
+	if(!pair) {
+	  return ERROR("BREAK outside of LOOP!!!");
+	}
+
+	//print(stdout, list, 10);
+	
+	if(cdr(list) && car(cdr(list))) {
+	  cdr(pair) = eval(car(cdr(list)), env);
+	}
+	else {
+	  cdr(pair) = create_true_type();
+	}
+	
+	return cdr(pair);
+      }
+      break;
       
     case N_LOOP:
 
@@ -1117,16 +1154,20 @@ void* eval_list(void* list, void* env) {
       if(!start || !car(start)) {
 	return ERROR("LOOP requires at least one argument!");
       }
-      void* i = start;
-      
-      while(-1) {
-	eval(car(i), env);
 
+      cdr(env) = cons(cons(create_symbol("*BREAK*"), NULL), cdr(env));
+      
+      void* i = start;
+      void* ret = cdr(cassoc("*BREAK*", cdr(env)));
+      while(!ret) {
+	eval(car(i), env);
+	ret = cdr(cassoc("*BREAK*", cdr(env)));
+	
 	if(cdr(i)) i = cdr(i);
 	else       i = start;
       }
 
-      return NULL;
+      return ret;
       break;
       
     default:
@@ -1148,14 +1189,14 @@ void* tread(void* env) {
 
   void* ret = NULL;
 
-  void* tmp =  cassoc("*INPUT*", env); 
+  void* tmp =  cassoc("*INPUT*", cdr(env)); 
   if(!tmp || !cdr(tmp)) {
     return ERROR("Could not find *INPUT* var!");
   }
   tmp = cdr(tmp);
   FILE* input = (FILE*) to_pointer(tmp)->p;    
     
-  tmp =  cassoc("*SCANNER*", env);
+  tmp =  cassoc("*SCANNER*", cdr(env));
   if(!tmp || !cdr(tmp)) {
     return ERROR("Could not find *SCANNER* var!");
   }

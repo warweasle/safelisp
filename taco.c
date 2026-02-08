@@ -22,17 +22,22 @@ void gmp_gc_free(void *ptr, size_t size) {
 // Initialize a scanner instance for Flex
 yyscan_t scanner;
   
-void* init_taco() {
+void* init_taco(FILE* input, FILE* output) {
   GC_INIT();
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
 
-  yylex_init(&scanner);
+  void* ret = NULL;
+
+  yyscan_t* s = (yyscan_t*) GC_malloc(sizeof(yyscan_t));
+  yylex_init(s);
+  ret = cons(cons(create_symbol("*SCANNER*"), create_pointer_type(s)), ret);
+  ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
+  ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
   
   // Set the input file for the lexer
-  yyset_in(stdin, scanner);
-  
-  
-  return NULL;
+  yyset_in(input, s);
+    
+  return ret;
 }
 
 // Set the event flag
@@ -258,8 +263,16 @@ resizable_string_type* create_resizable_string_type(size_t len, ValueType Type) 
   }
   return sym;
 }
+	     
+pointer_type* create_pointer_type(void* p) {
+  pointer_type* ret = (pointer_type*)GC_malloc(sizeof(pointer_type)); 
+  if (!ret) return NULL; // Check for allocation failure
+  ret->type = TYPE_POINTER;
+  ret->p = p;
 
-
+  return ret;
+}
+	     
 char* resize_string(char* str, size_t size) {
 
   char* ret;
@@ -346,18 +359,19 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
 }
 
 int string_compare(const void* a, const void* b) {
+   
+  /* if (!is_str(a) || !is_str(b)) { */
+  /*   printf("is this erroring?\n"); */
+  /*   return 0; // Consider returning 0 or handle the error as appropriate */
+  /* } */
+
   const string_type* str1 = (const string_type*)a;
-  const string_type* str2 = (const string_type*)b;
+  const string_type* str2 = (const string_type*)b;  
 
-  // Ensure both are valid strings using is_str
-  if (!is_str(str1) || !is_str(str2)) {
-    return 0; // Consider returning 0 or handle the error as appropriate
-  }
-
-  //printf("Comparing: %s vs %s\n", str1->str, str2->str);
-  
+  int ret = strcmp(str1->str, str2->str);
+    
   // Compare the strings
-  return strcmp(str1->str, str2->str);
+  return ret;
 }
 
 int raw_string_compare(const void* a, const void* b) {
@@ -412,7 +426,7 @@ rational_type* create_rational_type() {
 }
 
 void* equal(void* a, void* b) {
-
+  
   if(a == b) return create_true_type();
   
   ValueType at = get_type(a);
@@ -443,12 +457,13 @@ void* equal(void* a, void* b) {
     
   case TYPE_SYMBOL:
   case TYPE_STRING:
-  
-    if(string_compare(a, b) == 0) {
-      return create_true_type(); 
-    }
-    else {
-      return NULL;
+    {
+      if(string_compare(a, b) == 0) {
+	return create_true_type(); 
+      }
+      else {
+	return NULL;
+      }
     }
     break;
 
@@ -636,6 +651,7 @@ void* assoc(void* item, void* list) {
   if(car(list) && 
      car(car(list)) && 
      equal(item, car(car(list)))) {
+
     return car(list);
   }
 
@@ -643,8 +659,6 @@ void* assoc(void* item, void* list) {
 }
 
 void* eval(void* list, void* env) {
-
-  //printf("eval: TYPE: %s\n", return_type_c_string(list));
 
   ValueType type = get_type(list);
   
@@ -1061,18 +1075,29 @@ void* eval_list(void* list, void* env) {
 void* tread(void* env) {
 
   void* ret = NULL;
-  
-  // Initialize a scanner instance for Flex
-  yylex_init(&scanner);
-  
-  // Set the input file for the lexer
-  yyset_in(stdin, scanner);
 
+  void* tmp =  assoc(create_symbol("*INPUT*"), env); 
+  if(!tmp || !cdr(tmp)) {
+    return ERROR("Could not find *INPUT* var!");
+  }
+  tmp = cdr(tmp);
+  FILE* input = (FILE*) to_pointer(tmp)->p;    
+    
+  tmp =  assoc(create_symbol("*SCANNER*"), env);
+  if(!tmp || !cdr(tmp)) {
+    return ERROR("Could not find *SCANNER* var!");
+  }
+  tmp = cdr(tmp);
+  yyscan_t* scanner = (yyscan_t*) to_pointer(tmp)->p;    
+
+  // Initialize a scanner instance for Flex
+  yylex_init(scanner);
+  // Set the input file for the lexer
+  yyset_in(input, scanner);
   int parseResult = yyparse(scanner, &ret);
   
   if (parseResult != 0) {
     printf("Parsing failed. (%p)\n", ret);
-    //print(stdout, ret, 10);
   }
   
   // Clean up

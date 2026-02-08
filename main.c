@@ -7,8 +7,8 @@
 
 int main(int argc, char* argv[]) {
 
-  void* env = init_taco();
-    
+  void* env = init_taco(stdin, stdout);
+  
   // Call the parser
   void* atom = tread(env);
   atom = eval(atom, env);

@@ -185,9 +185,9 @@ void print(FILE* output, void* o, int base) {
     /*   fprintf(output, "#\\%c", to_string(o)->str[0]); */
     /* 	break; */
 
-    /* case TYPE_POINTER: */
-    /* 	fprintf(output, "%p\n", to_pointer(o)->p); */
-    /* 	break; */
+  case TYPE_POINTER:
+    fprintf(output, "<POINTER:%p>", to_pointer(o)->p);
+    break;
     
   case TYPE_INT8:
   case TYPE_UINT8:

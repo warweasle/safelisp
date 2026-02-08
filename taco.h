@@ -114,7 +114,7 @@ extern "C" {
 #define to_int(o) ((int_type*)o)
 #define to_float(o) ((float_type*)o)
 #define to_rational(o) ((rational_type*)o)
-#define to_pointer(o) ((pointertype*)o)
+#define to_pointer(o) ((pointer_type*)o)
 #define to_char(o) ((char_type*)o)
 #define to_native(o) ((native_type*)o)
 
@@ -168,9 +168,13 @@ extern "C" {
 	mpq_t num;
   } rational_type;
 
+  typedef struct {
+    ValueType type;
+    void* p;
+  } pointer_type;
 
   // Init and other...
-  void* init_taco();
+  void* init_taco(FILE* input, FILE* output);
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
@@ -216,6 +220,8 @@ extern "C" {
   rational_type* create_rational_type();
   float_type* create_float_type();
 
+  pointer_type* create_pointer_type(void* p);
+  
   // Important functions
   void* equal(void* a, void* b); 
   void* eval_list(void* list, void* env);

@@ -1209,7 +1209,5 @@ void* tread(void* env) {
   // Clean up
   yylex_destroy(scanner);
   return ret;
-  
-  return NULL;
 }
 

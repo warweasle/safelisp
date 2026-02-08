@@ -221,12 +221,14 @@ extern "C" {
   float_type* create_float_type();
 
   pointer_type* create_pointer_type(void* p);
+  cc create_lambda(void* args, void* code);
   
   // Important functions
   void* equal(void* a, void* b); 
   void* eval_list(void* list, void* env);
   void* return_type(void* o); 
   void* assoc(void* item, void* list);
+  void* cassoc(char* str, void* list);
   void* eval(void* list, void* env);
   void* tread(void* env);
   

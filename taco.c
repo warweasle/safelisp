@@ -291,6 +291,15 @@ char* resize_string(char* str, size_t size) {
   return ret;
 }
 
+cc create_lambda(void* args, void* code) {
+  cc ret = (cc) GC_malloc(sizeof(cons_cell));
+
+  ret->type = TYPE_LAMBDA;
+  ret->car = args;
+  ret->cdr = code;  
+  return ret;
+}
+
 resizable_string_type* resize_resizable_array(resizable_string_type* arr, size_t size) {
   char* newStr = resize_string(arr->str, size);
   if(!newStr) {
@@ -426,6 +435,8 @@ rational_type* create_rational_type() {
 }
 
 void* equal(void* a, void* b) {
+
+  printf("hello\n");
   
   if(a == b) return create_true_type();
   
@@ -648,14 +659,42 @@ void* return_type(void* o) {
 void* assoc(void* item, void* list) {
   if(list == NULL) return NULL;
 
-  if(car(list) && 
-     car(car(list)) && 
-     equal(item, car(car(list)))) {
+  printf("list: ");
+  print(stdout, list, 10);
+  printf("\n");
+  
+  printf("start...\n");
+  if(car(list)) {
+    printf("AAAAAA\n");
+    if (car(car(list))) 
+      {
+	printf("bbbb..\n");
+	if(equal(item, car(car(list)))){
+	  printf("MATCH!\n");
+	}
+	return car(list);
+      }
+  }
+  
+  return assoc(item, cdr(list));
+}
 
-    return car(list);
+void* cassoc(char* str, void* list) {
+
+  if(list == NULL) return NULL;
+
+  if(car(list) && 
+     car(car(list)))
+    {
+
+      string_type* target = to_string(car(car(list)));
+      
+      if(strcmp(str, target->str) == 0) {
+	return car(list);
+      }
   }
 
-  return assoc(item, cdr(list));
+  return cassoc(str, cdr(list));
 }
 
 void* eval(void* list, void* env) {
@@ -1007,8 +1046,41 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_SET:
-      printf("setting is not yet implemented!!!\n");
-      return NULL;
+      {
+	if(!cdr(list) || !cdr(cdr(list))) {
+	  return ERROR("ERROR: SET requires TWO arguments!\n");
+	}
+
+	void* name = car(cdr(list));
+	void* value = car(cdr(cdr(list)));
+
+	print(stdout, name, 10);
+	printf("\n");
+	print(stdout, value, 10);
+	printf("\n");
+	
+	name = eval(name, env);
+	print(stdout, name, 10);
+	printf("\n");
+	
+	value = eval(value, env);
+	print(stdout, value, 10);
+	printf("\n");
+	
+	void* found = assoc(name, env);
+	print(stdout, found, 10);
+	printf("\n");
+	
+	if(!found) {
+	  printf("NOT FOUND!!!\n");
+	  env = cons(cons(name, value), env);
+	}
+	else {
+	  printf("FOUND!!!\n");
+	  car(cdr(cdr(list))) = value;
+	}
+	return env;
+      }
       break;
 
     case N_WHILE:
@@ -1076,14 +1148,14 @@ void* tread(void* env) {
 
   void* ret = NULL;
 
-  void* tmp =  assoc(create_symbol("*INPUT*"), env); 
+  void* tmp =  cassoc("*INPUT*", env); 
   if(!tmp || !cdr(tmp)) {
     return ERROR("Could not find *INPUT* var!");
   }
   tmp = cdr(tmp);
   FILE* input = (FILE*) to_pointer(tmp)->p;    
     
-  tmp =  assoc(create_symbol("*SCANNER*"), env);
+  tmp =  cassoc("*SCANNER*", env);
   if(!tmp || !cdr(tmp)) {
     return ERROR("Could not find *SCANNER* var!");
   }

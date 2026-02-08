@@ -27,16 +27,9 @@ void* init_taco(FILE* input, FILE* output) {
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
 
   void* ret = NULL;
-
-  yyscan_t* s = (yyscan_t*) GC_malloc(sizeof(yyscan_t));
-  yylex_init(s);
-  ret = cons(cons(create_symbol("*SCANNER*"), create_pointer_type(s)), ret);
   ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
   ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
   
-  // Set the input file for the lexer
-  yyset_in(input, s);
-    
   return cons(NULL, ret);
 }
 
@@ -1150,11 +1143,11 @@ void* eval_list(void* list, void* env) {
       
     case N_LOOP:
 
+      void* oldenv = cdr(env);
       void* start = cdr(list);
       if(!start || !car(start)) {
 	return ERROR("LOOP requires at least one argument!");
       }
-
       cdr(env) = cons(cons(create_symbol("*BREAK*"), NULL), cdr(env));
       
       void* i = start;
@@ -1166,7 +1159,8 @@ void* eval_list(void* list, void* env) {
 	if(cdr(i)) i = cdr(i);
 	else       i = start;
       }
-
+      cdr(env) = oldenv;
+      
       return ret;
       break;
 

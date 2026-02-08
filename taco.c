@@ -145,8 +145,8 @@ int list_length(void* list) {
 cc last(void* lst) {
 
   if(!is_cons(lst)) {
-	printf("ERROR, You sent a non-list to LAST!!!\n");
-	return NULL;
+    printf("ERROR, You sent a non-list to LAST!!!\n");
+    return NULL;
   }
 
   cons_cell* i;
@@ -251,10 +251,10 @@ resizable_string_type* create_resizable_string_type(size_t len, ValueType Type) 
   sym->pos = 0;
   sym->str = (char*)GC_malloc(sym->len); // +1 for null terminator
   if (sym->str) {
-	sym->str[0] = '\0'; // Initialize empty string
+    sym->str[0] = '\0'; // Initialize empty string
   } else {
-	GC_free(sym); // Clean up if string allocation fails
-	return NULL;
+    GC_free(sym); // Clean up if string allocation fails
+    return NULL;
   }
   return sym;
 }
@@ -264,15 +264,15 @@ char* resize_string(char* str, size_t size) {
 
   char* ret;
   if(str) {
-	 ret = GC_realloc(str, size);
+    ret = GC_realloc(str, size);
   }
   else {
-	ret = GC_malloc(size);
+    ret = GC_malloc(size);
   }
   
   if(!ret) {
-	printf("Out of memory for resizable string!\n");
-	return NULL;
+    printf("Out of memory for resizable string!\n");
+    return NULL;
   }
 
   return ret;
@@ -281,7 +281,7 @@ char* resize_string(char* str, size_t size) {
 resizable_string_type* resize_resizable_array(resizable_string_type* arr, size_t size) {
   char* newStr = resize_string(arr->str, size);
   if(!newStr) {
-	return NULL;
+    return NULL;
   }
 
   arr->str = newStr;
@@ -297,21 +297,21 @@ resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c)
   
   if(!is_type(arr, TYPE_RESIZABLE_STRING)) {
 	
-	printf("Error, not a resizeable string!\n");
-	return NULL;
+    printf("Error, not a resizeable string!\n");
+    return NULL;
   }
 
   // Is there enough space? 
   if(arr->pos >= arr->len - 2) {
 	
-	// Gotta make some room...
-	resize_resizable_array(arr, arr->len * 2);
+    // Gotta make some room...
+    resize_resizable_array(arr, arr->len * 2);
   }
 
   if(arr->str != NULL) {
   
-	arr->str[arr->pos] = c;
-	arr->pos++;
+    arr->str[arr->pos] = c;
+    arr->pos++;
   }
   
   return arr;
@@ -321,8 +321,8 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
 
   if(!is_type(arr, TYPE_RESIZABLE_STRING)) {
 	
-	printf("Error, not a resizeable string!\n");
-	return NULL;
+    printf("Error, not a resizeable string!\n");
+    return NULL;
   }
 
   size_t strl = strlen(s);
@@ -330,16 +330,16 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
 						 
   if(totalRequired >= arr->len - 1) {
 
-	// Gotta make some room...
+    // Gotta make some room...
 		
-	arr->len = totalRequired * totalRequired; 
-	arr->str = resize_string(arr->str, arr->len);
+    arr->len = totalRequired * totalRequired; 
+    arr->str = resize_string(arr->str, arr->len);
   }
 
   if(arr->str != NULL) {
   
-	strncpy(arr->str + arr->pos, s, strl);
-	arr->pos = totalRequired;
+    strncpy(arr->str + arr->pos, s, strl);
+    arr->pos = totalRequired;
   }
   
   return arr;
@@ -351,7 +351,7 @@ int string_compare(const void* a, const void* b) {
 
   // Ensure both are valid strings using is_str
   if (!is_str(str1) || !is_str(str2)) {
-	return 0; // Consider returning 0 or handle the error as appropriate
+    return 0; // Consider returning 0 or handle the error as appropriate
   }
 
   //printf("Comparing: %s vs %s\n", str1->str, str2->str);
@@ -366,7 +366,7 @@ int raw_string_compare(const void* a, const void* b) {
 
   // Ensure both are valid strings using is_str
   if (!is_str(str1)) {
-	return 0; // Consider returning 0 or handle the error as appropriate
+    return 0; // Consider returning 0 or handle the error as appropriate
   }
 
   printf("Comparing: %s vs %s\n", str1->str, str2);
@@ -702,7 +702,7 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-
+  
   //printf("Type = %i or %s\n", type, return_type_c_string(o));
   
   switch(type) {
@@ -806,9 +806,7 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* predicate = eval(car(pred), env);
-	printf("returned: %p\n", predicate);
-	print(stdout, predicate, 10);
-	
+		
 	if(is_true(predicate)) {
 	  return eval(car(truth), env);
 	}
@@ -845,13 +843,13 @@ void* eval_list(void* list, void* env) {
 	}
 	return NULL;
       }
-    break;
+      break;
     
-  case N_TYPE:
-    if(!cdr(list)) {
-      printf("TYPE requires ONE argument!\n");
-      return NULL;
-    }
+    case N_TYPE:
+      if(!cdr(list)) {
+	printf("TYPE requires ONE argument!\n");
+	return NULL;
+      }
 
       if(cdr(cdr(list))) {
 	printf("TYPE requires only ONE argument!\n");
@@ -987,7 +985,6 @@ void* eval_list(void* list, void* env) {
 	fflush(f);
 	fclose(f);   // IMPORTANT: finalizes buffer
 
-	printf("to-string: %s\n", buf);
 	void* ret = create_string_type_and_copy(size, buf, TYPE_STRING);
 	old_free(buf);
 	return ret;
@@ -998,12 +995,59 @@ void* eval_list(void* list, void* env) {
       {
 	void* ret = eval(car(cdr(list)), env);
 	print(stdout, ret, 10);
+	fputc('\n', stdout);
 	return ret;
       }
       break;
       
     case N_SET:
       printf("setting is not yet implemented!!!\n");
+      return NULL;
+      break;
+
+    case N_WHILE:
+      {
+	void* pred = car(cdr(list));
+	void* code = cdr(cdr(list));
+
+	print(stdout, code, 10);
+	printf("\n"); 
+	
+	if(!pred) {
+	  printf("ERROR: nothing to WHILE!\n");
+	  return NULL;
+	}
+
+	if(!code) {
+	  printf("Nothing to execute in WHILE statement!\n");
+	  return NULL;
+	}
+
+	void* ret = NULL;
+	while(is_true(eval(pred, env))) {
+	  for(void* i=code; i; i = cdr(i)) {
+	    ret = eval(car(i), env);
+	  }
+	}
+	return ret;
+      }	
+      break;
+      
+    case N_LOOP:
+
+      void* start = cdr(list);
+      if(!start || !car(start)) {
+	return ERROR("LOOP requires at least one argument!");
+      }
+      void* i = start;
+      
+      while(-1) {
+	eval(car(i), env);
+
+	if(cdr(i)) i = cdr(i);
+	else       i = start;
+      }
+
       return NULL;
       break;
       
@@ -1035,11 +1079,9 @@ void* tread(void* env) {
   int parseResult = yyparse(scanner, &ret);
   
   if (parseResult != 0) {
-    yylex_destroy(scanner);
     printf("Parsing failed. (%p)\n", ret);
-    return NULL;
+    print(stdout, ret, 10);
   }
-
   
   // Clean up
   yylex_destroy(scanner);

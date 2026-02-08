@@ -52,14 +52,6 @@ return ATOM;
                           }
 <STRING><<EOF>>         { /* Handle EOF during string for error reporting, possibly flag error */ }
 
-[+-]?{digit}+/{digit}+    {
-
-   rational_type* newrat = create_rational_type();
-   yylval->p = newrat;
-   mpq_set_str(newrat->num, yytext, 10);
-   return ATOM;
-
-}
 
 [+-]?{digit}+    {
 
@@ -119,7 +111,7 @@ return ATOM;
 }
 
 [cC][aAdD]+[rR] {
-    const char *s = yytext;
+//    const char *s = yytext;
     int n = yyleng;
    yylval->p = NULL;
 
@@ -186,6 +178,15 @@ printf("Can't do it yet!!!\n");
     return ATOM;
 }
 
+[lL][oO][oO][pP] {
+    yylval->p = create_native_int_type(N_LOOP);
+    return ATOM;
+}
+
+[wW][hH][iI][lL][eE]  {
+   yylval->p = create_native_int_type(N_WHILE);
+    return ATOM;
+}
 
 [a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 
 

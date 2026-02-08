@@ -145,6 +145,14 @@ void print(FILE* output, void* o, int base) {
       case N_TO_STRING:
 	fprintf(output, "TO-STRING");
 	break;
+
+      case N_LOOP:
+	fprintf(output, "LOOP");
+	break;
+      
+      case N_WHILE:
+	fprintf(output, "WHILE");
+	break;
 	
       default:
 
@@ -173,7 +181,7 @@ void print(FILE* output, void* o, int base) {
     /* case TYPE_POINTER: */
     /* 	fprintf(output, "%p\n", to_pointer(o)->p); */
     /* 	break; */
-	
+    
   case TYPE_INT8:
   case TYPE_UINT8:
   case TYPE_FLOAT8:

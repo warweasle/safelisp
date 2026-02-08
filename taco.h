@@ -92,7 +92,9 @@ extern "C" {
 	N_SET,
 	N_CAR,
 	N_CDR,
-	N_CNR
+	N_CNR,
+	N_LOOP,
+	N_WHILE
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)

@@ -193,6 +193,11 @@ printf("Can't do it yet!!!\n");
     return ATOM;
 }
 
+[rR][eE][aA][dD] {
+    yylval->p = create_native_int_type(N_READ);
+    return ATOM;
+}
+
 [a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 
 
 // Convert to uppercase

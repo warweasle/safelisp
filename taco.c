@@ -1169,6 +1169,10 @@ void* eval_list(void* list, void* env) {
 
       return ret;
       break;
+
+    case N_READ:
+      return tread(env);
+      break;
       
     default:
 
@@ -1195,16 +1199,11 @@ void* tread(void* env) {
   }
   tmp = cdr(tmp);
   FILE* input = (FILE*) to_pointer(tmp)->p;    
-    
-  tmp =  cassoc("*SCANNER*", cdr(env));
-  if(!tmp || !cdr(tmp)) {
-    return ERROR("Could not find *SCANNER* var!");
-  }
-  tmp = cdr(tmp);
-  yyscan_t* scanner = (yyscan_t*) to_pointer(tmp)->p;    
+  
+  yyscan_t scanner;
 
   // Initialize a scanner instance for Flex
-  yylex_init(scanner);
+  yylex_init(&scanner);
   // Set the input file for the lexer
   yyset_in(input, scanner);
   int parseResult = yyparse(scanner, &ret);

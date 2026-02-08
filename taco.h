@@ -95,7 +95,8 @@ extern "C" {
 	N_CNR,
 	N_LOOP,
 	N_BREAK,
-	N_WHILE
+	N_WHILE,
+	N_READ
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)

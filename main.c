@@ -18,6 +18,8 @@ int main(int argc, char* argv[]) {
 
   print(stdout, env, 10);
   fputc('\n', stdout);
- 
+
+  printf("Sizeof : %lu\n", sizeof(ValueType));
+  
   return 0;
 }

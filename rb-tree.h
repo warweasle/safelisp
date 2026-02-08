@@ -51,8 +51,6 @@ extern "C" {
     
 #include "rbtree_template_h"
 
-
-  
   /* cc rb_search(cc root, void* object, int (*compare)(void* data, const void*, const void*)); */
   /* cc rb_raw_search(cc root, void* object, int (*compare)(void* data, const void* obj, const void* raw)); */
   /* void rb_inorder(cc root, void (*visit)(void*)); */

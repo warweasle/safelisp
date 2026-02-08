@@ -4,7 +4,6 @@ void (*old_free)(void*) = free;
 #include "taco_parser.yy.h"
 #include "taco.h"
 
-
 void *gmp_gc_malloc(size_t size) {
   return GC_malloc(size);
 }

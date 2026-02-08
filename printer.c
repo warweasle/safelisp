@@ -5,6 +5,7 @@ void print(FILE* output, void* o, int base) {
   
   if(o == NULL) {
     fprintf(output, "NULL");
+    fflush(output);
     return;
   }
 
@@ -21,12 +22,14 @@ void print(FILE* output, void* o, int base) {
 	void* tmp = car(o);
 	if(first) {first = 0;}
 	else {fprintf(output, " ");}
-      
+
+	fflush(output);
 	print(output, tmp, base);
 	//if so that's fine move along. But if cdr != cons then dot notation.
       
 	if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
 	  fprintf(output, " . ");
+	  fflush(output);
 	  print(output, to_cons(o)->cdr, base);
 	  break;
 	}
@@ -49,21 +52,25 @@ void print(FILE* output, void* o, int base) {
 	
   case TYPE_QUOTE:
     fprintf(output, "'");
+    fflush(output);
     print(output, to_cons(o)->car, base);
     break;
 
   case TYPE_BACKTICK:
     fprintf(output, "`");
+    fflush(output);
     print(output, to_cons(o)->car, base);
     break;
 
   case TYPE_COMMA:
     fprintf(output, ",");
+    fflush(output);
     print(output, to_cons(o)->car, base);
     break;
 
   case TYPE_SPLICE:
     fprintf(output, ",@");
+    fflush(output);
     print(output, to_cons(o)->car, base);
     break;
 	
@@ -72,7 +79,7 @@ void print(FILE* output, void* o, int base) {
     break;
 	
   case TYPE_SYMBOL:
-    printf("%s", ((string_type*)o)->str);
+    fprintf(output, "%s", ((string_type*)o)->str);
     break;
 	
   case TYPE_INT:
@@ -231,5 +238,7 @@ void print(FILE* output, void* o, int base) {
   default:
     printf("We have no idea what %p is.\n", o);
   }
+
+  fflush(output);
 }
 

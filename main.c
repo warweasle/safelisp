@@ -13,7 +13,6 @@ int main(int argc, char* argv[]) {
   void* atom = tread(env);
   atom = eval(atom, env);
 
-  fprintf(stdout, "\n");
   print(stdout, atom, 10);
   fputc('\n', stdout);
 

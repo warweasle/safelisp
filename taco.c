@@ -832,12 +832,8 @@ void* eval_list(void* list, void* env) {
 	for(void* i=car(cdr(list)); i; i = cdr(i)) {
 	  
 	  cc pair = car(i);
-	  printf("AAAA\n");
-	  print(stdout, pair, 10);
 	  
 	  if(is_true(eval(car(pair), env))) {
-	    printf("Evaling...");
-	    print(stdout, car(cdr(pair)), 10);
 	    return eval(car(cdr(pair)), env);
 	  }
 	}
@@ -964,7 +960,7 @@ void* eval_list(void* list, void* env) {
 
     case N_TO_STRING:
       {
-	printf("WARNING: TO-STRING is buggy as hell!");
+	printf("WARNING: TO-STRING is buggy as hell!\n");
 	char *buf = NULL;
 	size_t size = 0;
 
@@ -973,19 +969,15 @@ void* eval_list(void* list, void* env) {
 	  return NULL;
 	}
 
-	void* p = cdr(list);
-	//print(stdout, p, 10);
-	
+	void* p = eval(car(cdr(list)), env);
 	FILE *f = open_memstream(&buf, &size);
+	
 	print(f, p, 10);
-
-	print(f, p, 10);
-	fprintf(f, "\n");
 	
 	fflush(f);
 	fclose(f);   // IMPORTANT: finalizes buffer
-
-	void* ret = create_string_type_and_copy(size, buf, TYPE_STRING);
+	
+	void* ret = create_string_type_from_string(buf, TYPE_STRING);
 	old_free(buf);
 	return ret;
       }
@@ -1010,7 +1002,7 @@ void* eval_list(void* list, void* env) {
 	void* pred = car(cdr(list));
 	void* code = cdr(cdr(list));
 
-	print(stdout, code, 10);
+	//print(stdout, code, 10);
 	printf("\n"); 
 	
 	if(!pred) {
@@ -1059,7 +1051,7 @@ void* eval_list(void* list, void* env) {
 
   default:
 
-    printf("This type doesn't have a function handler!!!\n");
+    printf("This type doesn't have a function handler (type = %s)!!!\n", return_type_c_string(o));
     break;
   }
   
@@ -1080,7 +1072,7 @@ void* tread(void* env) {
   
   if (parseResult != 0) {
     printf("Parsing failed. (%p)\n", ret);
-    print(stdout, ret, 10);
+    //print(stdout, ret, 10);
   }
   
   // Clean up

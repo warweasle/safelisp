@@ -5,10 +5,10 @@ LEX=flex
 YACC=bison
 YFLAGS=-d
 
-taco:  main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o rb-tree.o
-	$(CC) $(CFLAGS) -o taco main.o taco_parser.yy.o taco_parser.tab.o taco.o printer.o $(LDFLAGS)
+safelisp:  main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o
+	$(CC) $(CFLAGS) -o safelisp main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o $(LDFLAGS)
 
-main.o: main.c taco_parser.tab.c taco_parser.tab.h taco_parser.yy.o
+main.o: main.c safelisp_parser.tab.c safelisp_parser.tab.h safelisp_parser.yy.o
 	$(CC) $(CFLAGS) -c main.c -o main.o 
 
 rb-tree.o: rb-tree.c rb-tree.h rbtree_template_c rbtree_template_h 
@@ -16,17 +16,17 @@ rb-tree.o: rb-tree.c rb-tree.h rbtree_template_c rbtree_template_h
 %.o: %.c %.h 
 	$(CC) $(CFLAGS) -c $< -o $@
 
-taco_parser.yy.o: taco_parser.yy.c taco_parser.tab.h
-	$(CC) $(CFLAGS) -c taco_parser.yy.c
+safelisp_parser.yy.o: safelisp_parser.yy.c safelisp_parser.tab.h
+	$(CC) $(CFLAGS) -c safelisp_parser.yy.c
 
-taco_parser.tab.o: taco_parser.tab.c
-	$(CC) $(CFLAGS) -c taco_parser.tab.c
+safelisp_parser.tab.o: safelisp_parser.tab.c
+	$(CC) $(CFLAGS) -c safelisp_parser.tab.c
 
-taco_parser.yy.c: taco_parser.l
-	$(LEX) -o taco_parser.yy.c --header-file=taco_parser.yy.h taco_parser.l
+safelisp_parser.yy.c: safelisp_parser.l
+	$(LEX) -o safelisp_parser.yy.c --header-file=safelisp_parser.yy.h safelisp_parser.l
 
-taco_parser.tab.c taco_parser.tab.h: taco_parser.y 
-	$(YACC) $(YFLAGS) taco_parser.y
+safelisp_parser.tab.c safelisp_parser.tab.h: safelisp_parser.y 
+	$(YACC) $(YFLAGS) safelisp_parser.y
 
 clean:
-	rm -f taco taco_parser.tab.* taco_parser.yy.* main.o *.o
+	rm -f safelisp safelisp_parser.tab.* safelisp_parser.yy.* main.o *.o

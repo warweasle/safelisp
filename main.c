@@ -1,9 +1,5 @@
 #include <stdio.h>
-#include "taco.h"
-
-#include "taco_parser.tab.h" // Include Bison-generated headers, which might vary by your setup
-#include "taco_parser.yy.h"
-
+#include "safelisp.h"
 
 int main(int argc, char* argv[]) {
 

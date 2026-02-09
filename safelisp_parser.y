@@ -6,9 +6,9 @@
 
 
 %code top {
-#include "taco_parser.tab.h"
-#include "taco_parser.yy.h"
-#include "taco.h"
+#include "safelisp_parser.tab.h"
+#include "safelisp_parser.yy.h"
+#include "safelisp.h"
 
  }
 

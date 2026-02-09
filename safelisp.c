@@ -1,8 +1,8 @@
 #include <stdlib.h>
 void (*old_free)(void*) = free;
-#include "taco_parser.tab.h" // Include Bison-generated headers, which might vary by your setup
-#include "taco_parser.yy.h"
-#include "taco.h"
+#include "safelisp_parser.tab.h" // Include Bison-generated headers, which might vary by your setup
+#include "safelisp_parser.yy.h"
+#include "safelisp.h"
 
 void *gmp_gc_malloc(size_t size) {
   return GC_malloc(size);
@@ -882,8 +882,7 @@ void* eval_list(void* list, void* env) {
     case N_COND:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  printf("ERROR: COND requires one argument!\n");
-	  return NULL;
+	  return ERROR("ERROR: COND requires one argument!\n");
 	}
 
 	for(void* i=car(cdr(list)); i; i = cdr(i)) {

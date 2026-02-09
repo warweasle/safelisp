@@ -1,5 +1,5 @@
-#ifndef TACO_H
-#define TACO_H
+#ifndef SAFELISP_H
+#define SAFELISP_H
 
 #include <ctype.h>
 #include <string.h>
@@ -241,5 +241,5 @@ extern "C" {
 #include "printer.h"
 #include "rb-tree.h"
 
-#endif // TACO_H
+#endif // SAFELISP_H
 

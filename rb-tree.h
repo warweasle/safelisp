@@ -1,7 +1,7 @@
 #ifndef RB_TREE_H
 #define RB_TREE_H
 
-#include "taco.h"
+#include "safelisp.h"
 
 #ifdef __cplusplus
 extern "C" {

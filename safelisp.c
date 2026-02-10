@@ -323,6 +323,9 @@ resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c)
     return NULL;
   }
 
+  // If this is the first char, add a space for a null
+  if(arr->pos == 0) arr->pos += 1;
+  
   // Is there enough space? 
   if(arr->pos >= arr->len - 2) {
 	
@@ -334,6 +337,7 @@ resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c)
   
     arr->str[arr->pos] = c;
     arr->pos++;
+    arr->str[arr->pos] = '\0';
   }
   
   return arr;
@@ -348,6 +352,9 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
   }
 
   size_t strl = strlen(s);
+
+  // if this is the first item then add an extra space for the NULL.
+  if(arr->pos == 0) strl += 1;
   size_t totalRequired = arr->pos + strl;
 						 
   if(totalRequired >= arr->len - 1) {

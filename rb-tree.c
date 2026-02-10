@@ -36,4 +36,4 @@ void* map_rm(cc map, void* object) {
   return NULL;
 }
 
-#include "rbtree_template_c"
+#include "rbtree_template.c"

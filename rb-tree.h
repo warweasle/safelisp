@@ -53,7 +53,7 @@ extern "C" {
   void* map_set(cc map, void* object, void* value);
   void* map_rm(cc map, void* object);
   
-#include "rbtree_template_h"
+#include "rbtree_template.h"
 
   /* cc rb_search(cc root, void* object, int (*compare)(void* data, const void*, const void*)); */
   /* cc rb_raw_search(cc root, void* object, int (*compare)(void* data, const void* obj, const void* raw)); */

@@ -176,10 +176,11 @@ extern "C" {
   } pointer_type;
 
   // Init and other...
-  void* init_taco(FILE* input, FILE* output);
+  void* init_safelisp(FILE* input, FILE* output);
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
+  cc make_rb_tree();
   cc error(void* car, void* cdr);
   int list_length(void* list);
   int is_list(void* list);

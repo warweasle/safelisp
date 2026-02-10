@@ -46,9 +46,13 @@ extern "C" {
 #define RB_CREATE_NODE(key) (create_rb_node(key, NULL, NULL, NULL))
 
   cc create_rb_node(void* key, cc left, cc right, cc parent);
-  
+
   typedef int (*RB_CMP_FUNC)(void* data, RB_KEY_TYPE* left, RB_KEY_TYPE* right);
-    
+
+  void* map_get(cc map, void* object);
+  void* map_set(cc map, void* object, void* value);
+  void* map_rm(cc map, void* object);
+  
 #include "rbtree_template_h"
 
   /* cc rb_search(cc root, void* object, int (*compare)(void* data, const void*, const void*)); */

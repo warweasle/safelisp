@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread $(shell pkg-config --cflags glib-2.0)
-LDFLAGS=-pthread -lgc -lgmp $(shell pkg-config --libs glib-2.0)
+CFLAGS=-Wall -g -pthread $(shell pkg-config --cflags glib-2.0 cairo pango pangocairo sdl3)
+LDFLAGS=-pthread -lgc -lgmp $(shell pkg-config --libs glib-2.0 cairo pango pangocairo sdl3) -lGL
 LEX=flex
 YACC=bison
 YFLAGS=-d

@@ -1,9 +1,15 @@
 #include <stdio.h>
+
 #include "safelisp.h"
+
+/* #include <SDL3/SDL.h> */
+/* #include <cairo.h> */
+/* #include <pango/pango.h> */
+/* #include <pango/pangocairo.h> */
 
 int main(int argc, char* argv[]) {
 
-  void* env = init_taco(stdin, stdout);
+  void* env = init_safelisp(stdin, stdout);
   
   // Call the parser
   void* atom = tread(env);

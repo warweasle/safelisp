@@ -14,4 +14,26 @@ cc create_rb_node(void* key, cc left, cc right, cc parent) {
   return cons(key, cons(left, cons(right, parent)));
 }
 
+int objectCompare(void* data, void* a, void* b) {
+  (void)data; // unused for now
+
+  return 0;
+}
+
+
+void* map_get(cc map, void* object) {
+
+  return NULL;
+}
+
+void* map_set(cc map, void* object, void* value) {
+
+  return NULL;
+}
+
+void* map_rm(cc map, void* object) {
+
+  return NULL;
+}
+
 #include "rbtree_template_c"

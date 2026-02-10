@@ -21,7 +21,7 @@ void gmp_gc_free(void *ptr, size_t size) {
 // Initialize a scanner instance for Flex
 yyscan_t scanner;
   
-void* init_taco(FILE* input, FILE* output) {
+void* init_safelisp(FILE* input, FILE* output) {
   GC_INIT();
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
 
@@ -94,6 +94,14 @@ cc cons(void* car, void* cdr) {
   ret->type = TYPE_CONS;
   ret->car = car;
   ret->cdr = cdr;  
+  return ret;
+}
+
+cc make_rb_tree() {
+
+  cc ret = (cc) GC_malloc(sizeof(cons_cell));
+
+  ret->type = TYPE_RB_TREE;
   return ret;
 }
 
@@ -426,56 +434,40 @@ rational_type* create_rational_type() {
   return ret;
 }
 
-void* equal(void* a, void* b) {
+int compare_lists(cc a, cc b) {
 
-  printf("hello\n");
-  
-  if(a == b) return create_true_type();
+  if(a == b) return 0;
+
+  printf("Not working yet!\n");
+  return -1;
+}
+
+int compare(void* a, void* b) {
+
+  if(a == b) return 0;
   
   ValueType at = get_type(a);
   ValueType bt = get_type(b);
 
-  if(at != bt) return NULL;
+  if(at != bt) return at - bt;
 
   switch(at) {
   
   case TYPE_NULL:
-    return create_true_type(); 
+    return 0; 
     break;
     
   case TYPE_CONS:
     {
       cc ac = to_cons(a);
       cc bc = to_cons(b);
-      if(equal(ac->car, bc->car) &&
-	 equal(ac->cdr, bc->cdr)) {
-
-	return create_true_type(); 
-      }
-      else {
-	return NULL;
-      }
+      return compare_lists(ac, bc);
     }
     break;
     
   case TYPE_SYMBOL:
   case TYPE_STRING:
-    {
-      /* printf("equal...\n"); */
-      /* printf("a = "); */
-      /* print(stdout, a, 10); */
-      /* printf("\n"); */
-      /* printf("b = "); */
-      /* print(stdout, b, 10); */
-      /* printf("\n"); */
-      
-      if(string_compare(a, b) == 0) {
-	return create_true_type(); 
-      }
-      else {
-	return NULL;
-      }
-    }
+    return string_compare(a, b);
     break;
 
   case TYPE_TRUE:
@@ -484,39 +476,23 @@ void* equal(void* a, void* b) {
   case TYPE_COMMA:
   case TYPE_SPLICE:
   
-    return create_true_type();
+    return 0;
     break;
 
   case TYPE_INT:
-    if(!mpz_cmp(to_int(a)->num, to_int(b)->num)) {
-      return create_true_type();
-    }
-    else {
-      return NULL;
-    }
+    return mpz_cmp(to_int(a)->num, to_int(b)->num);
     break;
     
   case TYPE_FLOAT:
-    if(!mpf_cmp(to_float(a)->num, to_float(b)->num)) {
-      return create_true_type();
-    }
-    else {
-      return NULL;
-    }
+    return mpf_cmp(to_float(a)->num, to_float(b)->num);
     break;
 
   case TYPE_RATIONAL:
-
+    return mpq_cmp(to_rational(a)->num, to_rational(b)->num);
     break;
 
   case TYPE_NATIVE_INT:
-    if(to_char(a)->c == to_char(b)->c) {
-      return create_true_type();
-    }
-    else {
-      return NULL;
-    }
-
+    return to_char(a)->c - to_char(b)->c;
     break;
     
   case TYPE_CHAR:
@@ -554,15 +530,23 @@ void* equal(void* a, void* b) {
   case TYPE_RB_TREE:
   case TYPE_ERROR:
 
-    return NULL;
+    return 0;
     break;
-    
-  
+      
   default:
   }
   
 
-  return create_true_type();
+  return 0;
+}
+
+void* equal(void* a, void* b) {
+  if(compare(a, b) == 0) {
+    return create_true_type();
+  }
+  else {
+    return NULL;
+  }
 }
 
 char* return_type_c_string(void* o) {
@@ -659,22 +643,10 @@ void* return_type(void* o) {
 void* assoc(void* item, void* list) {
   if(list == NULL) return NULL;
 
-  printf("item: ");
-  print(stdout, item, 10);
-  printf("\n");
-  
-  printf("list: ");
-  print(stdout, list, 10);
-  printf("\n");
-  
-  printf("start...\n");
   if(car(list)) {
-    printf("AAAAAA\n");
     if (car(car(list))) 
       {
-	printf("bbbb..\n");
 	if(equal(item, car(car(list)))){
-	  printf("MATCH!\n");
 	  return car(list);	  
 	}	
       }

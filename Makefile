@@ -1,7 +1,7 @@
 CC=gcc
 PKGS=glib-2.0 cairo pango pangocairo gdk-pixbuf-2.0 sdl3
 #CFLAGS=-Wall -g -pthread $(shell pkg-config --cflags $(PKGS))
-CFLAGS=-Wall -g -pthread 
+CFLAGS=-Wall -g -pthread -O3 
 #LDFLAGS=-pthread -lgc -lgmp $(shell pkg-config --libs $(PKGS)) -lGL
 LDFLAGS=-pthread -lgc -lgmp 
 LEX=flex

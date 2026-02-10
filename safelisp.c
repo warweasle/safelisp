@@ -208,8 +208,8 @@ string_type* create_string_type_and_copy(size_t len, const char* str, ValueType 
   if (!sym) return NULL; // Check for allocation failure
 
   sym->type = Type;
-  strncpy(sym->str, str, len); // Copy up to len characters
-  sym->str[len] = '\0'; // Ensure null termination
+  strncpy(sym->str, str, len+1); // Copy up to len characters
+  //sym->str[len] = '\0'; // Ensure null termination
 
   return sym;
 }
@@ -242,8 +242,8 @@ resizable_string_type* create_resizable_string_type_and_copy(size_t len, const c
   if (!sym) return NULL; // Check for allocation failure
 
   sym->type = Type;
-  strncpy(sym->str, str, len); // Copy up to len characters
-  sym->str[len] = '\0'; // Ensure null termination
+  strncpy(sym->str, str, len+1); // Copy up to len characters
+  //sym->str[len] = '\0'; // Ensure null termination
 
   return sym;
 }
@@ -360,7 +360,7 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
 
   if(arr->str != NULL) {
   
-    strncpy(arr->str + arr->pos, s, strl);
+    strncpy(arr->str + arr->pos, s, strl +1);
     arr->pos = totalRequired;
   }
   

@@ -47,10 +47,10 @@ extern "C" {
   typedef enum {
     TYPE_NULL = 0,
     TYPE_CONS = 1,
+    TYPE_TRUE,
     TYPE_SYMBOL,
     TYPE_NATIVE,
     TYPE_NATIVE_INT,
-    TYPE_TRUE,
     TYPE_CHAR,
     TYPE_STRING,
     TYPE_RESIZABLE_STRING,
@@ -71,7 +71,8 @@ extern "C" {
     TYPE_BACKTICK,
     TYPE_COMMA,
     TYPE_SPLICE,
-    TYPE_ERROR
+    TYPE_CNR,
+    TYPE_ERROR,
   } ValueType;
 
   typedef enum {
@@ -79,9 +80,9 @@ extern "C" {
 	N_LIST,
 	N_IF,
 	N_TYPE,
-	N_NULL,
 	N_AND,
 	N_OR,
+	N_NOT,
 	N_APPEND,
 	N_ASSOC,
 	N_EVAL,
@@ -96,7 +97,15 @@ extern "C" {
 	N_LOOP,
 	N_BREAK,
 	N_WHILE,
-	N_READ
+	N_READ,
+	N_MAPMAKE,
+	N_MAPADD,
+	N_MAPGET,
+	N_MAPSET,
+	N_MAPDEL,
+	N_LAMBDA,
+	N_LET,
+	N_CAT
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
@@ -119,10 +128,6 @@ extern "C" {
 #define to_pointer(o) ((pointer_type*)o)
 #define to_char(o) ((char_type*)o)
 #define to_native(o) ((native_type*)o)
-
-  typedef struct {
-    ValueType type; 
-  } true_type;
   
   typedef struct cons_cell {
     ValueType type;
@@ -225,8 +230,10 @@ extern "C" {
 
   pointer_type* create_pointer_type(void* p);
   cc create_lambda(void* args, void* code);
+  cc make_cnr(void* cnr);
   
   // Important functions
+  int compare(void* a, void* b);
   void* equal(void* a, void* b); 
   void* eval_list(void* list, void* env);
   void* return_type(void* o); 

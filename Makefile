@@ -1,6 +1,6 @@
 CC=gcc
 PKGS=glib-2.0 cairo pango pangocairo gdk-pixbuf-2.0 sdl3
-#CFLAGS=-Wall -g -pthread $(shell pkg-config --cflags $(PKGS))
+#CFLAGS=-Wall -g -pthread -O3 $(shell pkg-config --cflags $(PKGS))
 CFLAGS=-Wall -g -pthread -O3 
 #LDFLAGS=-pthread -lgc -lgmp $(shell pkg-config --libs $(PKGS)) -lGL
 LDFLAGS=-pthread -lgc -lgmp 
@@ -8,10 +8,10 @@ LEX=flex
 YACC=bison
 YFLAGS=-d
 
-safelisp:  main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o
-	$(CC) $(CFLAGS) -o safelisp main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o $(LDFLAGS)
+safelisp:  main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o rb-tree.o
+	$(CC) $(CFLAGS) -o safelisp main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o $(LDFLAGS)
 
-main.o: main.c safelisp_parser.tab.c safelisp_parser.tab.h safelisp_parser.yy.o
+main.o: main.c safelisp_parser.tab.c safelisp_parser.tab.h safelisp_parser.yy.o 
 	$(CC) $(CFLAGS) -c main.c -o main.o 
 
 rb-tree.o: rb-tree.c rb-tree.h rbtree_template.c rbtree_template.h 

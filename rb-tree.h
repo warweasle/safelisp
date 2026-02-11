@@ -47,19 +47,14 @@ extern "C" {
 
   cc create_rb_node(void* key, cc left, cc right, cc parent);
 
-  typedef int (*RB_CMP_FUNC)(void* data, RB_KEY_TYPE* left, RB_KEY_TYPE* right);
+  typedef int (*RB_CMP_FUNC)(void* data, RB_KEY_TYPE left, RB_KEY_TYPE right);
 
-  void* map_get(cc map, void* object);
-  void* map_set(cc map, void* object, void* value);
-  void* map_rm(cc map, void* object);
+  void* mapget(void* map, void* object);
+  void* mapadd(void* map, void* object, void* value);
+  void* mapset(void* map, void* object, void* value);
+  void* mapdel(void* map, void* object);
   
 #include "rbtree_template.h"
-
-  /* cc rb_search(cc root, void* object, int (*compare)(void* data, const void*, const void*)); */
-  /* cc rb_raw_search(cc root, void* object, int (*compare)(void* data, const void* obj, const void* raw)); */
-  /* void rb_inorder(cc root, void (*visit)(void*)); */
-  /* cc rb_insert(cc root, void* object, int (*compare)(void* data, const void*, const void*)); */
-  /* cc rb_delete(cc root, void* object, int (*compare)(void* data, const void*, const void*)); */
 
 #ifdef __cplusplus
 }

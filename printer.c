@@ -10,8 +10,12 @@ void print(FILE* output, void* o, int base) {
   }
 
   int t = get_type(o);
-
   switch(t) {
+
+  case TYPE_TRUE:
+    fprintf(output, "TRUE");
+    break;
+    
   case TYPE_CONS:
     {
       fprintf(output, "(");
@@ -73,11 +77,7 @@ void print(FILE* output, void* o, int base) {
     fflush(output);
     print(output, to_cons(o)->car, base);
     break;
-	
-  case TYPE_TRUE:
-    fprintf(output, "TRUE");
-    break;
-	
+		
   case TYPE_SYMBOL:
     fprintf(output, "%s", ((string_type*)o)->str);
     break;
@@ -109,8 +109,8 @@ void print(FILE* output, void* o, int base) {
 	fprintf(output, "TYPE");
 	break;
 		
-      case N_NULL:
-	fprintf(output, "NULL");
+      case N_NOT:
+	fprintf(output, "!");
 	break;
 		
       case N_AND:
@@ -164,6 +164,14 @@ void print(FILE* output, void* o, int base) {
       case N_WHILE:
 	fprintf(output, "WHILE");
 	break;
+
+      case N_LET:
+	fprintf(output, "LET");
+	break;
+
+      case N_LAMBDA:
+	fprintf(output, "LAMBDA");
+	break;
 	
       default:
 
@@ -191,6 +199,14 @@ void print(FILE* output, void* o, int base) {
 
   case TYPE_POINTER:
     fprintf(output, "<POINTER:%p>", to_pointer(o)->p);
+    break;
+
+  case TYPE_RB_TREE:
+    fprintf(output, "<MAP:%p>", o);
+    break;
+
+  case TYPE_CNR:
+    fprintf(output, "C%sR", to_string(car(o))->str);
     break;
     
   case TYPE_INT8:

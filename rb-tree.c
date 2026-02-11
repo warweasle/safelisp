@@ -14,25 +14,53 @@ cc create_rb_node(void* key, cc left, cc right, cc parent) {
   return cons(key, cons(left, cons(right, parent)));
 }
 
-int objectCompare(void* data, void* a, void* b) {
+int rbObjectCompare(void* data, void* a, void* b) {
   (void)data; // unused for now
 
-  return 0;
+  return compare(a, b);
 }
 
-
-void* map_get(cc map, void* object) {
-
-  return NULL;
+void* mapget(void* map, void* object) {
+  return cc_rb_find(map, object, rbObjectCompare, NULL);
 }
 
-void* map_set(cc map, void* object, void* value) {
+void* mapadd(void* map, void* object, void* value) {
 
-  return NULL;
+  cc c = to_cons(mapget(map, object));
+
+  if(c) {
+    return ERROR("KEY ALREADY EXISTS!");
+  }
+  // Add instead...
+  else {
+    cc_rb_insert(map, object, rbObjectCompare, NULL);
+  }
+  return value;
 }
 
-void* map_rm(cc map, void* object) {
+void* mapset(void* map, void* object, void* value) {
 
+  cc c = to_cons(mapget(map, object));
+
+  if(c) {
+    
+    if(c && is_cons(c)) {
+      cdr(cons) = value;
+    }
+    else {
+      return ERROR("Not a valid cons cell!");
+    }
+  }
+  // Add instead...
+  else {
+    return ERROR("KEY DOESN'T EXIST!");
+  }
+  return value;
+}
+
+void* mapdel(void* map, void* object) {
+
+  cc_rb_delete(map, object, rbObjectCompare, NULL);
   return NULL;
 }
 

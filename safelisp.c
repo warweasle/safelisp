@@ -4,6 +4,8 @@ void (*old_free)(void*) = free;
 #include "safelisp_parser.yy.h"
 #include "safelisp.h"
 
+ValueType ttrue = TYPE_TRUE;
+
 void *gmp_gc_malloc(size_t size) {
   return GC_malloc(size);
 }
@@ -25,6 +27,8 @@ void* init_safelisp(FILE* input, FILE* output) {
   GC_INIT();
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
 
+  ttrue = TYPE_TRUE;
+  
   void* ret = NULL;
   ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
   ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
@@ -78,9 +82,10 @@ int is_true(void* o) {
     if(mpf_cmp_ui(to_float(o)->num, 0) == 0) return 0;
     else return -1;
 
-  case TYPE_CONS:
-    if(car(o) || cdr(o)) return -1;
-    else return 0;
+    // I don't think this is the best idea.
+  /* case TYPE_CONS: */
+  /*   if(car(o) || cdr(o)) return -1; */
+  /*   else return 0; */
     
   default:
   
@@ -94,6 +99,15 @@ cc cons(void* car, void* cdr) {
   ret->type = TYPE_CONS;
   ret->car = car;
   ret->cdr = cdr;  
+  return ret;
+}
+
+cc make_cnr(void* cnr) {
+  cc ret = (cc) GC_malloc(sizeof(cons_cell));
+
+  ret->type = TYPE_CNR;
+  ret->car = cnr;
+  ret->cdr = NULL;
   return ret;
 }
 
@@ -178,10 +192,7 @@ char_type* create_char_type(char c) {
   return o;
 }
 
-true_type ttrue = {TYPE_TRUE};
-
 void* create_true_type() {
-
   return &ttrue;
 }
 
@@ -322,9 +333,6 @@ resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c)
     printf("Error, not a resizeable string!\n");
     return NULL;
   }
-
-  // If this is the first char, add a space for a null
-  if(arr->pos == 0) arr->pos += 1;
   
   // Is there enough space? 
   if(arr->pos >= arr->len - 2) {
@@ -675,7 +683,7 @@ void* cassoc(char* str, void* list) {
       if(strcmp(str, target->str) == 0) {
 	return car(list);
       }
-  }
+    }
 
   return cassoc(str, cdr(list));
 }
@@ -697,10 +705,20 @@ void* eval(void* list, void* env) {
     
     return car(list);
     break;
-      
-  case TYPE_SYMBOL:
-    return assoc(list, car(env));
 
+  case TYPE_SYMBOL:
+
+    {
+      void* found = assoc(list, car(env));
+      if(found && cdr(found)) {
+	return cdr(found);
+      }
+      else {
+	return ERROR("Could not find symbol!"); 
+      }
+    }
+    break;
+    
   default:
     return list;
   }
@@ -788,7 +806,7 @@ void* eval_list(void* list, void* env) {
     case N_CDR:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  return ERROR("CDR: Requires one argument!!!\n");
+	  return ERROR("CDR: Requires one argument!!!");
 	}
 
 	void* target = car(cdr(list)); 
@@ -832,7 +850,7 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  printf("ERROR: nothing to IF!\n");
+	  printf("ERROR: nothing to IF!");
 	  return NULL;
 	}
 
@@ -861,7 +879,7 @@ void* eval_list(void* list, void* env) {
     case N_COND:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  return ERROR("ERROR: COND requires one argument!\n");
+	  return ERROR("ERROR: COND requires one argument!");
 	}
 
 	for(void* i=car(cdr(list)); i; i = cdr(i)) {
@@ -890,14 +908,14 @@ void* eval_list(void* list, void* env) {
       return return_type(eval(car(cdr(list)), env));
       break;
       
-    case N_NULL:
+    case N_NOT:
       if(!cdr(list)) {
-	printf("NULL requires ONE argument!\n");
+	printf("NOT requires ONE argument!\n");
 	return NULL;
       }
 
       if(cdr(cdr(list))) {
-	printf("NULL requires only ONE argument!\n");
+	printf("NOT requires only ONE argument!\n");
 	return NULL;
       }
 
@@ -995,11 +1013,10 @@ void* eval_list(void* list, void* env) {
 
     case N_TO_STRING:
       {
-	printf("WARNING: TO-STRING is buggy as hell!\n");
 	char *buf = NULL;
 	size_t size = 0;
 
-	if(!cdr(list) || !car(cdr(list))) {
+	if(!cdr(list)) {
 	  printf("TO-STRING requires ONE argument!\n");
 	  return NULL;
 	}
@@ -1035,35 +1052,13 @@ void* eval_list(void* list, void* env) {
 
 	void* name = car(cdr(list));
 	void* value = car(cdr(cdr(list)));
-
-	/* print(stdout, name, 10); */
-	/* printf("\n"); */
-	/* print(stdout, value, 10); */
-	/* printf("\n"); */
-	
-	name = eval(name, env);
-	/* print(stdout, name, 10); */
-	/* printf("\n"); */
-	
-	value = eval(value, env);
-	/* print(stdout, value, 10); */
-	/* printf("\n"); */
-	
 	void* found = assoc(name, car(env));
-	/* printf("assoc returned = "); */
-	/* print(stdout, found, 10); */
-	/* printf("\n"); */
-
-	/* printf("name = "); */
-	/* print(stdout, name, 10); */
-	/* printf("\n"); */
-	
-	
+		
 	if(!found) {
 	  car(env) = cons(cons(name, value), car(env));
 	}
 	else {
-	  car(cdr(cdr(list))) = value;
+	  cdr(found) = value;
 	}
 	return value;
       }
@@ -1075,7 +1070,7 @@ void* eval_list(void* list, void* env) {
 	void* code = cdr(cdr(list));
 
 	//print(stdout, code, 10);
-	printf("\n"); 
+	//printf("\n"); 
 	
 	if(!pred) {
 	  printf("ERROR: nothing to WHILE!\n");
@@ -1145,12 +1140,204 @@ void* eval_list(void* list, void* env) {
       return tread(env);
       break;
       
+    case N_MAPMAKE:
+      return make_rb_tree();
+      break;
+
+    case N_MAPADD:
+      {
+
+	void* tmp1 = cdr(list);
+	if(!tmp1) {
+	  printf("ERROR: MAPADD requires 3 arguments!");
+	  return NULL;
+	}
+
+	void* tmp2 = cdr(tmp1);
+	if(!tmp2) {
+	  printf("ERROR: MAPADD requires 3 arguments!");
+	  return NULL;
+	}
+
+	void* tmp3 = cdr(tmp2);
+	if(!tmp3) {
+	  printf("ERROR: MAPADD requires 3 arguments!");
+	  return NULL;
+	}
+	
+	void* a = eval(car(tmp1), env);
+	void* b = eval(car(tmp2), env);
+	void* c = eval(car(tmp3), env);
+
+	return mapadd(a, b, c);
+      }
+      break;
+      
+    case N_MAPGET:
+      {
+	void* tmp1 = cdr(list);
+	if(!tmp1) {
+	  printf("ERROR: MAPGET requires 2 arguments!");
+	  return NULL;
+	}
+
+	void* tmp2 = cdr(tmp1);
+	if(!tmp2) {
+	  printf("ERROR: MAPGET requires 2 arguments!");
+	  return NULL;
+	}
+	
+	void* a = eval(car(tmp1), env);
+	void* b = eval(car(tmp2), env);
+
+	return mapget(a, b);
+      }
+      break;
+      
+    case N_MAPSET:
+      {
+	void* tmp1 = cdr(list);
+	if(!tmp1) {
+	  printf("ERROR: MAPADD requires 3 arguments!");
+	  return NULL;
+	}
+
+	void* tmp2 = cdr(tmp1);
+	if(!tmp2) {
+	  printf("ERROR: MAPADD requires 3 arguments!");
+	  return NULL;
+	}
+
+	void* tmp3 = cdr(tmp2);
+	if(!tmp3) {
+	  printf("ERROR: MAPADD requires 3 arguments!");
+	  return NULL;
+	}
+	
+	void* a = eval(car(tmp1), env);
+	void* b = eval(car(tmp2), env);
+	void* c = eval(car(tmp3), env);
+
+	return mapset(a, b, c);
+      }
+      break;
+
+    case N_MAPDEL:
+      {
+	void* tmp1 = cdr(list);
+	if(!tmp1) {
+	  printf("ERROR: MAPDEL requires 2 arguments!");
+	  return NULL;
+	}
+
+	void* tmp2 = cdr(tmp1);
+	if(!tmp2) {
+	  printf("ERROR: MAPDEL requires 2 arguments!");
+	  return NULL;
+	}
+	
+	void* a = eval(car(tmp1), env);
+	void* b = eval(car(tmp2), env);
+
+	return mapdel(a, b);
+      }
+      break;
+
+    case N_LET:
+      {
+	if(!cdr(list) || !car(cdr(list))) {
+	  return ERROR("LET requires 2 arguments!");
+	}
+
+	if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
+	  return ERROR("LET requires 2 arguments!");
+	}
+	
+	void* tmp1 = car(cdr(list));
+	
+	// First loop over all the values and eval the values...
+	// Add in the values as we go, it doesn't cost us anything...
+	void* newenv = env;
+
+	// loop over the variables (arg1)
+	for(void* i=tmp1; i; i=cdr(i)) {
+	  
+	  void* pair = car(i);
+	  
+	  void* name = car(pair);
+	  void* value = car(cdr(pair));
+	  
+	  value = eval(value, newenv); 
+	  if(is_error(value)) {
+	    return value;
+	  }
+	  
+	  newenv = cons(cons(cons(name, value), car(newenv)), cdr(newenv));	  
+	}
+	
+	void* ret = NULL;
+	void* tmp2 = cdr(cdr(list));
+
+	// loop over the code...
+	for(void* i=tmp2; i!=NULL; i=cdr(i)) {
+
+	  ret = eval(car(i), newenv);
+	  if(is_error(ret)) {
+	    return ret;
+	  }
+	}
+	return ret;
+      }
+      break;
+      
+    case N_LAMBDA:
+      printf("LAMBDA not yet implemented!!!\n");
+      break;
+      
     default:
 
       printf("Unknown native int function!!!\n");
       return NULL;
     }
 
+  case TYPE_CNR:
+    {
+      if(!cdr(list)) {
+	printf("EVAL requires ONE argument!\n");
+	return NULL;
+      }
+      string_type* str = to_string(car(o));
+      char* cstr = str->str;
+      void* ret = car(cdr(list));
+
+      for(int i=0; cstr[i]; i++) {
+
+	switch(cstr[i]) {
+	case 'a':
+	case 'A':
+
+	  if(!ret) return ERROR("CAR on NULL!");
+	  ret = car(ret);
+	  break;
+
+	case 'd':
+	case 'D':
+	  if(!ret) return ERROR("CDR on NULL!");
+	  ret = cdr(ret);
+	  break;
+
+	default:
+	  return ERROR("Unknown character in CN+R!");
+	  break;
+	}
+
+	if(is_error(ret)) return ret;
+      }
+
+      return ret;
+    }
+    break;
+    
   default:
 
     printf("This type doesn't have a function handler (type = %s)!!!\n", return_type_c_string(o));

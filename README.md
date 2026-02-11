@@ -4,6 +4,8 @@ A small, embeddable, lisp designed to run untrusted code safely.
 
 Safe by default. Unsafe only when explicitly enabled.
 
+Also an environment to test language ideas. 
+
 ---
 
 ## Goals
@@ -36,20 +38,26 @@ SafeLisp uses C Style comments like // or /* */
 
 Symbols are compared without regard to case.
 
+(
+
 This is a work in progress, please look at the safelisp_parser.l for a list of current functions.
 
-```lisp
+```C
 
-"Quote"
+// Quote
 '
 
-"True"
+// True
 TRUE
 
-"FALSE or Nil"
+// False
 NULL
 
-"IF statement"
+// FALSE or Nil 
+(! NULL) or (! 0) or (! 0.0) == TRUE
+// Everything else is TRUE. 
+
+// IF statement
 (? predicate
    if-true)
 
@@ -57,26 +65,52 @@ NULL
    if-true
    if-false)
 
-"COND"
+// switch statement (still thinking about this.)
 (?? (test branch)
     (test branch)
     ...)
 
-"Equality"
+// Equality
 (== a b)
 
-"Setting location"
-(= location 'value)
+// Setting location (Still thinking about this)
+// (= location 'value)
 
-"AND"
+// AND
 (&& true true true... )
 
-"OR"
+// OR
 (|| true true true... )
 
+// NOT (acts as isnull)
+(! TRUE)
 
-"Read Eval Print Loop"
+// Read Eval Print Loop
 (loop (print (eval (read))))
+
+TODO:
+
+// Not if statement.
+(!? predicate
+    if-false
+    if-true)
+
+(when ... only true path..)
+// or
+(?? ....) with ?? becomming switch
+
+(unless ..only false path..)
+// or
+(!?? ....)
+
+// Define function
+(fun name args code)
+
+// return last in block and first in block.
+(PROGN ...)
+(PROG1 ...)
+
+//Add escapes for strings.
 
 ```
 ---
@@ -84,7 +118,7 @@ NULL
 ## Architecture
 
 The parser is made in FLEX and BISON and creates the objects as soon as the text is parsed.
-Unlike tradional lisps, there are no reader macros since it's a security nightmare are rarely used.
+Unlike tradional lisps, there are no reader macros since it's a security nightmare and rarely used.
 SafeLisp uses garbage collection and bignums to minimize errors.
 It also uses short, easy to read functions for minimal mental load.
 It is a scheme-1 which means there is only one symbol space for both functions and variables.

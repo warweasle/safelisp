@@ -1,11 +1,5 @@
 #include <stdio.h>
-
 #include "safelisp.h"
-
-/* #include <SDL3/SDL.h> */
-/* #include <cairo.h> */
-/* #include <pango/pango.h> */
-/* #include <pango/pangocairo.h> */
 
 int main(int argc, char* argv[]) {
 
@@ -13,8 +7,11 @@ int main(int argc, char* argv[]) {
   
   // Call the parser
   void* atom = tread(env);
+
+  // Eval
   atom = eval(atom, env);
 
+  // Print
   print(stdout, atom, 10);
   fputc('\n', stdout);
 

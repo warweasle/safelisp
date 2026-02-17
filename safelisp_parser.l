@@ -249,6 +249,25 @@ return ATOM;}
     return ATOM;
 }
 
+[+] {
+    yylval->p = create_native_int_type(N_ADD);
+    return ATOM;
+}
+
+[-] {
+    yylval->p = create_native_int_type(N_SUB);
+    return ATOM;
+}
+
+[*] {
+    yylval->p = create_native_int_type(N_MULT);
+    return ATOM;
+}
+
+[/] {
+    yylval->p = create_native_int_type(N_DIV);
+    return ATOM;
+}
 
 [a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 
 
@@ -258,6 +277,8 @@ for(i=0; i<yyleng; i++) {
     
     yytext[i] = toupper(yytext[i]);
 }
+
+
 
 yylval->p = create_symbol_and_copy(yyleng, yytext);
 return ATOM;

@@ -83,9 +83,9 @@ int is_true(void* o) {
     else return -1;
 
     // I don't think this is the best idea.
-  /* case TYPE_CONS: */
-  /*   if(car(o) || cdr(o)) return -1; */
-  /*   else return 0; */
+    /* case TYPE_CONS: */
+    /*   if(car(o) || cdr(o)) return -1; */
+    /*   else return 0; */
     
   default:
   
@@ -1092,6 +1092,276 @@ void* eval_list(void* list, void* env) {
       }	
       break;
 
+    case N_ADD:
+      {
+	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
+	  return ERROR("ADD requires at least two arguments!");
+	}
+
+	void* a = car(cdr(list));
+	
+	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
+
+	  void* b = car(i);
+	  
+	  switch(get_type(a)) {
+
+	  case TYPE_INT:
+	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		int_type* result = create_int_type(0);
+		mpz_add(result->num, to_int(a)->num, to_int(b)->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_set_z(af->num, to_int(a)->num);
+		mpf_add(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type(); 
+		mpq_set_z(ar->num, to_int(a)->num);
+		mpq_add(ar->num, ar->num, to_rational(b)->num);
+		a = ar;
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_FLOAT:
+	        
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		float_type* result = create_float_type();
+		mpf_set_z(result->num, to_int(b)->num);
+		mpf_add(result->num, to_float(a)->num, result->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_add(af->num, to_float(a)->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		float_type* ar = create_float_type(); 
+	     	mpf_set_q(ar->num, to_rational(b)->num);
+	        mpf_add(ar->num, to_float(a)->num, ar->num); 
+	        a = ar; 
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_RATIONAL:
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		rational_type* result = create_rational_type();
+		mpq_set_z(result->num, to_int(b)->num);
+		mpq_add(result->num, to_rational(a)->num, result->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_set_z(af->num, to_int(a)->num);
+		mpf_add(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type(); 
+		mpq_set_z(ar->num, to_int(a)->num);
+		mpq_add(ar->num, ar->num, to_rational(b)->num);
+		a = ar;
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  default:
+
+	    return ERROR("Only integers, floats and rationals can be added!");
+		      
+	    break;
+	  }
+	  
+	}
+	
+        return a;
+      }	
+      break;
+
+    case N_SUB:
+      
+      break;
+
+    case N_MULT:
+      {
+	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
+	  return ERROR("ADD requires at least two arguments!");
+	}
+
+	void* a = car(cdr(list));
+	
+	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
+
+	  void* b = car(i);
+	  
+	  switch(get_type(a)) {
+
+	  case TYPE_INT:
+	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		int_type* result = create_int_type(0);
+		mpz_mul(result->num, to_int(a)->num, to_int(b)->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_set_z(af->num, to_int(a)->num);
+		mpf_mul(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type(); 
+		mpq_set_z(ar->num, to_int(a)->num);
+		mpq_mul(ar->num, ar->num, to_rational(b)->num);
+		a = ar;
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_FLOAT:
+
+	    printf("is this running?\n");
+	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		float_type* result = create_float_type();
+		mpf_set_z(result->num, to_int(b)->num);
+		mpf_mul(result->num, to_float(a)->num, result->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_mul(af->num, to_float(a)->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		float_type* ar = create_float_type(); 
+	     	mpf_set_q(ar->num, to_rational(b)->num);
+	        mpf_mul(ar->num, to_float(a)->num, ar->num); 
+	        a = ar; 
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_RATIONAL:
+	    
+	    break;
+
+	  default:
+
+	    return ERROR("Only integers, floats and rationals can be added!");
+		      
+	    break;
+	  }
+	  
+	}
+	
+        return a;
+      }	
+      break;
+
+    case N_DIV:
+      
+      break;
+
+
+      
     case N_BREAK:
       {
 	

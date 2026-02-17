@@ -105,7 +105,11 @@ extern "C" {
 	N_MAPDEL,
 	N_LAMBDA,
 	N_LET,
-	N_CAT
+	N_CAT,
+	N_MULT,
+	N_DIV,
+	N_ADD,
+	N_SUB
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
@@ -117,6 +121,10 @@ extern "C" {
 #define is_error(ptr) (is_type(ptr, TYPE_ERROR))
 #define is_rb_tree(ptr) (is_type(ptr, TYPE_RB_TREE))
 #define is_str(ptr) (is_type(ptr, TYPE_STRING))
+#define is_int(ptr) (is_type(ptr, TYPE_STRING))
+#define is_float(ptr) (is_type(ptr, TYPE_STRING))
+#define is_rational(ptr) (is_type(ptr, TYPE_STRING))
+#define is_number(ptr) (is_int(ptr) || is_float(ptr) || is_rational(ptr))
 #define car(o) (((cons_cell*)o)->car)
 #define cdr(o) (((cons_cell*)o)->cdr)
 #define to_cons(o) ((cons_cell*)o)

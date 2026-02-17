@@ -1095,11 +1095,13 @@ void* eval_list(void* list, void* env) {
 	  return ERROR("ADD requires at least two arguments!");
 	}
 
-	void* a = car(cdr(list));
+	void* a = eval(car(cdr(list)), env);
+	if(is_error(a)) return a;
 	
 	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
 
-	  void* b = car(i);
+	  void* b = eval(car(i), env);
+	  if(is_error(b)) return b;
 	  
 	  switch(get_type(a)) {
 
@@ -1258,7 +1260,8 @@ void* eval_list(void* list, void* env) {
 	  return ERROR("SUB requires at least one argument!");
 	}
 
-	void* a = car(cdr(list));
+	void* a = eval(car(cdr(list)), env);
+	if(is_error(a)) return a;
 
 	if(!cdr(cdr(list))) {
 	  	  
@@ -1294,7 +1297,8 @@ void* eval_list(void* list, void* env) {
 	
 	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
 
-	  void* b = car(i);
+	  void* b = eval(car(i), env);
+	  if(is_error(b)) return b;
 	  
 	  switch(get_type(a)) {
 
@@ -1411,11 +1415,13 @@ void* eval_list(void* list, void* env) {
 	  return ERROR("ADD requires at least two arguments!");
 	}
 
-	void* a = car(cdr(list));
-	
+	void* a = eval(car(cdr(list)), env);
+	if(is_error(a)) return a;
+		
 	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
 
-	  void* b = car(i);
+	  void* b = eval(car(i), env);
+	  if(is_error(b)) return b;
 	  
 	  switch(get_type(a)) {
 
@@ -1532,14 +1538,62 @@ void* eval_list(void* list, void* env) {
     case N_DIV:
       {
 	if(!car(cdr(list))) {
-	  return ERROR("SUB requires at least one argument!");
+	  return ERROR("DIV requires at least one argument!");
 	}
 
-	void* a = car(cdr(list));
+	void* a = eval(car(cdr(list)), env);
+	if(is_error(a)) return a;	
+	if(!cdr(cdr(list))) {
+	  
+	  switch(get_type(a)) {
+	  case TYPE_INT:
+	    {
+	      if(mpz_sgn(to_int(a)->num) == 0) {
+		return ERROR("DIVIDE BY ZERO!!!");
+	      }
+	      
+	      rational_type* ret = create_rational_type(0);
+	      mpq_set_z(ret->num, to_int(a)->num);
+	      mpq_inv(ret->num, ret->num);
+	      mpq_canonicalize(ret->num);
+	      return ret;
+	    }
+	    break;
+	  case TYPE_FLOAT:
+	    {
+	      if (mpf_sgn(to_float(a)->num) == 0) {
+		return ERROR("DIVIDE BY ZERO!!!");
+	      }
+
+	      float_type* ret = create_float_type();
+	      mpf_ui_div(ret->num, 1, to_float(a)->num);
+	      return ret;
+	    }
+	    break;
+	    
+	  case TYPE_RATIONAL:
+	    {
+	      if (mpq_sgn(to_rational(a)->num) == 0) {
+		return ERROR("DIVIDE BY ZERO!!!");
+	      }
+	      
+	      rational_type* ret = create_rational_type(0);
+	      mpq_inv(ret->num, to_rational(a)->num);
+	      return ret;
+	    }
+	    break;
+	    
+	  default:
+	    return ERROR("Only integers, floats and rationals can be added!");	      
+	    break;
+	  }
+	}
+	
 	
 	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
 
-	  void* b = car(i);
+	  void* b = eval(car(i), env);
+	  if(is_error(b)) return a;
 	  
 	  switch(get_type(a)) {
 

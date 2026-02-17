@@ -192,7 +192,6 @@ void print(FILE* output, void* o, int base) {
       default:
 
 	fprintf(output, "UNKNOW_NATIVE");
-		
       }
     }
     break;

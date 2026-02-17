@@ -1129,7 +1129,7 @@ void* eval_list(void* list, void* env) {
 		rational_type* ar = create_rational_type(); 
 		mpq_set_z(ar->num, to_int(a)->num);
 		mpq_add(ar->num, ar->num, to_rational(b)->num);
-		mpq_canonicalize(ar->num);
+		
 		a = ar;
 	      }
 	
@@ -1167,10 +1167,14 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_RATIONAL:
 	      {
-		float_type* ar = create_float_type(); 
-	     	mpf_set_q(ar->num, to_rational(b)->num);
-	        mpf_add(ar->num, to_float(a)->num, ar->num);
-		a = ar; 
+		/// int and rational ... so a rational
+		
+		rational_type* ar = create_rational_type(); 
+	     	mpq_set_z(ar->num, to_int(b)->num);
+	        mpq_add(ar->num, ar->num, to_rational(b)->num);
+		a = ar;
+
+		
 	      }
 	
 	      break;
@@ -1231,6 +1235,17 @@ void* eval_list(void* list, void* env) {
 	    break;
 	  }
 	  
+	}
+
+	if(is_rational(a)) {
+	  mpq_canonicalize(to_rational(a)->num);
+
+	  if (mpz_cmp_ui(mpq_denref(to_rational(a)->num), 1) == 0) {
+
+	    int_type* newint = create_int_type(0);
+	    mpz_set(newint->num, mpq_numref(to_rational(a)->num));
+	    a = newint;
+	  }
 	}
 	
         return a;
@@ -1374,6 +1389,17 @@ void* eval_list(void* list, void* env) {
 	  }
 	  
 	}
+
+	if(is_rational(a)) {
+	  mpq_canonicalize(to_rational(a)->num);
+
+	  if (mpz_cmp_ui(mpq_denref(to_rational(a)->num), 1) == 0) {
+
+	    int_type* newint = create_int_type(0);
+	    mpz_set(newint->num, mpq_numref(to_rational(a)->num));
+	    a = newint;
+	  }
+	}
 	
         return a;
       }	
@@ -1487,6 +1513,17 @@ void* eval_list(void* list, void* env) {
 	  }
 	  
 	}
+
+	if(is_rational(a)) {
+	  mpq_canonicalize(to_rational(a)->num);
+	  
+	  if (mpz_cmp_ui(mpq_denref(to_rational(a)->num), 1) == 0) {
+	    
+	    int_type* newint = create_int_type(0);
+	    mpz_set(newint->num, mpq_numref(to_rational(a)->num));
+	    a = newint;
+	  }
+	}
 	
         return a;
       }	
@@ -1494,10 +1531,6 @@ void* eval_list(void* list, void* env) {
 
     case N_DIV:
       {
-
-	printf("DIV doesn't work yet!!!\n");
-	return ERROR("DIV DOESN't WORK YEt!!!");
-	
 	if(!car(cdr(list))) {
 	  return ERROR("SUB requires at least one argument!");
 	}
@@ -1516,29 +1549,44 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_INT:
 	      {
-		int_type* result = create_int_type(0);
-		mpz_sub(result->num, to_int(a)->num, to_int(b)->num);
-		a = result;
+		if(mpz_sgn(to_int(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+		
+		rational_type* aq = create_rational_type();
+		rational_type* bq = create_rational_type();
+		
+		mpq_set_z(aq->num, to_int(a)->num);
+		mpq_set_z(bq->num, to_int(b)->num);
+		mpq_div(aq->num, aq->num, bq->num);
+		a = aq;
 	      }
 	      break;
 
 	    case TYPE_FLOAT:
 	      {
-		float_type* af = create_float_type(); 
+		if (mpf_sgn(to_float(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+				
+		float_type* af = create_float_type();
 		mpf_set_z(af->num, to_int(a)->num);
-		mpf_sub(af->num, af->num, to_float(b)->num);
+		mpf_div(af->num, af->num, to_float(b)->num);
 		a = af;
 	      }
 	      break;
 
 	    case TYPE_RATIONAL:
 	      {
+		if (mpq_sgn(to_rational(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+				
 		rational_type* ar = create_rational_type(); 
 		mpq_set_z(ar->num, to_int(a)->num);
-		mpq_sub(ar->num, ar->num, to_rational(b)->num);
+		mpq_div(ar->num, ar->num, to_rational(b)->num);
 		a = ar;
 	      }
-	
 	      break;
 
 	    default:
@@ -1556,26 +1604,38 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_INT:
 	      {
+		if(mpz_sgn(to_int(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+				
 		float_type* result = create_float_type();
 		mpf_set_z(result->num, to_int(b)->num);
-		mpf_sub(result->num, to_float(a)->num, result->num);
+		mpf_div(result->num, to_float(a)->num, result->num);
 		a = result;
 	      }
 	      break;
 
 	    case TYPE_FLOAT:
 	      {
+		if (mpf_sgn(to_float(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+		
 		float_type* af = create_float_type(); 
-		mpf_sub(af->num, to_float(a)->num, to_float(b)->num);
+		mpf_div(af->num, to_float(a)->num, to_float(b)->num);
 		a = af;
 	      }
 	      break;
 
 	    case TYPE_RATIONAL:
 	      {
+		if (mpq_sgn(to_rational(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+		
 		float_type* ar = create_float_type(); 
 	     	mpf_set_q(ar->num, to_rational(b)->num);
-	        mpf_sub(ar->num, to_float(a)->num, ar->num); 
+	        mpf_div(ar->num, to_float(a)->num, ar->num); 
 	        a = ar; 
 	      }
 	
@@ -1591,7 +1651,54 @@ void* eval_list(void* list, void* env) {
 	    break;
 
 	  case TYPE_RATIONAL:
-	    
+	    switch(get_type(b)) {
+	      
+	    case TYPE_INT:
+	      {
+		if(mpz_sgn(to_int(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+				
+		rational_type* result = create_rational_type();
+		mpq_set_z(result->num, to_int(b)->num);
+		mpq_div(result->num, to_rational(a)->num, result->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		if (mpf_sgn(to_float(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+		
+		float_type* af = create_float_type();
+		mpf_set_q(af->num, to_rational(a)->num);
+		mpf_div(af->num, to_float(a)->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		if (mpq_sgn(to_rational(b)->num) == 0) {
+		  return ERROR("DIVIDE BY ZERO!!!");
+		}
+		
+		rational_type* ret = create_rational_type(); 
+		mpq_div(ret->num, to_rational(a)->num, to_rational(b)->num); 
+	        a = ret; 
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
 	    break;
 
 	  default:

@@ -202,7 +202,7 @@ void print(FILE* output, void* o, int base) {
     break;
 
   case TYPE_RATIONAL:
-    mpq_out_str(output, base, 0, to_rational(o)->num);
+    mpq_out_str(output, base, to_rational(o)->num);
     break;
     
   case TYPE_STRING:

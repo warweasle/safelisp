@@ -18,8 +18,8 @@ int main(int argc, char* argv[]) {
   print(stdout, atom, 10);
   fputc('\n', stdout);
 
-  print(stdout, env, 10);
-  fputc('\n', stdout);
+  //print(stdout, env, 10);
+  //fputc('\n', stdout);
   
   return 0;
 }

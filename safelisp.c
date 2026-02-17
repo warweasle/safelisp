@@ -1068,9 +1068,6 @@ void* eval_list(void* list, void* env) {
       {
 	void* pred = car(cdr(list));
 	void* code = cdr(cdr(list));
-
-	//print(stdout, code, 10);
-	//printf("\n"); 
 	
 	if(!pred) {
 	  printf("ERROR: nothing to WHILE!\n");
@@ -1132,6 +1129,7 @@ void* eval_list(void* list, void* env) {
 		rational_type* ar = create_rational_type(); 
 		mpq_set_z(ar->num, to_int(a)->num);
 		mpq_add(ar->num, ar->num, to_rational(b)->num);
+		mpq_canonicalize(ar->num);
 		a = ar;
 	      }
 	
@@ -1171,8 +1169,8 @@ void* eval_list(void* list, void* env) {
 	      {
 		float_type* ar = create_float_type(); 
 	     	mpf_set_q(ar->num, to_rational(b)->num);
-	        mpf_add(ar->num, to_float(a)->num, ar->num); 
-	        a = ar; 
+	        mpf_add(ar->num, to_float(a)->num, ar->num);
+		a = ar; 
 	      }
 	
 	      break;

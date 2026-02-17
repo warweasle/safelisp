@@ -172,6 +172,22 @@ void print(FILE* output, void* o, int base) {
       case N_LAMBDA:
 	fprintf(output, "LAMBDA");
 	break;
+
+      case N_ADD:
+	fprintf(output, "+");
+	break;
+	
+      case N_SUB:
+	fprintf(output, "-");
+	break;
+	
+      case N_MULT:
+	fprintf(output, "*");
+	break;
+	
+      case N_DIV:
+	fprintf(output, "/");
+	break;      
 	
       default:
 

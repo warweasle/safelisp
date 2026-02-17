@@ -1238,7 +1238,145 @@ void* eval_list(void* list, void* env) {
       break;
 
     case N_SUB:
-      
+      {
+	if(!car(cdr(list))) {
+	  return ERROR("SUB requires at least one argument!");
+	}
+
+	void* a = car(cdr(list));
+
+	if(!cdr(cdr(list))) {
+	  	  
+	  switch(get_type(a)) {
+	  case TYPE_INT:
+	    {
+	      int_type* ret = create_int_type(0);
+	      mpz_neg(ret->num, to_int(a)->num);
+	      return ret;
+	    }
+	    break;
+	  case TYPE_FLOAT:
+	    {
+	      float_type* ret = create_float_type();
+	      mpf_neg(ret->num, to_float(a)->num);
+	      return ret;
+	    }
+	    break;
+	    
+	  case TYPE_RATIONAL:
+	    {
+	      rational_type* ret = create_rational_type(0);
+	      mpq_neg(ret->num, to_rational(a)->num);
+	      return ret;
+	    }
+	    break;
+	    	    
+	  default:
+	    return ERROR("Only integers, floats and rationals can be added!");	      
+	    break;
+	  }
+	}
+	
+	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
+
+	  void* b = car(i);
+	  
+	  switch(get_type(a)) {
+
+	  case TYPE_INT:
+	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		int_type* result = create_int_type(0);
+		mpz_sub(result->num, to_int(a)->num, to_int(b)->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_set_z(af->num, to_int(a)->num);
+		mpf_sub(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type(); 
+		mpq_set_z(ar->num, to_int(a)->num);
+		mpq_sub(ar->num, ar->num, to_rational(b)->num);
+		a = ar;
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");	      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_FLOAT:
+
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		float_type* result = create_float_type();
+		mpf_set_z(result->num, to_int(b)->num);
+		mpf_sub(result->num, to_float(a)->num, result->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_sub(af->num, to_float(a)->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		float_type* ar = create_float_type(); 
+	     	mpf_set_q(ar->num, to_rational(b)->num);
+	        mpf_sub(ar->num, to_float(a)->num, ar->num); 
+	        a = ar; 
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_RATIONAL:
+	    
+	    break;
+
+	  default:
+
+	    return ERROR("Only integers, floats and rationals can be added!");
+		      
+	    break;
+	  }
+	  
+	}
+	
+        return a;
+      }	
       break;
 
     case N_MULT:
@@ -1355,6 +1493,118 @@ void* eval_list(void* list, void* env) {
       break;
 
     case N_DIV:
+      {
+
+	printf("DIV doesn't work yet!!!\n");
+	return ERROR("DIV DOESN't WORK YEt!!!");
+	
+	if(!car(cdr(list))) {
+	  return ERROR("SUB requires at least one argument!");
+	}
+
+	void* a = car(cdr(list));
+	
+	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
+
+	  void* b = car(i);
+	  
+	  switch(get_type(a)) {
+
+	  case TYPE_INT:
+	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		int_type* result = create_int_type(0);
+		mpz_sub(result->num, to_int(a)->num, to_int(b)->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_set_z(af->num, to_int(a)->num);
+		mpf_sub(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type(); 
+		mpq_set_z(ar->num, to_int(a)->num);
+		mpq_sub(ar->num, ar->num, to_rational(b)->num);
+		a = ar;
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_FLOAT:
+
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		float_type* result = create_float_type();
+		mpf_set_z(result->num, to_int(b)->num);
+		mpf_sub(result->num, to_float(a)->num, result->num);
+		a = result;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type(); 
+		mpf_sub(af->num, to_float(a)->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		float_type* ar = create_float_type(); 
+	     	mpf_set_q(ar->num, to_rational(b)->num);
+	        mpf_sub(ar->num, to_float(a)->num, ar->num); 
+	        a = ar; 
+	      }
+	
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+		      
+	      break;
+	    }
+
+	    break;
+
+	  case TYPE_RATIONAL:
+	    
+	    break;
+
+	  default:
+
+	    return ERROR("Only integers, floats and rationals can be added!");
+		      
+	    break;
+	  }
+	  
+	}
+	
+        return a;
+      }	
       
       break;
 

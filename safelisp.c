@@ -33,7 +33,7 @@ void* init_safelisp(FILE* input, FILE* output) {
   ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
   ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
   
-  return cons(NULL, ret);
+  return cons(cons(NULL, cons(make_rb_tree(), NULL)), ret);
 }
 
 // Set the event flag
@@ -709,13 +709,46 @@ void* eval(void* list, void* env) {
   case TYPE_SYMBOL:
 
     {
-      void* found = assoc(list, car(env));
-      if(found && cdr(found)) {
-	return cdr(found);
+      // !!!!!!!! ENV USED HERE
+
+      // loop over car(env) if it's a list, we do assoc,
+      // if it's an rb_tree then we do a mapget.
+      for(cc i=car(env); i; i=cdr(i)) {
+
+	void* l = car(i);
+
+	switch(get_type(l)) {
+
+	case TYPE_CONS:
+	  {
+	    void* found = assoc(l, list);
+	    if(found && cdr(found)) {
+	      return cdr(found);
+	    }
+	  }
+	  break;
+	  
+	case TYPE_RB_TREE:
+	  {
+	    void* ret = mapget(l, list);
+
+	    if(ret) return ret;
+	  }
+	  
+	  break;
+
+	case TYPE_NULL:
+
+	  break;
+	  
+	default:
+	  ERROR("Unknown type in variable environment."); 
+	  break;	  
+	}
+	
       }
-      else {
-	return ERROR("Could not find symbol!"); 
-      }
+      
+      return ERROR("Could not find symbol!");  
     }
     break;
     
@@ -1773,13 +1806,11 @@ void* eval_list(void* list, void* env) {
       
     case N_BREAK:
       {
-	
+
 	void* pair = cassoc("*BREAK*", cdr(env));
 	if(!pair) {
 	  return ERROR("BREAK outside of LOOP!!!");
 	}
-
-	//print(stdout, list, 10);
 	
 	if(cdr(list) && car(cdr(list))) {
 	  cdr(pair) = eval(car(cdr(list)), env);
@@ -1799,6 +1830,7 @@ void* eval_list(void* list, void* env) {
       if(!start || !car(start)) {
 	return ERROR("LOOP requires at least one argument!");
       }
+
       cdr(env) = cons(cons(create_symbol("*BREAK*"), NULL), cdr(env));
       
       void* i = start;
@@ -1924,6 +1956,10 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
+	// !!! USES ENV
+
+	printf("This is broken, the env has changed to be a list not just one assoc list.\n");
+	
 	if(!cdr(list) || !car(cdr(list))) {
 	  return ERROR("LET requires 2 arguments!");
 	}

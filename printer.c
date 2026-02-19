@@ -217,7 +217,9 @@ void print(FILE* output, void* o, int base) {
     break;
 
   case TYPE_RB_TREE:
-    fprintf(output, "<MAP:%p>", o);
+    fprintf(output, "(MAPMAKE ");
+    print(output, car(o), base);
+    fprintf(output, ")");
     break;
 
   case TYPE_CNR:

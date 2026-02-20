@@ -22,7 +22,9 @@ void gmp_gc_free(void *ptr, size_t size) {
 
 // Initialize a scanner instance for Flex
 yyscan_t scanner;
-  
+
+
+// ENV layout is ((local . global) . internal) 
 void* init_safelisp(FILE* input, FILE* output) {
   GC_INIT();
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
@@ -33,7 +35,7 @@ void* init_safelisp(FILE* input, FILE* output) {
   ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
   ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
   
-  return cons(cons(NULL, cons(make_rb_tree(), NULL)), ret);
+  return cons(cons(NULL, make_rb_tree()), ret);
 }
 
 // Set the event flag
@@ -713,40 +715,12 @@ void* eval(void* list, void* env) {
 
       // loop over car(env) if it's a list, we do assoc,
       // if it's an rb_tree then we do a mapget.
-      for(cc i=car(env); i; i=cdr(i)) {
 
-	void* l = car(i);
+      void* found = assoc(list, car(car(env)));
+      if(found && cdr(found)) return cdr(found);
 
-	switch(get_type(l)) {
-
-	case TYPE_CONS:
-	  {
-	    void* found = assoc(l, list);
-	    if(found && cdr(found)) {
-	      return cdr(found);
-	    }
-	  }
-	  break;
-	  
-	case TYPE_RB_TREE:
-	  {
-	    void* ret = mapget(l, list);
-
-	    if(ret) return ret;
-	  }
-	  
-	  break;
-
-	case TYPE_NULL:
-
-	  break;
-	  
-	default:
-	  ERROR("Unknown type in variable environment."); 
-	  break;	  
-	}
-	
-      }
+      found = mapget(list, cdr(list));
+      if(found) return found;
       
       return ERROR("Could not find symbol!");  
     }

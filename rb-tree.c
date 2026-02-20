@@ -21,7 +21,7 @@ int rbObjectCompare(void* data, void* a, void* b) {
 }
 
 void* mapget(void* map, void* object) {
-  return cc_rb_find(map, object, rbObjectCompare, NULL);
+  return cdr(cc_rb_find(map, object, rbObjectCompare, NULL));
 }
 
 void* mapadd(void* map, void* object, void* value) {

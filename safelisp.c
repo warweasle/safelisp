@@ -713,8 +713,8 @@ void* eval(void* list, void* env) {
     {
       // !!!!!!!! ENV USED HERE
 
-      // loop over car(env) if it's a list, we do assoc,
-      // if it's an rb_tree then we do a mapget.
+      // car is the local variable stack
+      // cdr is the global variable map
 
       void* found = assoc(list, car(car(env)));
       if(found && cdr(found)) return cdr(found);
@@ -1062,7 +1062,10 @@ void* eval_list(void* list, void* env) {
 	void* found = assoc(name, car(env));
 		
 	if(!found) {
-	  car(env) = cons(cons(name, value), car(env));
+	  //car(env) = cons(cons(name, value), car(env));
+	  char err[1024];
+	  sprintf(err, "Variable %s not found!", to_string(name)->str);
+	  return ERROR(err);
 	}
 	else {
 	  cdr(found) = value;
@@ -1930,9 +1933,7 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
-	// !!! USES ENV
-
-	printf("This is broken, the env has changed to be a list not just one assoc list.\n");
+	void* oldenv = car(car(env));
 	
 	if(!cdr(list) || !car(cdr(list))) {
 	  return ERROR("LET requires 2 arguments!");
@@ -1946,7 +1947,7 @@ void* eval_list(void* list, void* env) {
 	
 	// First loop over all the values and eval the values...
 	// Add in the values as we go, it doesn't cost us anything...
-	void* newenv = env;
+	void* newenv = car(env);
 
 	// loop over the variables (arg1)
 	for(void* i=tmp1; i; i=cdr(i)) {
@@ -1958,11 +1959,16 @@ void* eval_list(void* list, void* env) {
 	  
 	  value = eval(value, newenv); 
 	  if(is_error(value)) {
+	    car(car(env)) = oldenv;
 	    return value;
 	  }
-	  
-	  newenv = cons(cons(cons(name, value), car(newenv)), cdr(newenv));	  
+
+	  newenv = cons(cons(name, value),
+			newenv);
+		       
 	}
+
+	car(car(env)) = newenv;
 	
 	void* ret = NULL;
 	void* tmp2 = cdr(cdr(list));
@@ -1970,11 +1976,14 @@ void* eval_list(void* list, void* env) {
 	// loop over the code...
 	for(void* i=tmp2; i!=NULL; i=cdr(i)) {
 
-	  ret = eval(car(i), newenv);
+	  ret = eval(car(i), env);
 	  if(is_error(ret)) {
+
+	    car(car(env)) = oldenv;
 	    return ret;
 	  }
 	}
+	car(car(env)) = oldenv;
 	return ret;
       }
       break;

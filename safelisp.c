@@ -23,8 +23,7 @@ void gmp_gc_free(void *ptr, size_t size) {
 // Initialize a scanner instance for Flex
 yyscan_t scanner;
 
-
-// ENV layout is ((local . global) . internal) 
+// ENV layout is ((local local global) . internal) 
 void* init_safelisp(FILE* input, FILE* output) {
   GC_INIT();
   mp_set_memory_functions(GC_malloc, gmp_gc_realloc, gmp_gc_free);
@@ -35,7 +34,7 @@ void* init_safelisp(FILE* input, FILE* output) {
   ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
   ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
   
-  return cons(cons(NULL, make_rb_tree()), ret);
+  return cons(cons(make_rb_tree(), NULL), ret);
 }
 
 // Set the event flag
@@ -132,6 +131,18 @@ cc error(void* car, void* cdr) {
 
 int is_list(void* list) {
   return is_cons(list);
+}
+
+void* append(void* a, void* b) {
+  if(!a || !is_cons(a)) {
+    return ERROR("APPEND requires the first argument to be a list!");
+  }
+  
+  cc l = last(car(a));
+  
+  l->cdr = b;
+  
+  return a;
 }
 
 int list_length(void* list) {
@@ -692,14 +703,29 @@ void* cassoc(char* str, void* list) {
 
 void* eval(void* list, void* env) {
 
+  printf("eval got: ");
+  print(stdout, list, 10);
+  printf("\n");
+  
   ValueType type = get_type(list);
   
   switch(type) {
 
   case TYPE_CONS:
-    return eval_list(list, env);
-
+    printf("CONS\n");
+    print(stdout, list, 10);
+    printf("\n");
+    {
+      void* p = eval_list(list, env);
+      printf("EVAL CONS...\n");
+      print(stdout, p, 10);
+      printf("\n");
+      
+      return p;
+    }
+    
   case TYPE_QUOTE:
+    printf("QUOTE\n");
     if(!car(list)) {
       printf("Error: quote requires something after it!\n");
       return NULL;
@@ -709,24 +735,58 @@ void* eval(void* list, void* env) {
     break;
 
   case TYPE_SYMBOL:
-
+    printf("SYMBOL\n");
+    print(stdout, list, 10);
+    printf("\n");
+    print(stdout, env, 10);
+    printf("\n");
+    
     {
-      // !!!!!!!! ENV USED HERE
-
-      // car is the local variable stack
-      // cdr is the global variable map
-
-      void* found = assoc(list, car(car(env)));
-      if(found && cdr(found)) return cdr(found);
-
-      found = mapget(list, cdr(list));
-      if(found) return found;
+      void* ret = NULL;
+      void* tail = NULL;
       
+      
+      //!!!!!!!! ENV USED HERE
+      for(void* i=car(env); i; i=cdr(i)) {
+
+	switch(get_type(car(i))) {
+
+	case TYPE_RB_TREE:
+	  {
+	    void* found = mapget(car(i), list);
+	    if(is_error(found)) return found;
+
+	    return cdr(found);
+	  }
+	  break;
+
+	case TYPE_CONS:
+	  {
+	    void* found = assoc(list, car(i));
+	    if(is_error(found)) return found;
+
+	    printf("look at this:\n");
+	    print(stdout, cdr(found), 10);
+	    return cdr(found);
+	  }
+	  break;
+
+	default:
+	  ERROR("Set found an issue with the environment!!!\n");
+	  break;
+	}
+
+      
+      
+      }
+    
       return ERROR("Could not find symbol!");  
     }
     break;
+      
     
   default:
+    //printf("DEFAULT\n");
     return list;
   }
   
@@ -763,16 +823,22 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-  
-  //printf("Type = %i or %s\n", type, return_type_c_string(o));
+  printf("eval_list = ");
+  print(stdout, list, 10);
+  printf("\nType = %i or %s\n", type, return_type_c_string(o));
   
   switch(type) {
   case TYPE_CONS:
+    
     printf("Function calling not yet available!!!\n");
+    print(stdout, list, 10);
+    
     break;
 
   case TYPE_NATIVE_INT:
 
+    printf("NATIVE int?\n");
+    
     switch(to_char(o)->c) {
       
     case N_CONS:
@@ -966,13 +1032,11 @@ void* eval_list(void* list, void* env) {
 	  return NULL;
 	}
 
-	cc tmp = cdr(list); 
+	cc tmp = car(cdr(list)); 
 	
-	cc l = last(car(tmp));
+	cc l = car(cdr(cdr(list))); 
 
-	l->cdr = car(cdr(tmp));
-
-	return car(tmp);
+	return append(tmp, l);
       }
       break;
       
@@ -1059,19 +1123,50 @@ void* eval_list(void* list, void* env) {
 
 	void* name = car(cdr(list));
 	void* value = car(cdr(cdr(list)));
-	void* found = assoc(name, car(env));
-		
-	if(!found) {
-	  //car(env) = cons(cons(name, value), car(env));
-	  char err[1024];
-	  sprintf(err, "Variable %s not found!", to_string(name)->str);
-	  return ERROR(err);
+	
+	for(void* i=car(env); i; i=cdr(i)) {
+
+	  switch(get_type(car(i))) {
+
+	  case TYPE_RB_TREE:
+	    {
+	      void* found = mapget(car(i), name);
+	      if(is_error(found)) return found;
+
+	      if(found) {
+		value = eval(value, env);
+		if(is_error(value)) return value;
+
+		cdr(found) = value;
+	      }
+	      else {
+		mapset(car(i), name, value);
+	      }
+	      return value;
+	    }
+	    break;
+
+	  case TYPE_CONS:
+	    {
+	      void* found = assoc(name, car(i));
+
+	      value = eval(value, env);
+	    
+	      if(is_error(value)) return value;
+	  
+	      cdr(found) = value;
+	      return value;
+	    }
+	    break;
+
+	  default:
+	    ERROR("Set found an issue with the environment!!!\n");
+	    break;
+	  }
+	  
 	}
-	else {
-	  cdr(found) = value;
-	}
-	return value;
       }
+	
       break;
 
     case N_WHILE:
@@ -1802,7 +1897,9 @@ void* eval_list(void* list, void* env) {
       
     case N_LOOP:
 
-      void* oldenv = cdr(env);
+      void* oldenv = NULL;
+      oldenv = cdr(env);
+      
       void* start = cdr(list);
       if(!start || !car(start)) {
 	return ERROR("LOOP requires at least one argument!");
@@ -1933,9 +2030,11 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
-	void* oldenv = car(car(env));
+	printf("\nMORE STUFF LOOK AT ME\n");
+	print(stdout, env, 10);
+	printf("\n");
 	
-	if(!cdr(list) || !car(cdr(list))) {
+       	if(!cdr(list) || !car(cdr(list))) {
 	  return ERROR("LET requires 2 arguments!");
 	}
 
@@ -1944,60 +2043,139 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* tmp1 = car(cdr(list));
+
+	void* frame = NULL;
 	
 	// First loop over all the values and eval the values...
 	// Add in the values as we go, it doesn't cost us anything...
-	void* newenv = car(env);
-
+	void* newenv = cons(car(env), cdr(env)); 
 	// loop over the variables (arg1)
 	for(void* i=tmp1; i; i=cdr(i)) {
 	  
 	  void* pair = car(i);
-	  
 	  void* name = car(pair);
 	  void* value = car(cdr(pair));
-	  
-	  value = eval(value, newenv); 
+
+	  printf("before frame\n");
+	  print(stdout, newenv, 10);
+	  if(!frame) {
+	    printf("\nno frame\n");
+	    value = eval(value, env);
+	  }
+	  else {
+	    printf("\nhas a frame\n");
+	    value = eval(value, newenv);
+	  }
+	  	  	  
 	  if(is_error(value)) {
-	    car(car(env)) = oldenv;
 	    return value;
 	  }
 
-	  newenv = cons(cons(name, value),
-			newenv);
-		       
+	  frame = cons(cons(name, value), frame);
+	  car(newenv) = cons(frame, car(env));	      
 	}
-
-	car(car(env)) = newenv;
 	
 	void* ret = NULL;
 	void* tmp2 = cdr(cdr(list));
 
+	printf("the code for let is: ");
+	print(stdout, tmp2, 10);
+	printf("\n");
+	
 	// loop over the code...
-	for(void* i=tmp2; i!=NULL; i=cdr(i)) {
-
-	  ret = eval(car(i), env);
-	  if(is_error(ret)) {
-
-	    car(car(env)) = oldenv;
-	    return ret;
-	  }
+	for(void* i=tmp2; i; i=cdr(i)) {
+	  ret = eval(car(i), newenv);
+	  if(is_error(ret)) return ret;
 	}
-	car(car(env)) = oldenv;
 	return ret;
       }
       break;
       
     case N_LAMBDA:
-      printf("LAMBDA not yet implemented!!!\n");
+
+      // Lambda is set up as (lambda (args) code) 
+      // but I create a (TYPE_LAMBDA closure args code)
+      // let's just try storing the env itself. 
+      if(!cdr(list) || !car(cdr(list))) {
+	return ERROR("LAMBDA requires 2 arguments!");
+      }
+      
+      if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
+	return ERROR("LAMBDA requires 2 arguments!");
+      }
+
+      return create_lambda(car(env), cons(car(cdr(list)), car(cdr(cdr(list)))));
       break;
       
     default:
-
+      
       printf("Unknown native int function!!!\n");
       return NULL;
     }
 
+  case TYPE_LAMBDA:
+    {
+
+      printf("AAAAAAAAsdkfajsd;lfjad;lfjsj\n");
+      
+      // Ok, this is broken.
+      // I need to add a closure to the lambda list...
+      // when we call it,
+      void* lambda = car(list);
+      void* closure = car(lambda);
+      void* args = car(cdr(lambda));
+      void* vals = car(cdr(list));
+
+      // first deal with the closure...
+      void* l = last(closure);
+      cdr(l) = car(env);
+      void* newenv = cons(l, car(env));
+
+      if(!args) {
+	if(!vals) {
+	  // No arguments so no loop
+	}
+	else {
+	  return ERROR("Sent args to a function and accepts none!");
+	}
+      }
+      else {
+	// figure out how to handle (arg arg . args) later
+	void* nextFrame = NULL;
+	for(void* i = args; i; i=cdr(i)) {
+
+	  vals = cdr(vals);
+	  if(!vals && !car(vals)) {
+	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
+	  }
+	
+	  void* val = eval(car(vals), newenv);	
+	  nextFrame = cons(cons(car(i), val), nextFrame);
+	}
+
+	// set the new env with the lambda list...
+	car(newenv) = cons(nextFrame, car(newenv));
+      }
+      
+      // run the code with the new env
+      void* ret = NULL;
+      for(void* i=cdr(cdr(lambda)); i; i=cdr(i)) {
+
+	ret = eval(car(i), newenv);
+
+	if(is_error(ret)) {
+	  return ret;
+	}
+      }
+
+      // reset the end so we don't mess up the closure.
+      cdr(l) = NULL;
+      
+      return ret;
+    }
+    
+    break;
+    
   case TYPE_CNR:
     {
       if(!cdr(list)) {
@@ -2035,7 +2213,14 @@ void* eval_list(void* list, void* env) {
       return ret;
     }
     break;
-    
+
+  case TYPE_SYMBOL:
+    {
+      printf("is this the one?\n");
+      return eval(o, env);
+    }
+    break;
+        
   default:
 
     printf("This type doesn't have a function handler (type = %s)!!!\n", return_type_c_string(o));

@@ -249,6 +249,7 @@ extern "C" {
   void* cassoc(char* str, void* list);
   void* eval(void* list, void* env);
   void* tread(void* env);
+  void* append(void* a, void* b);
   
 #ifdef __cplusplus
 }

@@ -271,6 +271,14 @@ void print(FILE* output, void* o, int base) {
     fprintf(output, ">");
     break;
 
+  case TYPE_LAMBDA:
+    fprintf(output, "(LAMBDA ");
+    print(output, car(cdr(o)), base);
+    fprintf(output, " ");
+    print(output, cdr(cdr(o)), base);
+    fprintf(output, ")"); 
+
+    break;
 	
   default:
     printf("We have no idea what %p is.\n", o);

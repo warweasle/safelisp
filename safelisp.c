@@ -829,10 +829,15 @@ void* eval_list(void* list, void* env) {
   
   switch(type) {
   case TYPE_CONS:
-    
-    printf("Function calling not yet available!!!\n");
-    print(stdout, list, 10);
-    
+    {
+      void* f = eval_list(car(list), env);
+      if(is_error(f)) return f;
+
+      void* args = eval_rest(cdr(list), env);
+      if(is_error(args)) return args;
+      
+      return eval_list(cons(f, args), env);
+    }
     break;
 
   case TYPE_NATIVE_INT:
@@ -2118,17 +2123,21 @@ void* eval_list(void* list, void* env) {
 
       printf("AAAAAAAAsdkfajsd;lfjad;lfjsj\n");
       
-      // Ok, this is broken.
-      // I need to add a closure to the lambda list...
-      // when we call it,
+      /* // Ok, this is broken. */
+      /* // I need to add a closure to the lambda list... */
+      /* // when we call it, */
       void* lambda = car(list);
       void* closure = car(lambda);
       void* args = car(cdr(lambda));
-      void* vals = car(cdr(list));
+      void* vals = cdr(list);
 
+      printf("vals = ");
+      print(stdout, vals, 10);
+      printf("\n");
+      
       // first deal with the closure...
       void* l = last(closure);
-      cdr(l) = car(env);
+      cdr(l) = car(car(env));
       void* newenv = cons(l, car(env));
 
       if(!args) {
@@ -2141,16 +2150,24 @@ void* eval_list(void* list, void* env) {
       }
       else {
 	// figure out how to handle (arg arg . args) later
+
+	printf("BBBBBBBBBBBBBBBBB\n");
+	
 	void* nextFrame = NULL;
 	for(void* i = args; i; i=cdr(i)) {
 
-	  vals = cdr(vals);
-	  if(!vals && !car(vals)) {
+	  printf("CCCCCCCCCCCCCCCCC\n");
+	  
+	  printf("DDDDDDDDDDDDDDDDD\n");
+	  if(!vals) {
 	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
 	  }
-	
-	  void* val = eval(car(vals), newenv);	
+
+	  
+	  
+	  void* val = eval(car(vals), newenv);
 	  nextFrame = cons(cons(car(i), val), nextFrame);
+	  vals = cdr(vals);
 	}
 
 	// set the new env with the lambda list...
@@ -2173,7 +2190,8 @@ void* eval_list(void* list, void* env) {
       
       return ret;
     }
-    
+
+    return NULL;
     break;
     
   case TYPE_CNR:

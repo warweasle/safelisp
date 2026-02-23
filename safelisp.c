@@ -703,24 +703,13 @@ void* cassoc(char* str, void* list) {
 
 void* eval(void* list, void* env) {
 
-  printf("eval got: ");
-  print(stdout, list, 10);
-  printf("\n");
-  
   ValueType type = get_type(list);
   
   switch(type) {
 
   case TYPE_CONS:
-    printf("CONS\n");
-    print(stdout, list, 10);
-    printf("\n");
     {
       void* p = eval_list(list, env);
-      printf("EVAL CONS...\n");
-      print(stdout, p, 10);
-      printf("\n");
-      
       return p;
     }
     
@@ -735,12 +724,6 @@ void* eval(void* list, void* env) {
     break;
 
   case TYPE_SYMBOL:
-    printf("SYMBOL\n");
-    print(stdout, list, 10);
-    printf("\n");
-    print(stdout, env, 10);
-    printf("\n");
-    
     {
       void* ret = NULL;
       void* tail = NULL;
@@ -765,8 +748,6 @@ void* eval(void* list, void* env) {
 	    void* found = assoc(list, car(i));
 	    if(is_error(found)) return found;
 
-	    printf("look at this:\n");
-	    print(stdout, cdr(found), 10);
 	    return cdr(found);
 	  }
 	  break;
@@ -823,9 +804,9 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-  printf("eval_list = ");
-  print(stdout, list, 10);
-  printf("\nType = %i or %s\n", type, return_type_c_string(o));
+  //printf("eval_list = ");
+  //print(stdout, list, 10);
+  //printf("\nType = %i or %s\n", type, return_type_c_string(o));
   
   switch(type) {
   case TYPE_CONS:
@@ -842,8 +823,6 @@ void* eval_list(void* list, void* env) {
 
   case TYPE_NATIVE_INT:
 
-    printf("NATIVE int?\n");
-    
     switch(to_char(o)->c) {
       
     case N_CONS:
@@ -2121,58 +2100,34 @@ void* eval_list(void* list, void* env) {
   case TYPE_LAMBDA:
     {
 
-      printf("AAAAAAAAsdkfajsd;lfjad;lfjsj\n");
-      
-      /* // Ok, this is broken. */
-      /* // I need to add a closure to the lambda list... */
-      /* // when we call it, */
       void* lambda = car(list);
       void* closure = car(lambda);
       void* args = car(cdr(lambda));
       void* vals = cdr(list);
 
-      printf("vals = ");
-      print(stdout, vals, 10);
-      printf("\n");
-      
       // first deal with the closure...
       void* l = last(closure);
       cdr(l) = car(car(env));
       void* newenv = cons(l, car(env));
 
-      if(!args) {
+      if(!args && vals) return ERROR("Sent args to a function and accepts none!");
+      
+      
+      void* nextFrame = NULL;
+      for(void* i = args; i; i=cdr(i)) {
+
 	if(!vals) {
-	  // No arguments so no loop
+	  return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
 	}
-	else {
-	  return ERROR("Sent args to a function and accepts none!");
-	}
+
+	void* val = eval(car(vals), newenv);
+	nextFrame = cons(cons(car(i), val), nextFrame);
+	vals = cdr(vals);
       }
-      else {
-	// figure out how to handle (arg arg . args) later
 
-	printf("BBBBBBBBBBBBBBBBB\n");
-	
-	void* nextFrame = NULL;
-	for(void* i = args; i; i=cdr(i)) {
-
-	  printf("CCCCCCCCCCCCCCCCC\n");
-	  
-	  printf("DDDDDDDDDDDDDDDDD\n");
-	  if(!vals) {
-	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
-	  }
-
-	  
-	  
-	  void* val = eval(car(vals), newenv);
-	  nextFrame = cons(cons(car(i), val), nextFrame);
-	  vals = cdr(vals);
-	}
-
-	// set the new env with the lambda list...
-	car(newenv) = cons(nextFrame, car(newenv));
-      }
+      // set the new env with the lambda list...
+      car(newenv) = cons(nextFrame, car(newenv));
+      
       
       // run the code with the new env
       void* ret = NULL;

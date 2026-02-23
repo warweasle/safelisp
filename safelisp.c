@@ -709,6 +709,8 @@ void* eval(void* list, void* env) {
 
   case TYPE_CONS:
     {
+
+      printf("type found as CONS: %s\n", return_type_c_string(car(list)));
       void* p = eval_list(list, env);
       return p;
     }
@@ -725,17 +727,20 @@ void* eval(void* list, void* env) {
 
   case TYPE_SYMBOL:
     {
-      void* ret = NULL;
-      void* tail = NULL;
-      
-      
-      //!!!!!!!! ENV USED HERE
+      printf("TYPE SYMBOL FOUND IN EVAL()\n");
+
       for(void* i=car(env); i; i=cdr(i)) {
 
+	printf("looping in the vars...\n");
+	print(stdout, i, 10);
+	printf("\n");
+	
 	switch(get_type(car(i))) {
 
 	case TYPE_RB_TREE:
 	  {
+	    printf("rb tree\n");
+	    
 	    void* found = mapget(car(i), list);
 	    if(is_error(found)) return found;
 
@@ -745,8 +750,16 @@ void* eval(void* list, void* env) {
 
 	case TYPE_CONS:
 	  {
+	    printf("CONS\n");
+	    print(stdout, i, 10);
+	    printf("\n");
+	    
 	    void* found = assoc(list, car(i));
-	    if(is_error(found)) return found;
+	    printf("found = ");
+	    print(stdout, cdr(found), 10);
+	    printf("\n");
+	    
+	    if(is_error(found)) return cdr(found);
 
 	    return cdr(found);
 	  }
@@ -756,9 +769,6 @@ void* eval(void* list, void* env) {
 	  ERROR("Set found an issue with the environment!!!\n");
 	  break;
 	}
-
-      
-      
       }
     
       return ERROR("Could not find symbol!");  
@@ -804,9 +814,10 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-  //printf("eval_list = ");
-  //print(stdout, list, 10);
-  //printf("\nType = %i or %s\n", type, return_type_c_string(o));
+  printf("eval_list = ");
+  printf("\nType = %i or %s\n", type, return_type_c_string(o));
+  print(stdout, list, 10);
+  printf("\n");
   
   switch(type) {
   case TYPE_CONS:
@@ -814,7 +825,7 @@ void* eval_list(void* list, void* env) {
       void* f = eval_list(car(list), env);
       if(is_error(f)) return f;
 
-      void* args = eval_rest(cdr(list), env);
+      void* args = eval_list(cdr(list), env);
       if(is_error(args)) return args;
       
       return eval_list(cons(f, args), env);
@@ -2014,7 +2025,7 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
-	printf("\nMORE STUFF LOOK AT ME\n");
+	printf("\nLET STARTED...\n");
 	print(stdout, env, 10);
 	printf("\n");
 	
@@ -2040,14 +2051,13 @@ void* eval_list(void* list, void* env) {
 	  void* name = car(pair);
 	  void* value = car(cdr(pair));
 
-	  printf("before frame\n");
-	  print(stdout, newenv, 10);
 	  if(!frame) {
 	    printf("\nno frame\n");
 	    value = eval(value, env);
 	  }
 	  else {
 	    printf("\nhas a frame\n");
+	    
 	    value = eval(value, newenv);
 	  }
 	  	  	  
@@ -2056,7 +2066,8 @@ void* eval_list(void* list, void* env) {
 	  }
 
 	  frame = cons(cons(name, value), frame);
-	  car(newenv) = cons(frame, car(env));	      
+	  car(newenv) = cons(frame, car(env));
+	  print(stdout, newenv, 10);
 	}
 	
 	void* ret = NULL;
@@ -2068,10 +2079,18 @@ void* eval_list(void* list, void* env) {
 	
 	// loop over the code...
 	for(void* i=tmp2; i; i=cdr(i)) {
-	  ret = eval(car(i), newenv);
+	  printf("eval_list sent...");
+	  print(stdout, i, 10);
+	  printf("\n");
+	  ret = eval_list(car(i), newenv);
+	  printf("eval_list returned...");
+	  print(stdout, ret, 10);
+	  printf("\n");
+	  
 	  if(is_error(ret)) return ret;
 	}
 	return ret;
+	return NULL;
       }
       break;
       
@@ -2189,7 +2208,8 @@ void* eval_list(void* list, void* env) {
 
   case TYPE_SYMBOL:
     {
-      printf("is this the one?\n");
+      // ok, we need to do more...
+      
       return eval(o, env);
     }
     break;

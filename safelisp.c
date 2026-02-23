@@ -2088,7 +2088,7 @@ void* eval_list(void* list, void* env) {
 	return ERROR("LAMBDA requires 2 arguments!");
       }
 
-      return create_lambda(car(env), cons(car(cdr(list)), car(cdr(cdr(list)))));
+      return create_lambda(car(env), cons(car(cdr(list)), cdr(cdr(list))));
       break;
       
     default:

@@ -711,9 +711,9 @@ void* eval(void* list, void* env) {
 
   ValueType type = get_type(list);
 
-  /* printf("type found as: %s\n", return_type_c_string(list)); */
-  /* print(stdout, list, 10); */
-  /* printf("\n"); */
+  printf("eval type found as: %s\n", return_type_c_string(list));
+  print(stdout, list, 10);
+  printf("\n");
   
   switch(type) {
 
@@ -738,6 +738,9 @@ void* eval(void* list, void* env) {
   case TYPE_SYMBOL:
     {
 
+      // I think this should be my problem!!!!!
+      // I need to treat this like a (symbol item item...)
+      
       for(void* i=car(env); i; i=cdr(i)) {
 
 	switch(get_type(car(i))) {
@@ -807,14 +810,16 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-  /* printf("eval_list = "); */
-  /* printf("\nType = %i or %s\n", type, return_type_c_string(o)); */
-  /* print(stdout, list, 10); */
-  /* printf("\n"); */
+  printf("eval_list = ");
+  printf("\nType = %i or %s\n", type, return_type_c_string(o));
+  print(stdout, list, 10);
+  printf("\n");
    
   switch(type) {
   case TYPE_CONS:
     {
+      printf("THIS IS THE CONS?\n");
+      
       void* f = eval(car(list), env);
       if(is_error(f)) return f;
 
@@ -836,6 +841,10 @@ void* eval_list(void* list, void* env) {
 	}
       }
 
+      printf("this is the eval...\n");
+      print(stdout, f, 10);
+      printf("\n");
+      
       return eval(cons(f, args), env);
       
       // now we should ahve something that can be called...
@@ -2042,11 +2051,11 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
-	/* printf("\nLET STARTED...\n"); */
-	/* print(stdout, car(cdr(list)), 10); */
-	/* printf("\n"); */
-	/* print(stdout, env, 10); */
-	/* printf("\n"); */
+	printf("\nLET STARTED...\n");
+	print(stdout, car(cdr(list)), 10);
+	printf("\n");
+	print(stdout, env, 10);
+	printf("\n");
 	
        	if(!cdr(list) || !car(cdr(list))) {
 	  return ERROR("LET requires 2 arguments!");
@@ -2066,6 +2075,8 @@ void* eval_list(void* list, void* env) {
 	// loop over the variables (arg1)
 	for(void* i=vars; i; i=cdr(i)) {
 
+	  printf("again !!!\n");
+	  
 	  void* pair = car(i);
 	  void* name = car(pair);
 	  void* value = car(cdr(pair));
@@ -2076,7 +2087,7 @@ void* eval_list(void* list, void* env) {
 	  else {
 	    value = eval(value, newenv);
 	  }
-	  	  	  
+
 	  if(is_error(value)) {
 	    return value;
 	  }
@@ -2088,14 +2099,28 @@ void* eval_list(void* list, void* env) {
 	}
 	  
 	void* ret = NULL;
+	
+	
 	void* code = cdr(cdr(list));
-
 	// loop over the code...
 	for(void* i=code; i; i=cdr(i)) {
-	  void* tmp = eval(car(i), newenv);
+
+	  printf("code = ");
+	  print(stdout, car(i), 10);
+	  printf("\n");
+	  void* tmp = eval(car(i), newenv);;
+
+	  printf("ret = ");
+	  print(stdout, tmp, 10);
+	  printf("\n");
 	  if(is_error(tmp)) return tmp;
+
 	  ret = tmp;
 	}
+
+	printf("added to env  = ");
+	  print(stdout, ret, 10);
+	  printf("\n");
 	return ret;
       }
       break;
@@ -2125,6 +2150,7 @@ void* eval_list(void* list, void* env) {
   case TYPE_LAMBDA:
     {
 
+      printf("LAMBDA!!!\n");
       void* lambda = car(list);
       void* closure = car(lambda);
       void* args = car(cdr(lambda));
@@ -2219,6 +2245,7 @@ void* eval_list(void* list, void* env) {
   case TYPE_SYMBOL:
     {
       // ok, we need to do more...
+      printf("is this the problem?\n");
       
       return eval(o, env);
     }

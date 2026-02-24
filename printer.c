@@ -170,7 +170,7 @@ void print(FILE* output, void* o, int base) {
 	break;
 
       case N_LAMBDA:
-	fprintf(output, "LAMBDA");
+	fprintf(output, "lambda");
 	break;
 
       case N_ADD:

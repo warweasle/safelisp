@@ -732,7 +732,6 @@ void* eval(void* list, void* env) {
       for(void* i=car(env); i; i=cdr(i)) {
 
 	printf("looping in the vars...\n");
-	print(stdout, i, 10);
 	printf("\n");
 	
 	switch(get_type(car(i))) {
@@ -747,21 +746,17 @@ void* eval(void* list, void* env) {
 	    return cdr(found);
 	  }
 	  break;
-
+	  
 	case TYPE_CONS:
 	  {
-	    printf("CONS\n");
-	    print(stdout, i, 10);
-	    printf("\n");
+	    printf("CONS =");
+	    void* tmp = assoc(list, car(i));
+	    if(is_error(tmp)) return tmp;
 	    
-	    void* found = assoc(list, car(i));
-	    printf("found = ");
-	    print(stdout, cdr(found), 10);
+	       
+	    print(stdout, cdr(tmp), 10);
 	    printf("\n");
-	    
-	    if(is_error(found)) return cdr(found);
-
-	    return cdr(found);
+	    return cdr(tmp);
 	  }
 	  break;
 
@@ -814,21 +809,43 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-  printf("eval_list = ");
-  printf("\nType = %i or %s\n", type, return_type_c_string(o));
-  print(stdout, list, 10);
-  printf("\n");
-  
+  /* printf("eval_list = "); */
+  /* printf("\nType = %i or %s\n", type, return_type_c_string(o)); */
+  /* print(stdout, list, 10); */
+  /* printf("\n"); */
+   
   switch(type) {
   case TYPE_CONS:
     {
-      void* f = eval_list(car(list), env);
+      void* f = eval(car(list), env);
       if(is_error(f)) return f;
 
-      void* args = eval_list(cdr(list), env);
-      if(is_error(args)) return args;
+      void* args = NULL;
+      void* last = NULL;
       
-      return eval_list(cons(f, args), env);
+      for(void* i=cdr(list); i; i=cdr(i)) {
+
+	void* a = eval(car(i), env);
+	if(is_error(a)) return a;
+	
+	if(args == NULL) {
+	  args = cons(a, NULL);
+	  last = args;
+	}
+	else {
+	  cdr(last) = cons(a, NULL);
+	  last = cdr(last);
+	}
+      }
+
+      return eval(cons(f, args), env);
+      
+      // now we should ahve something that can be called...
+      
+      //void* args = eval_list(cdr(list), env);
+      //if(is_error(args)) return args;
+      
+      //return eval_list(cons(f, args), env);
     }
     break;
 
@@ -2071,25 +2088,36 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* ret = NULL;
+	void* last = NULL;
 	void* tmp2 = cdr(cdr(list));
 
 	printf("the code for let is: ");
 	print(stdout, tmp2, 10);
 	printf("\n");
+
+	
 	
 	// loop over the code...
 	for(void* i=tmp2; i; i=cdr(i)) {
 	  printf("eval_list sent...");
 	  print(stdout, i, 10);
 	  printf("\n");
-	  ret = eval_list(car(i), newenv);
+	  void* tmp = eval_list(car(i), newenv);
 	  printf("eval_list returned...");
-	  print(stdout, ret, 10);
+	  print(stdout, tmp, 10);
 	  printf("\n");
+
+	  if(!ret) {
+	    ret = cons(tmp, NULL);
+	    last = ret;
+	  }
+	  else {
+	    cdr(last) = cons(tmp, NULL);
+	    last = cdr(last);
+	  }
 	  
-	  if(is_error(ret)) return ret;
+	  return eval(ret, newenv);
 	}
-	return ret;
 	return NULL;
       }
       break;
@@ -2130,8 +2158,12 @@ void* eval_list(void* list, void* env) {
       void* newenv = cons(l, car(env));
 
       if(!args && vals) return ERROR("Sent args to a function and accepts none!");
-      
-      
+
+      /* printf("liat = "); print(stdout, list, 10); */
+      /* printf("\nargs = "); print(stdout, args, 10); */
+      /* printf("\nvals = "); print(stdout, vals, 10); */
+      /* printf("\n"); */
+       
       void* nextFrame = NULL;
       for(void* i = args; i; i=cdr(i)) {
 

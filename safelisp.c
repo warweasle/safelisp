@@ -395,19 +395,11 @@ resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* 
   return arr;
 }
 
-int string_compare(const void* a, const void* b) {
+int string_compare(void* a, void* b) {
    
-  /* if (!is_str(a) || !is_str(b)) { */
-  /*   printf("is this erroring?\n"); */
-  /*   return 0; // Consider returning 0 or handle the error as appropriate */
-  /* } */
-
-  const string_type* str1 = (const string_type*)a;
-  const string_type* str2 = (const string_type*)b;  
-
-  int ret = strcmp(str1->str, str2->str);
-    
   // Compare the strings
+  int ret = strcmp(to_string(a)->str, to_string(b)->str);
+  
   return ret;
 }
 
@@ -473,7 +465,7 @@ int compare_lists(cc a, cc b) {
 int compare(void* a, void* b) {
 
   if(a == b) return 0;
-  
+
   ValueType at = get_type(a);
   ValueType bt = get_type(b);
 
@@ -569,7 +561,15 @@ int compare(void* a, void* b) {
 }
 
 void* equal(void* a, void* b) {
+
+  printf("equal a = ");
+  print(stdout,a, 10);
+  printf("\nequal b = ");
+  print(stdout,b, 10);
+  printf("\n");
+  
   if(compare(a, b) == 0) {
+    printf("equal from compare?");
     return create_true_type();
   }
   else {
@@ -671,16 +671,23 @@ void* return_type(void* o) {
 void* assoc(void* item, void* list) {
   if(list == NULL) return NULL;
 
-  if(car(list)) {
-    if (car(car(list))) 
+  /* printf("\nASSOC!!!\n"); */
+  /* print(stdout, item, 10); */
+  /* printf("\n"); */
+  /* print(stdout, list, 10); */
+  /* printf("\n"); */
+
+  for(void* i=list; i; i=cdr(i)) {
+    if (car(car(i))) 
       {
-	if(equal(item, car(car(list)))){
-	  return car(list);	  
-	}	
-      }
+	if(compare(item, car(car(i))) == 0) { 
+	  return car(i);	  
+	}
+	
+      }    
   }
   
-  return assoc(item, cdr(list));
+  return NULL;
 }
 
 void* cassoc(char* str, void* list) {
@@ -690,7 +697,6 @@ void* cassoc(char* str, void* list) {
   if(car(list) && 
      car(car(list)))
     {
-
       string_type* target = to_string(car(car(list)));
       
       if(strcmp(str, target->str) == 0) {
@@ -704,13 +710,17 @@ void* cassoc(char* str, void* list) {
 void* eval(void* list, void* env) {
 
   ValueType type = get_type(list);
+
+  /* printf("type found as: %s\n", return_type_c_string(list)); */
+  /* print(stdout, list, 10); */
+  /* printf("\n"); */
   
   switch(type) {
 
   case TYPE_CONS:
     {
 
-      //printf("type found as CONS: %s\n", return_type_c_string(car(list)));
+      
       void* p = eval_list(list, env);
       return p;
     }
@@ -727,26 +737,24 @@ void* eval(void* list, void* env) {
 
   case TYPE_SYMBOL:
     {
+
       for(void* i=car(env); i; i=cdr(i)) {
 
 	switch(get_type(car(i))) {
 
 	case TYPE_RB_TREE:
 	  {
-	    printf("rb tree\n");
-	    
 	    void* found = mapget(car(i), list);
-	    if(is_error(found)) return found;
-
-	    return cdr(found);
+	    if(found) return found;
 	  }
 	  break;
 	  
 	case TYPE_CONS:
 	  {
 	    void* tmp = assoc(list, car(i));
-	    if(is_error(tmp)) return tmp;
-	    return cdr(tmp);
+	    if(tmp) {
+	      return cdr(tmp);
+	    }
 	  }
 	  break;
 
@@ -755,7 +763,7 @@ void* eval(void* list, void* env) {
 	  break;
 	}
       }
-    
+
       return ERROR("Could not find symbol!");  
     }
     break;
@@ -1201,8 +1209,8 @@ void* eval_list(void* list, void* env) {
 	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
 	  return ERROR("ADD requires at least two arguments!");
 	}
-
 	void* a = eval(car(cdr(list)), env);
+	
 	if(is_error(a)) return a;
 	
 	for(cc i = cdr(cdr(list)); i; i=cdr(i)) {
@@ -1218,6 +1226,7 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_INT:
 	      {
+
 		int_type* result = create_int_type(0);
 		mpz_add(result->num, to_int(a)->num, to_int(b)->num);
 		a = result;
@@ -1710,6 +1719,7 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_INT:
 	      {
+				
 		if(mpz_sgn(to_int(b)->num) == 0) {
 		  return ERROR("DIVIDE BY ZERO!!!");
 		}
@@ -2032,9 +2042,11 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
-	printf("\nLET STARTED...\n");
-	print(stdout, env, 10);
-	printf("\n");
+	/* printf("\nLET STARTED...\n"); */
+	/* print(stdout, car(cdr(list)), 10); */
+	/* printf("\n"); */
+	/* print(stdout, env, 10); */
+	/* printf("\n"); */
 	
        	if(!cdr(list) || !car(cdr(list))) {
 	  return ERROR("LET requires 2 arguments!");
@@ -2044,7 +2056,7 @@ void* eval_list(void* list, void* env) {
 	  return ERROR("LET requires 2 arguments!");
 	}
 	
-	void* tmp1 = car(cdr(list));
+	void* vars = car(cdr(list));
 
 	void* frame = NULL;
 	
@@ -2052,19 +2064,16 @@ void* eval_list(void* list, void* env) {
 	// Add in the values as we go, it doesn't cost us anything...
 	void* newenv = cons(car(env), cdr(env)); 
 	// loop over the variables (arg1)
-	for(void* i=tmp1; i; i=cdr(i)) {
-	  
+	for(void* i=vars; i; i=cdr(i)) {
+
 	  void* pair = car(i);
 	  void* name = car(pair);
 	  void* value = car(cdr(pair));
-
+	  
 	  if(!frame) {
-	    printf("\nno frame\n");
 	    value = eval(value, env);
 	  }
 	  else {
-	    printf("\nhas a frame\n");
-	    
 	    value = eval(value, newenv);
 	  }
 	  	  	  
@@ -2073,27 +2082,18 @@ void* eval_list(void* list, void* env) {
 	  }
 
 	  frame = cons(cons(name, value), frame);
+	  
 	  car(newenv) = cons(frame, car(env));
-	  print(stdout, newenv, 10);
+	  
 	}
-	
+	  
 	void* ret = NULL;
-	void* tmp2 = cdr(cdr(list));
-
-	printf("the code for let is: ");
-	print(stdout, tmp2, 10);
-	printf("\n");
+	void* code = cdr(cdr(list));
 
 	// loop over the code...
-	for(void* i=tmp2; i; i=cdr(i)) {
-	  printf("eval sent...");
-	  print(stdout, i, 10);
-	  printf("\n");
+	for(void* i=code; i; i=cdr(i)) {
 	  void* tmp = eval(car(i), newenv);
-	  printf("eval returned...");
-	  print(stdout, tmp, 10);
-	  printf("\n");
-
+	  if(is_error(tmp)) return tmp;
 	  ret = tmp;
 	}
 	return ret;

@@ -214,7 +214,7 @@ extern "C" {
   string_type* create_string_type(size_t len, ValueType Type);
   string_type* create_string_type_and_copy(size_t len, const char* str, ValueType Type);
   string_type* create_string_type_from_string(const char* str, ValueType Type);
-  int string_compare(const void* a, const void* b);
+  int string_compare(void* a, void* b);
   int raw_string_compare(const void* a, const void* b);
   string_type* create_symbol(const char* str);
   string_type* create_symbol_and_copy(size_t len, const char* str);

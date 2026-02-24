@@ -710,7 +710,7 @@ void* eval(void* list, void* env) {
   case TYPE_CONS:
     {
 
-      printf("type found as CONS: %s\n", return_type_c_string(car(list)));
+      //printf("type found as CONS: %s\n", return_type_c_string(car(list)));
       void* p = eval_list(list, env);
       return p;
     }
@@ -727,13 +727,8 @@ void* eval(void* list, void* env) {
 
   case TYPE_SYMBOL:
     {
-      printf("TYPE SYMBOL FOUND IN EVAL()\n");
-
       for(void* i=car(env); i; i=cdr(i)) {
 
-	printf("looping in the vars...\n");
-	printf("\n");
-	
 	switch(get_type(car(i))) {
 
 	case TYPE_RB_TREE:
@@ -749,13 +744,8 @@ void* eval(void* list, void* env) {
 	  
 	case TYPE_CONS:
 	  {
-	    printf("CONS =");
 	    void* tmp = assoc(list, car(i));
 	    if(is_error(tmp)) return tmp;
-	    
-	       
-	    print(stdout, cdr(tmp), 10);
-	    printf("\n");
 	    return cdr(tmp);
 	  }
 	  break;
@@ -2088,37 +2078,25 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* ret = NULL;
-	void* last = NULL;
 	void* tmp2 = cdr(cdr(list));
 
 	printf("the code for let is: ");
 	print(stdout, tmp2, 10);
 	printf("\n");
 
-	
-	
 	// loop over the code...
 	for(void* i=tmp2; i; i=cdr(i)) {
-	  printf("eval_list sent...");
+	  printf("eval sent...");
 	  print(stdout, i, 10);
 	  printf("\n");
-	  void* tmp = eval_list(car(i), newenv);
-	  printf("eval_list returned...");
+	  void* tmp = eval(car(i), newenv);
+	  printf("eval returned...");
 	  print(stdout, tmp, 10);
 	  printf("\n");
 
-	  if(!ret) {
-	    ret = cons(tmp, NULL);
-	    last = ret;
-	  }
-	  else {
-	    cdr(last) = cons(tmp, NULL);
-	    last = cdr(last);
-	  }
-	  
-	  return eval(ret, newenv);
+	  ret = tmp;
 	}
-	return NULL;
+	return ret;
       }
       break;
       
@@ -2248,7 +2226,7 @@ void* eval_list(void* list, void* env) {
         
   default:
 
-    printf("This type doesn't have a function handler (type = %s)!!!\n", return_type_c_string(o));
+    printf("This type doesn't have a function handler eval_list (type = %s)!!!\n", return_type_c_string(o));
     break;
   }
   

@@ -198,7 +198,8 @@ extern "C" {
   int list_length(void* list);
   int is_list(void* list);
   cc last(void* lst);
-
+  cc butlast(void* lst);
+  
   // Bool functions
   // Why is this chartype? 
   void* create_true_type();

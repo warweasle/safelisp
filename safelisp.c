@@ -176,6 +176,8 @@ int list_length(void* list) {
 
 cc last(void* lst) {
 
+  if(!lst) return NULL;
+  
   if(!is_cons(lst)) {
     printf("ERROR, You sent a non-list to LAST!!!\n");
     return NULL;
@@ -186,6 +188,15 @@ cc last(void* lst) {
 
   return i;
   
+}
+
+cc butlast(void* lst) {
+
+  if(lst && cdr(lst)) {
+    return cons(car(lst), butlast(cdr(lst)));
+  }
+  
+  return NULL;
 }
 
 cc create_quotetype(ValueType Type, void* car) {
@@ -2141,7 +2152,8 @@ void* eval_list(void* list, void* env) {
 	return ERROR("LAMBDA requires 2 arguments!");
       }
 
-      return create_lambda(car(env), cons(car(cdr(list)), cdr(cdr(list))));
+      void* e = butlast(car(env));
+      return create_lambda(e, cons(car(cdr(list)), cdr(cdr(list))));
       break;
       
     default:
@@ -2158,18 +2170,34 @@ void* eval_list(void* list, void* env) {
       void* closure = car(lambda);
       void* args = car(cdr(lambda));
       void* vals = cdr(list);
-
+      
+      printf("CLOSURE = ");
+      print(stdout, closure, 10);
+      printf("\n");
+      
+      printf("env 1 = ");
+      print(stdout, env, 10);
+      printf("\n");
+      
       // first deal with the closure...
-      void* l = last(closure);
-      cdr(l) = car(car(env));
-      void* newenv = cons(l, car(env));
-
+      void* newenv = NULL;
+      void* l = NULL;
+      if(closure) {
+	l = last(closure);
+	cdr(l) = car(car(env));
+	newenv = cons(l, car(env));
+      }
+      else {
+	newenv = env;
+      }
+      
       if(!args && vals) return ERROR("Sent args to a function and accepts none!");
-
-      /* printf("liat = "); print(stdout, list, 10); */
-      /* printf("\nargs = "); print(stdout, args, 10); */
-      /* printf("\nvals = "); print(stdout, vals, 10); */
-      /* printf("\n"); */
+      
+      printf("env = "); print(stdout, env, 10);
+      printf("\nlist = "); print(stdout, list, 10);
+      printf("\nargs = "); print(stdout, args, 10);
+      printf("\nvals = "); print(stdout, vals, 10);
+      printf("\n");
        
       void* nextFrame = NULL;
       for(void* i = args; i; i=cdr(i)) {
@@ -2199,7 +2227,9 @@ void* eval_list(void* list, void* env) {
       }
 
       // reset the end so we don't mess up the closure.
-      cdr(l) = NULL;
+      if(closure) {
+	cdr(l) = NULL;
+      }
       
       return ret;
     }

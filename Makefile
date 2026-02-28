@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread -O3 
+CFLAGS=-Wall -g -pthread  
 LDFLAGS=-pthread -lgc -lgmp 
 LEX=flex
 YACC=bison

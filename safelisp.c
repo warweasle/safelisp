@@ -719,9 +719,10 @@ void* eval(void* list, void* env) {
 
   case TYPE_CONS:
     {
-
       
+            
       void* p = eval_list(list, env);
+      
       return p;
     }
     
@@ -740,6 +741,11 @@ void* eval(void* list, void* env) {
 
       // I think this should be my problem!!!!!
       // I need to treat this like a (symbol item item...)
+      // Reuse the native int function as a template
+
+      printf("TYPE_SYMBOL: ");
+      print(stdout, list, 10);
+      printf("\n");
       
       for(void* i=car(env); i; i=cdr(i)) {
 
@@ -2118,9 +2124,6 @@ void* eval_list(void* list, void* env) {
 	  ret = tmp;
 	}
 
-	printf("added to env  = ");
-	  print(stdout, ret, 10);
-	  printf("\n");
 	return ret;
       }
       break;
@@ -2246,8 +2249,11 @@ void* eval_list(void* list, void* env) {
     {
       // ok, we need to do more...
       printf("is this the problem?\n");
-      
-      return eval(o, env);
+      print(stdout, list, 10);
+      printf("\n");
+      void* ret = eval(o, env);
+      printf("**********************************\n");
+      return eval(cons(ret, cdr(list)), env);
     }
     break;
         

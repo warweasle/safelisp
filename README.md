@@ -65,10 +65,10 @@ NULL
    if-true
    if-false)
 
-// switch statement (still thinking about this.)
-(?? (test branch)
-    (test branch)
-    ...)
+// switch statement 
+(?... (test branch)
+      (test branch)
+      ...)
 
 // Equality
 (== a b)

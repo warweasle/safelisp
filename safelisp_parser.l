@@ -269,6 +269,17 @@ return ATOM;}
     return ATOM;
 }
 
+[pP][rR][oO][gG][nN] {
+    yylval->p = create_native_int_type(N_PROGN);
+    return ATOM;
+}
+
+
+[pP][rR][oO][gG][1] {
+    yylval->p = create_native_int_type(N_PROG1);
+    return ATOM;
+}
+
 [a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 
 
 // Convert to uppercase

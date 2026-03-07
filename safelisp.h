@@ -109,7 +109,9 @@ extern "C" {
 	N_MULT,
 	N_DIV,
 	N_ADD,
-	N_SUB
+	N_SUB,
+	N_PROGN,
+	N_PROG1
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)

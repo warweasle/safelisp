@@ -2138,6 +2138,57 @@ void* eval_list(void* list, void* env) {
 	return ret;
       }
       break;
+
+    case N_PROGN:
+      {
+	void* ret = NULL;
+	void* code = cdr(list);
+	// loop over the code...
+	for(void* i=code; i; i=cdr(i)) {
+	  
+	printf("code = ");
+	print(stdout, car(i), 10);
+	printf("\n");
+	void* tmp = eval(car(i), env);;
+	
+	printf("ret = ");
+	print(stdout, tmp, 10);
+	printf("\n");
+	if(is_error(tmp)) return tmp;
+	
+	ret = tmp;
+	}
+
+	return ret;
+      }
+      break;
+      
+    case N_PROG1:
+      {
+	if(!cdr(list) || !car(cdr(list))) return NULL;
+
+	void* ret = eval(car(cdr(list)), env);
+	if(is_error(ret)) return ret;
+	
+	void* code = cdr(cdr(list));
+	// loop over the code...
+	for(void* i=code; i; i=cdr(i)) {
+	  
+	printf("code = ");
+	print(stdout, car(i), 10);
+	printf("\n");
+	void* tmp = eval(car(i), env);;
+	
+	printf("ret = ");
+	print(stdout, tmp, 10);
+	printf("\n");
+	if(is_error(tmp)) return tmp;
+	
+	}
+
+	return ret;
+      }
+      break;
       
     case N_LAMBDA:
 

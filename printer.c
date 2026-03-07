@@ -188,6 +188,14 @@ void print(FILE* output, void* o, int base) {
       case N_DIV:
 	fprintf(output, "/");
 	break;      
+
+      case N_PROGN:
+	fprintf(output, "PROGN");
+	break;
+	
+      case N_PROG1:
+	fprintf(output, "PROG1");
+	break;
 	
       default:
 

@@ -199,6 +199,7 @@ extern "C" {
   cc error(void* car, void* cdr);
   int list_length(void* list);
   int is_list(void* list);
+  int is_true(void* o);
   cc last(void* lst);
   cc butlast(void* lst);
   
@@ -231,6 +232,8 @@ extern "C" {
   resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c);
   resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* s);
 
+  char* return_type_c_string(void* o);
+  
   // native function and data functions
   char_type* create_native_int_type(nativeType type);
 
@@ -246,11 +249,9 @@ extern "C" {
   // Important functions
   int compare(void* a, void* b);
   void* equal(void* a, void* b); 
-  void* eval_list(void* list, void* env);
   void* return_type(void* o); 
   void* assoc(void* item, void* list);
   void* cassoc(char* str, void* list);
-  void* eval(void* list, void* env);
   void* tread(void* env);
   void* append(void* a, void* b);
   
@@ -259,6 +260,7 @@ extern "C" {
 #endif
 
 #include "printer.h"
+#include "eval.h"
 #include "rb-tree.h"
 
 #endif // SAFELISP_H

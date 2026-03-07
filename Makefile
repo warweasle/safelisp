@@ -5,14 +5,15 @@ LEX=flex
 YACC=bison
 YFLAGS=-d
 
-safelisp:  main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o rb-tree.o
-	$(CC) $(CFLAGS) -o safelisp main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o $(LDFLAGS)
+safelisp:  main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o rb-tree.o eval.o
+	$(CC) $(CFLAGS) -o safelisp main.o safelisp_parser.yy.o safelisp_parser.tab.o safelisp.o printer.o rb-tree.o eval.o $(LDFLAGS)
 
 main.o: main.c safelisp_parser.tab.c safelisp_parser.tab.h safelisp_parser.yy.o 
 	$(CC) $(CFLAGS) -c main.c -o main.o 
 
 rb-tree.o: rb-tree.c rb-tree.h rbtree_template.c rbtree_template.h 
 	$(CC) $(CFLAGS) -c rb-tree.c -o rb-tree.o
+
 %.o: %.c %.h 
 	$(CC) $(CFLAGS) -c $< -o $@
 

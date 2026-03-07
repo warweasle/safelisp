@@ -6,9 +6,9 @@ void* eval(void* list, void* env) {
 
   ValueType type = get_type(list);
 
-  printf("eval type found as: %s\n", return_type_c_string(list));
-  print(stdout, list, 10);
-  printf("\n");
+  /* printf("eval type found as: %s\n", return_type_c_string(list)); */
+  /* print(stdout, list, 10); */
+  /* printf("\n"); */
   
   switch(type) {
 
@@ -22,10 +22,9 @@ void* eval(void* list, void* env) {
     }
     
   case TYPE_QUOTE:
-    printf("QUOTE\n");
+    
     if(!car(list)) {
-      printf("Error: quote requires something after it!\n");
-      return NULL;
+      return ERROR("Error: quote requires something after it!\n");
     }
     
     return car(list);
@@ -37,10 +36,6 @@ void* eval(void* list, void* env) {
       // I think this should be my problem!!!!!
       // I need to treat this like a (symbol item item...)
       // Reuse the native int function as a template
-
-      printf("TYPE_SYMBOL: ");
-      print(stdout, list, 10);
-      printf("\n");
       
       for(void* i=car(env); i; i=cdr(i)) {
 
@@ -85,16 +80,14 @@ void* eval_list(void* list, void* env) {
   
   void* o = car(list);
   ValueType type = get_type(o);
-  printf("eval_list = ");
-  printf("\nType = %i or %s\n", type, return_type_c_string(o));
-  print(stdout, list, 10);
-  printf("\n");
+  /* printf("eval_list = "); */
+  /* printf("\nType = %i or %s\n", type, return_type_c_string(o)); */
+  /* print(stdout, list, 10); */
+  /* printf("\n"); */
    
   switch(type) {
   case TYPE_CONS:
     {
-      printf("THIS IS THE CONS?\n");
-      
       void* f = eval(car(list), env);
       if(is_error(f)) return f;
 
@@ -116,18 +109,7 @@ void* eval_list(void* list, void* env) {
 	}
       }
 
-      printf("this is the eval...\n");
-      print(stdout, f, 10);
-      printf("\n");
-      
       return eval(cons(f, args), env);
-      
-      // now we should ahve something that can be called...
-      
-      //void* args = eval_list(cdr(list), env);
-      //if(is_error(args)) return args;
-      
-      //return eval_list(cons(f, args), env);
     }
     break;
 
@@ -217,13 +199,11 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  printf("ERROR: nothing to IF!");
-	  return NULL;
+	  return ERROR("ERROR: nothing to IF!");
 	}
 
 	if(!truth) {
-	  printf("Nothing to execute in IF statement!\n");
-	  return NULL;
+	  return ERROR("Nothing to execute in IF statement!\n");
 	}
 	
 	void* predicate = eval(car(pred), env);
@@ -263,13 +243,11 @@ void* eval_list(void* list, void* env) {
     
     case N_TYPE:
       if(!cdr(list)) {
-	printf("TYPE requires ONE argument!\n");
-	return NULL;
+	return ERROR("TYPE requires ONE argument!\n");
       }
 
       if(cdr(cdr(list))) {
-	printf("TYPE requires only ONE argument!\n");
-	return NULL;
+	return ERROR("TYPE requires only ONE argument!\n");
       }
       
       return return_type(eval(car(cdr(list)), env));
@@ -277,13 +255,11 @@ void* eval_list(void* list, void* env) {
       
     case N_NOT:
       if(!cdr(list)) {
-	printf("NOT requires ONE argument!\n");
-	return NULL;
+	return ERROR("NOT requires ONE argument!\n");
       }
 
       if(cdr(cdr(list))) {
-	printf("NOT requires only ONE argument!\n");
-	return NULL;
+	return ERROR("NOT requires only ONE argument!\n");
       }
 
       void* result = eval(car(cdr(list)), env);
@@ -322,8 +298,7 @@ void* eval_list(void* list, void* env) {
     case N_APPEND:
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  printf("ERROR: APPEND requires TWO arguments!\n");
-	  return NULL;
+	  return ERROR("ERROR: APPEND requires TWO arguments!\n");
 	}
 
 	cc tmp = car(cdr(list)); 
@@ -338,8 +313,7 @@ void* eval_list(void* list, void* env) {
 
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  printf("ERROR: ASSOC requires at least TWO arguments!\n");
-	  return NULL;
+	  return ERROR("ERROR: ASSOC requires at least TWO arguments!\n");
 	}
 	
 	void* item = eval(car(cdr(list)), env);
@@ -351,8 +325,7 @@ void* eval_list(void* list, void* env) {
       
     case N_EVAL:
       if(!cdr(list) || !car(cdr(list))) {
-	printf("EVAL requires ONE argument!\n");
-	return NULL;
+	return ERROR("EVAL requires ONE argument!\n");
       }
 
       return eval(eval(car(cdr(list)), env), env);
@@ -361,12 +334,10 @@ void* eval_list(void* list, void* env) {
     case N_EQL:
       {
 	if(!cdr(list)) {
-	  printf("ERROR: EQL requires 2 arguements!");
-	  return NULL;
+	  return ERROR("ERROR: EQL requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  printf("ERROR: EQL requires 2 arguements!");
-	  return NULL;
+	  return ERROR("ERROR: EQL requires 2 arguements!");
 	}
 
 	void* tmp = cdr(list);
@@ -382,8 +353,7 @@ void* eval_list(void* list, void* env) {
 	size_t size = 0;
 
 	if(!cdr(list)) {
-	  printf("TO-STRING requires ONE argument!\n");
-	  return NULL;
+	  return ERROR("TO-STRING requires ONE argument!\n");
 	}
 
 	void* p = eval(car(cdr(list)), env);
@@ -469,13 +439,11 @@ void* eval_list(void* list, void* env) {
 	void* code = cdr(cdr(list));
 	
 	if(!pred) {
-	  printf("ERROR: nothing to WHILE!\n");
-	  return NULL;
+	  return ERROR("ERROR: nothing to WHILE!\n");
 	}
 
 	if(!code) {
-	  printf("Nothing to execute in WHILE statement!\n");
-	  return NULL;
+	  return ERROR("Nothing to execute in WHILE statement!\n");
 	}
 
 	void* ret = NULL;
@@ -867,8 +835,6 @@ void* eval_list(void* list, void* env) {
 
 	  case TYPE_FLOAT:
 
-	    printf("is this running?\n");
-	    
 	    switch(get_type(b)) {
 
 	    case TYPE_INT:
@@ -1230,20 +1196,17 @@ void* eval_list(void* list, void* env) {
 
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  printf("ERROR: MAPADD requires 3 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPADD requires 3 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  printf("ERROR: MAPADD requires 3 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPADD requires 3 arguments!");
 	}
 
 	void* tmp3 = cdr(tmp2);
 	if(!tmp3) {
-	  printf("ERROR: MAPADD requires 3 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPADD requires 3 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -1258,14 +1221,12 @@ void* eval_list(void* list, void* env) {
       {
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  printf("ERROR: MAPGET requires 2 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPGET requires 2 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  printf("ERROR: MAPGET requires 2 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPGET requires 2 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -1279,20 +1240,17 @@ void* eval_list(void* list, void* env) {
       {
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  printf("ERROR: MAPADD requires 3 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPADD requires 3 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  printf("ERROR: MAPADD requires 3 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPADD requires 3 arguments!");
 	}
 
 	void* tmp3 = cdr(tmp2);
 	if(!tmp3) {
-	  printf("ERROR: MAPADD requires 3 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPADD requires 3 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -1307,14 +1265,12 @@ void* eval_list(void* list, void* env) {
       {
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  printf("ERROR: MAPDEL requires 2 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPDEL requires 2 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  printf("ERROR: MAPDEL requires 2 arguments!");
-	  return NULL;
+	  return ERROR("ERROR: MAPDEL requires 2 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -1326,13 +1282,7 @@ void* eval_list(void* list, void* env) {
 
     case N_LET:
       {
-	printf("\nLET STARTED...\n");
-	print(stdout, car(cdr(list)), 10);
-	printf("\n");
-	print(stdout, env, 10);
-	printf("\n");
-	
-       	if(!cdr(list) || !car(cdr(list))) {
+	if(!cdr(list) || !car(cdr(list))) {
 	  return ERROR("LET requires 2 arguments!");
 	}
 
@@ -1350,8 +1300,6 @@ void* eval_list(void* list, void* env) {
 	// loop over the variables (arg1)
 	for(void* i=vars; i; i=cdr(i)) {
 
-	  printf("again !!!\n");
-	  
 	  void* pair = car(i);
 	  void* name = car(pair);
 	  void* value = car(cdr(pair));
@@ -1380,14 +1328,8 @@ void* eval_list(void* list, void* env) {
 	// loop over the code...
 	for(void* i=code; i; i=cdr(i)) {
 
-	  printf("code = ");
-	  print(stdout, car(i), 10);
-	  printf("\n");
 	  void* tmp = eval(car(i), newenv);;
 
-	  printf("ret = ");
-	  print(stdout, tmp, 10);
-	  printf("\n");
 	  if(is_error(tmp)) return tmp;
 
 	  ret = tmp;
@@ -1404,17 +1346,11 @@ void* eval_list(void* list, void* env) {
 	// loop over the code...
 	for(void* i=code; i; i=cdr(i)) {
 	  
-	printf("code = ");
-	print(stdout, car(i), 10);
-	printf("\n");
-	void* tmp = eval(car(i), env);;
+	  void* tmp = eval(car(i), env);;
 	
-	printf("ret = ");
-	print(stdout, tmp, 10);
-	printf("\n");
-	if(is_error(tmp)) return tmp;
-	
-	ret = tmp;
+	  if(is_error(tmp)) return tmp;
+	  
+	  ret = tmp;
 	}
 
 	return ret;
@@ -1432,16 +1368,9 @@ void* eval_list(void* list, void* env) {
 	// loop over the code...
 	for(void* i=code; i; i=cdr(i)) {
 	  
-	printf("code = ");
-	print(stdout, car(i), 10);
-	printf("\n");
-	void* tmp = eval(car(i), env);;
-	
-	printf("ret = ");
-	print(stdout, tmp, 10);
-	printf("\n");
-	if(is_error(tmp)) return tmp;
-	
+	  void* tmp = eval(car(i), env);;
+	  
+	  if(is_error(tmp)) return tmp;
 	}
 
 	return ret;
@@ -1467,26 +1396,18 @@ void* eval_list(void* list, void* env) {
       
     default:
       
-      printf("Unknown native int function!!!\n");
-      return NULL;
+      return ERROR("Unknown native int function!!!\n");
     }
 
   case TYPE_LAMBDA:
     {
 
-      printf("LAMBDA!!!\n");
       void* lambda = car(list);
       void* closure = car(lambda);
       void* args = car(cdr(lambda));
       void* vals = cdr(list);
-      
-      printf("CLOSURE = ");
-      print(stdout, closure, 10);
-      printf("\n");
-      
-      printf("env 1 = ");
-      print(stdout, env, 10);
-      printf("\n");
+
+      void* oldenv = car(env);
       
       // first deal with the closure...
       void* newenv = NULL;
@@ -1502,12 +1423,6 @@ void* eval_list(void* list, void* env) {
       
       if(!args && vals) return ERROR("Sent args to a function and accepts none!");
       
-      printf("env = "); print(stdout, env, 10);
-      printf("\nlist = "); print(stdout, list, 10);
-      printf("\nargs = "); print(stdout, args, 10);
-      printf("\nvals = "); print(stdout, vals, 10);
-      printf("\n");
-       
       void* nextFrame = NULL;
       for(void* i = args; i; i=cdr(i)) {
 
@@ -1531,6 +1446,7 @@ void* eval_list(void* list, void* env) {
 	ret = eval(car(i), newenv);
 
 	if(is_error(ret)) {
+	  car(env) = oldenv;
 	  return ret;
 	}
       }
@@ -1539,7 +1455,8 @@ void* eval_list(void* list, void* env) {
       if(closure) {
 	cdr(l) = NULL;
       }
-      
+
+      car(env) = oldenv;
       return ret;
     }
 
@@ -1549,8 +1466,7 @@ void* eval_list(void* list, void* env) {
   case TYPE_CNR:
     {
       if(!cdr(list)) {
-	printf("EVAL requires ONE argument!\n");
-	return NULL;
+	return ERROR("EVAL requires ONE argument!\n");
       }
       string_type* str = to_string(car(o));
       char* cstr = str->str;
@@ -1587,11 +1503,7 @@ void* eval_list(void* list, void* env) {
   case TYPE_SYMBOL:
     {
       // ok, we need to do more...
-      printf("is this the problem?\n");
-      print(stdout, list, 10);
-      printf("\n");
       void* ret = eval(o, env);
-      printf("**********************************\n");
       return eval(cons(ret, cdr(list)), env);
     }
     break;

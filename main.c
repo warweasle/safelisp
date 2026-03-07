@@ -4,6 +4,9 @@
 int main(int argc, char* argv[]) {
 
   void* env = init_safelisp(stdin, stdout);
+
+  print(stdout, env, 10);
+  fputc('\n', stdout);
   
   // Call the parser
   void* atom = tread(env);

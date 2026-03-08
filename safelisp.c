@@ -29,8 +29,8 @@ void* init_safelisp(FILE* input, FILE* output) {
   ttrue = TYPE_TRUE;
   
   void* ret = NULL;
-  ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input)), ret);
-  ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output)), ret);
+  ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input, TYPE_POINTER)), ret);
+  ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output, TYPE_POINTER)), ret);
   
   return cons(cons(make_rb_tree(), NULL), ret);
 }
@@ -296,10 +296,10 @@ resizable_string_type* create_resizable_string_type(size_t len, ValueType Type) 
   return sym;
 }
 	     
-pointer_type* create_pointer_type(void* p) {
+pointer_type* create_pointer_type(void* p, ValueType Type) {
   pointer_type* ret = (pointer_type*)GC_malloc(sizeof(pointer_type)); 
   if (!ret) return NULL; // Check for allocation failure
-  ret->type = TYPE_POINTER;
+  ret->type = Type;
   ret->p = p;
 
   return ret;

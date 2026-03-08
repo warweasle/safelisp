@@ -149,11 +149,6 @@ extern "C" {
 
   typedef struct {
     ValueType type;
-    void* func;
-  } native_type;
-
-  typedef struct {
-    ValueType type;
     int size;
     char str[];
   } string_type;
@@ -190,6 +185,8 @@ extern "C" {
     void* p;
   } pointer_type;
 
+  typedef void *(*native_func)(void *args, void *env);
+  
   // Init and other...
   void* init_safelisp(FILE* input, FILE* output);
   
@@ -242,7 +239,7 @@ extern "C" {
   rational_type* create_rational_type();
   float_type* create_float_type();
 
-  pointer_type* create_pointer_type(void* p);
+  pointer_type* create_pointer_type(void* p, ValueType Type);
   cc create_lambda(void* args, void* code);
   cc make_cnr(void* cnr);
   

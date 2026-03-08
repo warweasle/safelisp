@@ -1502,6 +1502,38 @@ void* eval_list(void* list, void* env) {
     }
     break;
 
+  case TYPE_NATIVE:
+
+    {
+      native_func f = to_pointer(o)->p;
+
+      // run the code with the new env
+      void* ret = NULL;
+      void* last = NULL;
+      for(void* i=cdr(list); i; i=cdr(i)) {
+
+	void* val = eval(car(i), env);
+
+	if(is_error(val)) {
+	  return ret;
+	}
+
+	if(ret) {
+	  ret = cons(val, NULL);
+	  last = ret;
+	}
+	else {
+
+	  cdr(last) = cons(val, NULL);
+	  last = cdr(last);
+	}
+      }
+
+      return f(ret, env);
+      
+    }
+    break;
+    
   case TYPE_SYMBOL:
     {
       // ok, we need to do more...

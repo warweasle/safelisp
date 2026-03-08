@@ -1422,22 +1422,24 @@ void* eval_list(void* list, void* env) {
       }
       
       if(!args && vals) return ERROR("Sent args to a function and accepts none!");
-      
-      void* nextFrame = NULL;
-      for(void* i = args; i; i=cdr(i)) {
 
-	if(!vals) {
-	  return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
+      void* nextFrame = NULL;
+
+      if(car(args)) {
+	for(void* i = args; i; i=cdr(i)) {
+
+	  if(!vals) {
+	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
+	  }
+
+	  void* val = eval(car(vals), newenv);
+	  nextFrame = cons(cons(car(i), val), nextFrame);
+	  vals = cdr(vals);
 	}
 
-	void* val = eval(car(vals), newenv);
-	nextFrame = cons(cons(car(i), val), nextFrame);
-	vals = cdr(vals);
+	// set the new env with the lambda list...
+	car(newenv) = cons(nextFrame, car(newenv));
       }
-
-      // set the new env with the lambda list...
-      car(newenv) = cons(nextFrame, car(newenv));
-      
       
       // run the code with the new env
       void* ret = NULL;

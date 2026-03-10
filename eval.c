@@ -1346,7 +1346,7 @@ void* eval_list(void* list, void* env) {
 	  }
 
 	  // here we need to call the function on the valules...
-	  void* a = eval_list(cons(func, args), env);
+	  void* a = eval_list(cons(func, cons(args, NULL)), env);
 	  if(!ret) {
 	    ret = cons(a, NULL);
 	    lret = ret;

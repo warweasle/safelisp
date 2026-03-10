@@ -66,7 +66,7 @@ NULL
    if-false)
 
 // switch statement 
-(?... (test branch)
+(??? (test branch)
       (test branch)
       ...)
 
@@ -85,6 +85,17 @@ NULL
 // NOT (acts as isnull)
 (! TRUE)
 
+// Loops are surrounded by <>
+// |> break
+// <| continue
+(<>
+   (PRINT "FOREVER!"))
+
+(<?> predicate
+     code)
+
+
+
 // Read Eval Print Loop
 (loop (print (eval (read))))
 
@@ -95,20 +106,19 @@ TODO:
     if-false
     if-true)
 
-(when ... only true path..)
-// or
-(?? ....) with ?? becomming switch
+(?? ... only true path..)
 
-(unless ..only false path..)
-// or
 (!?? ....)
+
+// lambda
+(lambda (args) code)
 
 // Define function
 (fun name args code)
 
 // return last in block and first in block.
-(PROGN ...)
-(PROG1 ...)
+(... code)
+(1... code)
 
 //Add escapes for strings.
 
@@ -124,3 +134,4 @@ It also uses short, easy to read functions for minimal mental load.
 It is a scheme-1 which means there is only one symbol space for both functions and variables.
 
 The idea is to make a simple, fast lisp that is familiar to C programmers.
+

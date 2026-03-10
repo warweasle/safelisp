@@ -1280,6 +1280,95 @@ void* eval_list(void* list, void* env) {
       }
       break;
 
+    case N_MAP:
+      //return ERROR("MAP NOT YET IMPLEMENTED!");
+      printf("I wrote this in one big block after having too much coffee. Does it work? IDK.\n");
+      {
+	// If i were to spitball this..
+
+	// I would need to break apart the list.
+	// verify there is a lambda expression
+	if(!cdr(list) || !car(cdr(list)) ||
+	   !cdr(cdr(list))) {
+	  return ERROR("MAP requires at least 2 arguments!");
+	}
+	
+	void* func  = car(cdr(list));
+	void* lists = cdr(cdr(list));
+	void* ret = NULL;
+	void* lret = NULL;
+	// then a dumb loop
+	
+	void* clists = NULL;
+	void* tmp = NULL;
+	for(void* i=lists; i; i=cdr(i)) {
+
+	  void* e = eval(car(i), env);
+	  if(is_error(e)) return e;
+	  if(!is_cons(e)) return ERROR("Map requires lists... as of now...");
+	  
+	  if(!clists) {
+	    clists = cons(e, NULL);
+	    tmp = clists;
+	  }
+	  else {
+	    cdr(tmp) = cons(e, NULL);
+	    tmp = cdr(tmp);
+	  }
+	}
+      
+	while(clists) {
+	  // stripe across the lists and zip them up...
+	  // and also the clists.
+	  void* args = NULL;
+	  tmp = NULL;
+	  void* tmp2 = NULL;
+	  
+	  for(void* i=clists; i; i=cdr(i)) {
+
+	    // if car(i) is null then we end?
+	    if(!car(i)) return ret;
+	    
+	    if(!args) {
+	      args = cons(car(car(i)), NULL);
+	      tmp = args;
+
+	      clists = cons(cdr(car(i)), NULL);
+	      tmp2 = clists;
+	    }
+	    else {
+	      cdr(tmp) = cons(car(car(i)),NULL);
+	      tmp = cdr(tmp);
+
+	      cdr(tmp2) = cons(cdr(car(i)), NULL);
+	      tmp2 = cdr(tmp2);
+	    }	  
+	  }
+
+	  // here we need to call the function on the valules...
+	  void* a = eval_list(cons(func, args), env);
+	  if(!ret) {
+	    ret = cons(a, NULL);
+	    lret = ret;
+	  }
+	  else {
+	    cdr(lret) = cons(a, NULL);
+	    lret = cdr(lret);
+	  }
+	}
+
+	return ret;
+      }
+      break;
+
+    case N_REDUCE:
+      return ERROR("REDUCE NOT YET IMPLEMENTED!");
+      break;
+
+    case N_FILTER:
+      return ERROR("FILTER NOT YET IMPLEMENTED!");
+      break;
+      
     case N_LET:
       {
 	if(!cdr(list) || !car(cdr(list))) {

@@ -233,6 +233,22 @@ return ATOM;}
     return ATOM;
 }
 
+[mM][aA][pP] {
+    yylval->p = create_native_int_type(N_MAP);
+    return ATOM;
+}
+
+[rR][eE][dD][uU][cC][eE] {
+    yylval->p = create_native_int_type(N_REDUCE);
+    return ATOM;
+}
+
+[fF][iI][lL][tT][eE][rR] {
+    yylval->p = create_native_int_type(N_FILTER);
+    return ATOM;
+}
+
+
 [cC][aA][tT] {
     yylval->p = create_native_int_type(N_CAT);
     return ATOM;

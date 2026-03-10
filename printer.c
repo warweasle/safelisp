@@ -190,11 +190,23 @@ void print(FILE* output, void* o, int base) {
 	break;      
 
       case N_PROGN:
-	fprintf(output, "PROGN");
+	fprintf(output, "...");
 	break;
 	
       case N_PROG1:
-	fprintf(output, "PROG1");
+	fprintf(output, "1...");
+	break;
+
+      case N_MAP:
+	fprintf(output, "MAP");
+	break;
+
+      case N_REDUCE:
+	fprintf(output, "REDUCE");
+	break;
+
+      case N_FILTER:
+	fprintf(output, "FILTER");
 	break;
 	
       default:

@@ -201,6 +201,7 @@ cc create_quotetype(ValueType Type, void* car) {
   cc ret = (cc) GC_malloc(sizeof(cons_cell));
   ret->type = Type;
   ret->car = car;
+  ret->cdr = NULL;
   return ret;
 }
 

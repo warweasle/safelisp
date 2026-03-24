@@ -2,6 +2,39 @@
 void (*old_free)(void*) = free;
 #include "eval.h"
 
+void* quasiquote(void* list, void* env) {
+
+  printf("QUASIQUOTE: Not yet complete!\n");
+  
+  switch(get_type(list)) {
+
+  case TYPE_CONS:
+    return cons(quasiquote(car(list), env),
+		quasiquote(cdr(list), env));
+		
+    break;
+    
+  case TYPE_COMMA:
+    return eval(car(list), env);
+    break;
+    
+  case TYPE_BACKTICK:
+    return quasiquote(car(list), env);
+    break;
+
+  case TYPE_SPLICE:
+    return append(eval(car(list), env), quasiquote(cdr(list), env));
+		  
+    break;
+
+  default:
+    return list;
+    break;
+  }
+
+  return list;
+}
+
 void* eval(void* list, void* env) {
 
   ValueType type = get_type(list);
@@ -27,9 +60,28 @@ void* eval(void* list, void* env) {
       return ERROR("Error: quote requires something after it!\n");
     }
     
-    return car(list);
+    return quasiquote(car(list), env);
     break;
 
+
+  case TYPE_BACKTICK:
+    if(!car(list)) {
+      return ERROR("Error: quasiquote requires something after it!\n");
+    }
+    break;
+    
+  case TYPE_SPLICE:
+    if(!car(list)) {
+      return ERROR("Error: Comma must be used inside a QUASIQUOTE!");
+    }
+    break;
+    
+  case TYPE_COMMA:
+    if(!car(list)) {
+      return ERROR("Error: Splice must be used inside a QUAZIQUOTE!");
+    }
+    break;
+    
   case TYPE_SYMBOL:
     {
 
@@ -56,7 +108,7 @@ void* eval(void* list, void* env) {
 	    }
 	  }
 	  break;
-
+	  
 	default:
 	  ERROR("Set found an issue with the environment!!!\n");
 	  break;

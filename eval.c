@@ -23,8 +23,7 @@ void* quasiquote(void* list, void* env) {
     break;
 
   case TYPE_SPLICE:
-    return append(eval(car(list), env), quasiquote(cdr(list), env));
-		  
+    return ERROR("SPLICE: NOT YET IMPLEMENTED!!!");
     break;
 
   default:
@@ -47,8 +46,6 @@ void* eval(void* list, void* env) {
 
   case TYPE_CONS:
     {
-      
-            
       void* p = eval_list(list, env);
       
       return p;
@@ -60,26 +57,23 @@ void* eval(void* list, void* env) {
       return ERROR("Error: quote requires something after it!\n");
     }
     
-    return quasiquote(car(list), env);
+    return car(list);
     break;
-
 
   case TYPE_BACKTICK:
     if(!car(list)) {
       return ERROR("Error: quasiquote requires something after it!\n");
     }
+
+    return quasiquote(car(list), env);
     break;
     
   case TYPE_SPLICE:
-    if(!car(list)) {
-      return ERROR("Error: Comma must be used inside a QUASIQUOTE!");
-    }
+    return ERROR("Error: Splice must be used inside a QUASIQUOTE!");
     break;
     
   case TYPE_COMMA:
-    if(!car(list)) {
-      return ERROR("Error: Splice must be used inside a QUAZIQUOTE!");
-    }
+    return ERROR("Error: Comma must be used inside a QUASIQUOTE!");
     break;
     
   case TYPE_SYMBOL:

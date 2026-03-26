@@ -25,7 +25,7 @@ void* quasiquote(void* list, void* env, int depth) {
       return eval(car(list), env);
     }
     else {
-      return quasiquote(car(list), env, depth -1);
+      return quasiquote(car(list), env, depth +1);
     }
     break;
     

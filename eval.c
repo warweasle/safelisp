@@ -2,28 +2,45 @@
 void (*old_free)(void*) = free;
 #include "eval.h"
 
-void* quasiquote(void* list, void* env) {
-
-  printf("QUASIQUOTE: Not yet complete!\n");
+void* quasiquote(void* list, void* env, int depth) {
   
   switch(get_type(list)) {
 
   case TYPE_CONS:
-    return cons(quasiquote(car(list), env),
-		quasiquote(cdr(list), env));
-		
+    if(car(list) && get_type(car(list)) == TYPE_SPLICE && depth == 0) {
+
+      void* head = eval(car(car(list)), env);
+      void* test = quasiquote(cdr(list), env, depth);
+      return append(head, test); 
+    }
+    else {
+      return cons(quasiquote(car(list), env, depth),
+		  quasiquote(cdr(list), env, depth));
+    }	
     break;
     
   case TYPE_COMMA:
-    return eval(car(list), env);
+    
+    if(depth == 0) {
+      return eval(car(list), env);
+    }
+    else {
+      return quasiquote(car(list), env, depth -1);
+    }
     break;
     
   case TYPE_BACKTICK:
-    return quasiquote(car(list), env);
+    return quasiquote(car(list), env, depth + 1);
     break;
 
   case TYPE_SPLICE:
-    return ERROR("SPLICE: NOT YET IMPLEMENTED!!!");
+    if(depth == 0) {
+      return ERROR("SPLICE: SPLICE MUST BE IN A LIST!!!");
+    }
+    else {
+      return create_quotetype(TYPE_SPLICE,
+			      quasiquote(car(list), env, depth - 1));
+    }
     break;
 
   default:
@@ -65,7 +82,7 @@ void* eval(void* list, void* env) {
       return ERROR("Error: quasiquote requires something after it!\n");
     }
 
-    return quasiquote(car(list), env);
+    return quasiquote(car(list), env, 0);
     break;
     
   case TYPE_SPLICE:

@@ -135,7 +135,7 @@ void* append(void* a, void* b) {
     return ERROR("APPEND requires the first argument to be a list!");
   }
   
-  cc l = last(car(a));
+  cc l = last(a);
   
   l->cdr = b;
   

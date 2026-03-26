@@ -94,8 +94,6 @@ NULL
 (<?> predicate
      code)
 
-
-
 // Read Eval Print Loop
 (loop (print (eval (read))))
 
@@ -119,6 +117,12 @@ TODO:
 // return last in block and first in block.
 (... code)
 (1... code)
+
+// QUASIQUOTING
+`(a b c) => (A B C)
+`(a ,(list hello world) c) => (A (HELLO WORLD) C)
+`(a ,@(list hello world) c) => (A HELLO WORLD C)
+
 
 //Add escapes for strings.
 

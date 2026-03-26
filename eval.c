@@ -415,6 +415,94 @@ void* eval_list(void* list, void* env) {
       }
       break;
 
+    case N_LT:
+      {
+      	if(!cdr(list)) {
+	  return ERROR("ERROR: < requires 2 arguements!");
+	}
+	if(!cdr(cdr(list))) {
+	  return ERROR("ERROR: < requires 2 arguements!");
+	}
+	
+	void* tmp = cdr(list);
+	void* a = eval(car(tmp), env);
+	void* b = eval(car(cdr(tmp)), env);
+	
+	if(compare(a, b) < 0) {
+	  return create_true_type();
+	}
+	else {
+	  return NULL;
+	}
+      }
+      break;
+      
+    case N_GT:
+      {
+	if(!cdr(list)) {
+	  return ERROR("ERROR: > requires 2 arguements!");
+	}
+	if(!cdr(cdr(list))) {
+	  return ERROR("ERROR: > requires 2 arguements!");
+	}
+	
+	void* tmp = cdr(list);
+	void* a = eval(car(tmp), env);
+	void* b = eval(car(cdr(tmp)), env);
+	
+	if(compare(a, b) > 0) {
+	  return create_true_type();
+	}
+	else {
+	  return NULL;
+	}
+      }
+      break;
+      
+    case N_LTE:
+      {
+	if(!cdr(list)) {
+	  return ERROR("ERROR: <= requires 2 arguements!");
+	}
+	if(!cdr(cdr(list))) {
+	  return ERROR("ERROR: <= requires 2 arguements!");
+	}
+	
+	void* tmp = cdr(list);
+	void* a = eval(car(tmp), env);
+	void* b = eval(car(cdr(tmp)), env);
+	
+	if(compare(a, b) <= 0) {
+	  return create_true_type();
+	}
+	else {
+	  return NULL;
+	}
+      }
+      break;
+      
+    case N_GTE:
+      {
+	if(!cdr(list)) {
+	  return ERROR("ERROR: >= requires 2 arguements!");
+	}
+	if(!cdr(cdr(list))) {
+	  return ERROR("ERROR: >= requires 2 arguements!");
+	}
+	
+	void* tmp = cdr(list);
+	void* a = eval(car(tmp), env);
+	void* b = eval(car(cdr(tmp)), env);
+	
+	if(compare(a, b) >= 0) {
+	  return create_true_type();
+	}
+	else {
+	  return NULL;
+	}
+      }
+      break;
+      
     case N_TO_STRING:
       {
 	char *buf = NULL;

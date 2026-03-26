@@ -571,14 +571,7 @@ int compare(void* a, void* b) {
 
 void* equal(void* a, void* b) {
 
-  printf("equal a = ");
-  print(stdout,a, 10);
-  printf("\nequal b = ");
-  print(stdout,b, 10);
-  printf("\n");
-  
   if(compare(a, b) == 0) {
-    printf("equal from compare?");
     return create_true_type();
   }
   else {

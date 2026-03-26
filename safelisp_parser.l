@@ -91,7 +91,28 @@ return ATOM;}
     return ATOM;
 }
 
-= {
+[<] {
+    yylval->p = create_native_int_type(N_LT);
+    return ATOM;
+}
+
+
+[>] {
+    yylval->p = create_native_int_type(N_GT);
+    return ATOM;
+}
+
+[<=] {
+    yylval->p = create_native_int_type(N_LTE);
+    return ATOM;
+}
+
+[>=] {
+    yylval->p = create_native_int_type(N_GTE);
+    return ATOM;
+}
+
+[sS][eE][tT] {
     yylval->p = create_native_int_type(N_SET);
     return ATOM;
 }

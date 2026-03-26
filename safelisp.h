@@ -87,6 +87,7 @@ extern "C" {
 	N_ASSOC,
 	N_EVAL,
 	N_EQL,
+	N_NEQL,
 	N_LT,
 	N_GT,
 	N_LTE,

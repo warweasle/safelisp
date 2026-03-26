@@ -91,6 +91,11 @@ return ATOM;}
     return ATOM;
 }
 
+!= {
+    yylval->p = create_native_int_type(N_NEQL);
+    return ATOM;
+}
+
 [<] {
     yylval->p = create_native_int_type(N_LT);
     return ATOM;

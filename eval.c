@@ -30,7 +30,12 @@ void* quasiquote(void* list, void* env, int depth) {
     break;
     
   case TYPE_BACKTICK:
-    return quasiquote(car(list), env, depth + 1);
+    if(depth == 0) {
+      return quasiquote(car(list), env, depth + 1);
+    }
+    else {
+      return list;
+    }
     break;
 
   case TYPE_SPLICE:
@@ -82,7 +87,7 @@ void* eval(void* list, void* env) {
       return ERROR("Error: quasiquote requires something after it!\n");
     }
 
-    return quasiquote(car(list), env, 0);
+    return quasiquote(car(list), env, 1);
     break;
     
   case TYPE_SPLICE:

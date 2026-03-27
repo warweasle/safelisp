@@ -80,6 +80,8 @@ extern "C" {
 	N_LIST,
 	N_IF,
 	N_NIF,
+	N_WHEN,
+	N_UNLESS,
 	N_TYPE,
 	N_AND,
 	N_OR,

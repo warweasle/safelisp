@@ -295,26 +295,90 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR("ERROR: nothing to IF!");
+	  return ERROR("ERROR: nothing to !?!");
 	}
 
 	if(!truth) {
-	  return ERROR("Nothing to execute in IF statement!\n");
+	  return ERROR("Nothing to execute in !? statement!\n");
 	}
 	
 	void* predicate = eval(car(pred), env);
 
 	if(!is_true(predicate)) {
-	  return eval(car(truth), env);
+	  return eval_list(car(truth), env);
+	}
+
+	return NULL;
+	
+      }
+      break;
+
+      case N_WHEN:
+      {
+	void* pred = cdr(list);
+	void* truth = cdr(cdr(list));
+	
+	if(!pred) {
+	  return ERROR("ERROR: nothing to \?\?!");
+	}
+
+	if(!truth) {
+	  return ERROR("Nothing to execute in ?? statement!\n");
+	}
+	
+	void* predicate = eval(car(pred), env);
+	
+	if(is_true(predicate)) {
+	  void* ret = NULL;
+	  // loop over the code...
+	  for(void* i=truth; i; i=cdr(i)) {
+	    
+	    void* tmp = eval(car(i), env);;
+	    
+	    if(is_error(tmp)) return tmp;
+	    
+	    ret = tmp;
+	  }
+	  
+	  return ret;
 	}
 	else {
-	  void* falsehood = cdr(truth);
-	  if(falsehood) {
-	    return eval(car(falsehood), env);
+	  return NULL;
+	}
+      }
+      break;
+
+    case N_UNLESS:
+      {
+	void* pred = cdr(list);
+	void* truth = cdr(cdr(list));
+	
+	if(!pred) {
+	  return ERROR("ERROR: nothing to \?\?!");
+	}
+
+	if(!truth) {
+	  return ERROR("Nothing to execute in ?? statement!\n");
+	}
+	
+	void* predicate = eval(car(pred), env);
+	
+	if(!is_true(predicate)) {
+	  void* ret = NULL;
+	  // loop over the code...
+	  for(void* i=truth; i; i=cdr(i)) {
+	    
+	    void* tmp = eval(car(i), env);;
+	    
+	    if(is_error(tmp)) return tmp;
+	    
+	    ret = tmp;
 	  }
-	  else {
-	    return NULL;
-	  }
+	  
+	  return ret;
+	}
+	else {
+	  return NULL;
 	}
       }
       break;

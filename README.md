@@ -1,10 +1,10 @@
 # SafeLisp
 
-A small, embeddable, lisp designed to run untrusted code safely. 
+A small, embeddable Lisp designed to safely run untrusted code.
 
 Safe by default. Unsafe only when explicitly enabled.
 
-Also an environment to test language ideas. 
+Otherwise, as simple as I can make it.
 
 ---
 
@@ -26,7 +26,7 @@ Also an environment to test language ideas.
 - Closures
 - Embeddable interpreter
 - Small dependency footprint
-- (TODO) Separate environments (local / global / system)
+- Separate environments (local / global / system)
 - (TODO) Optional unsafe/volatile mode (for trusted code.)
 - (TODO) Foreign function interface (restricted)
 
@@ -50,12 +50,25 @@ This is a work in progress, please look at the safelisp_parser.l for a list of c
 `(a ,(list hello world) c) => (A (HELLO WORLD) C)
 `(a ,@(list hello world) c) => (A HELLO WORLD C)
 
+// Variables (single namespace for functions and data)
+// Let behaves as let*, where previous values are available
+// as soon as they are declared.
+
+(let ((a 1)
+      (b (+ a 1)))
+  (print b)) 
+
+// SET evaluates its first argument. SETQ does not. (currently broken)
+(SET 'location 'value)
+
+// Or for convenience
+(SETQ location 'value)
+
 // True
 TRUE
 
 // False
 NULL
-
 // FALSE or Nil 
 (! NULL) or (! 0) or (! 0.0) == TRUE
 // Everything else is TRUE. 
@@ -73,12 +86,22 @@ NULL
     if-false
     if-true)
 
+(!? predicate
+    if-false)
+
 // cond statement 
 (??? (test branch)
      (test branch)
      t ...)
 
-// Equality (there is no = keyword, so there are never any = vs == errors)
+// When and unless are here too.. (not yet implemented)
+(?? predicate
+    code...)
+
+(!?? predicate
+     code...)
+
+// Equality (there is no '=' keyword, so there are never any '=' vs '==' errors)
 (== a b)
 
 // Inequality
@@ -120,27 +143,7 @@ NULL
       (b 2)
       (l (lambda (c d) (print (+ c d)))))
    (l a b))
-   
 
-TODO:
-
-// I need to reconfigure my rbtree to work with data pairs.
-// Setting location 
-(SET 'location 'value)
-// Or for convenience
-(SETQ location 'value)
-
-// Just need to implement them as while and unless
-(?? ... only true path..)
-
-(!?? ....)
-
-// Define function
-(fun name args code)
-
-
-
-//Add escapes for strings.
 
 ```
 ---
@@ -148,10 +151,18 @@ TODO:
 ## Architecture
 
 The parser is made in FLEX and BISON and creates the objects as soon as the text is parsed.
-Unlike tradional lisps, there are no reader macros since it's a security nightmare and rarely used.
+Unlike traditional lisps, there are no reader macros since it's a security nightmare and rarely used.
 SafeLisp uses garbage collection and bignums to minimize errors.
 It also uses short, easy to read functions for minimal mental load.
 It is a scheme-1 which means there is only one symbol space for both functions and variables.
 
 The idea is to make a simple, fast lisp that is familiar to C programmers.
 
+## TODO
+
+- Improve RB-tree structure for key/value pairs
+- Implement SET / SETQ
+- Add string escape sequences
+- Expand control flow forms (in safelisp)
+- Add char types
+- Add nativeC types

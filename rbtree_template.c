@@ -415,13 +415,17 @@ void RB_FUNC(remove)(RB_TREE_TYPE* tree, RB_NODE_TYPE* node)
 }
 
 RB_NODE_TYPE* RB_FUNC(find)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void* data) {
+
   RB_NODE_TYPE* node = RB_ROOT(tree);
+    
   while (node) {
     int c = cmp(data, key, RB_GET_KEY(node));
+        
     if (c < 0) node = RB_LEFT(node);
     else if (c > 0) node = RB_RIGHT(node);
     else return node;
   }
+  
   return NULL;
 }
 
@@ -432,7 +436,6 @@ void RB_FUNC(delete)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void
 
   RB_FUNC(remove)(tree, node);
 }
-
 
 // Find node with smallest key
 RB_NODE_TYPE* RB_FUNC(find_first)(RB_TREE_TYPE* tree) {

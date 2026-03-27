@@ -14,8 +14,12 @@ extern "C" {
 #define RB_PREFIX          cc_rb_
   
 #define RB_GET_KEY(node)        (car(node))
-#define RB_LEFT(node)           ((cc)car(cdr(node)))
-#define RB_RIGHT(node)          ((cc)car(cdr(cdr(node))))
+#define RB_LEFT(node) \
+  (((node) && cdr(node)) ? ((cc)car(cdr(node))) : NULL)
+#define RB_RIGHT(node) \
+  (((node) && cdr(node) && cdr(cdr(node))) ? ((cc)car(cdr(cdr(node)))) : NULL)
+  //#define RB_LEFT(node)           ((cc)car(cdr(node)))
+  //#define RB_RIGHT(node)          ((cc)car(cdr(cdr(node))))
 #define RB_PARENT(node)         ((cc)cdr(cdr(cdr(node))))
 
 #define RB_SET_KEY(node, val)   (car(node) = (val))

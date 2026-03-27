@@ -100,7 +100,6 @@ void* eval(void* list, void* env) {
     
   case TYPE_SYMBOL:
     {
-
       // I think this should be my problem!!!!!
       // I need to treat this like a (symbol item item...)
       // Reuse the native int function as a template
@@ -111,7 +110,7 @@ void* eval(void* list, void* env) {
 
 	case TYPE_RB_TREE:
 	  {
-	    void* found = mapget(car(i), list);
+	    void* found = mapget(i, list);
 	    if(found) return found;
 	  }
 	  break;
@@ -126,7 +125,7 @@ void* eval(void* list, void* env) {
 	  break;
 	  
 	default:
-	  ERROR("Set found an issue with the environment!!!\n");
+	  ERROR("Found an issue with the environment!!!\n");
 	  break;
 	}
       }
@@ -137,7 +136,6 @@ void* eval(void* list, void* env) {
       
     
   default:
-    //printf("DEFAULT\n");
     return list;
   }
   

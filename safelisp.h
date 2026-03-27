@@ -79,6 +79,7 @@ extern "C" {
 	N_CONS,
 	N_LIST,
 	N_IF,
+	N_NIF,
 	N_TYPE,
 	N_AND,
 	N_OR,

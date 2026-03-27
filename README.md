@@ -22,13 +22,13 @@ Also an environment to test language ideas.
 ## Features
 
 - Minimal Lisp core (symbols, lists, numbers, strings)
+- Tree/map structures (RB-tree maps)
+- Closures
+- Embeddable interpreter
+- Small dependency footprint
 - (TODO) Separate environments (local / global / system)
 - (TODO) Optional unsafe/volatile mode (for trusted code.)
 - (TODO) Foreign function interface (restricted)
-- Tree/map structures (RB-tree maps)
-- (TODO) Closures
-- Embeddable interpreter
-- Small dependency footprint
 
 ---
 
@@ -38,14 +38,17 @@ SafeLisp uses C Style comments like // or /* */
 
 Symbols are compared without regard to case.
 
-(
-
 This is a work in progress, please look at the safelisp_parser.l for a list of current functions.
 
 ```C
 
 // Quote
 '
+
+// QUASIQUOTING
+`(a b c) => (A B C)
+`(a ,(list hello world) c) => (A (HELLO WORLD) C)
+`(a ,@(list hello world) c) => (A HELLO WORLD C)
 
 // True
 TRUE
@@ -65,16 +68,25 @@ NULL
    if-true
    if-false)
 
-// switch statement 
-(??? (test branch)
-      (test branch)
-      ...)
+// Not if statement.
+(!? predicate
+    if-false
+    if-true)
 
-// Equality
+// cond statement 
+(??? (test branch)
+     (test branch)
+     t ...)
+
+// Equality (there is no = keyword, so there are never any = vs == errors)
 (== a b)
 
-// Setting location (Still thinking about this)
-// (= location 'value)
+// Inequality
+(!= a b)
+(< a b)
+(> a b)
+(<= a b)
+(>= a b)
 
 // AND
 (&& true true true... )
@@ -82,7 +94,7 @@ NULL
 // OR
 (|| true true true... )
 
-// NOT (acts as isnull)
+// NOT (acts as null?)
 (! TRUE)
 
 // Loops are surrounded by <>
@@ -95,33 +107,37 @@ NULL
      code)
 
 // Read Eval Print Loop
-(loop (print (eval (read))))
-
-TODO:
-
-// Not if statement.
-(!? predicate
-    if-false
-    if-true)
-
-(?? ... only true path..)
-
-(!?? ....)
-
-// lambda
-(lambda (args) code)
-
-// Define function
-(fun name args code)
+(<> (print (eval (read))))
 
 // return last in block and first in block.
 (... code)
 (1... code)
 
-// QUASIQUOTING
-`(a b c) => (A B C)
-`(a ,(list hello world) c) => (A (HELLO WORLD) C)
-`(a ,@(list hello world) c) => (A HELLO WORLD C)
+// lambda
+(lambda (args) code)
+
+(let ((a 1)
+      (b 2)
+      (l (lambda (c d) (print (+ c d)))))
+   (l a b))
+   
+
+TODO:
+
+// I need to reconfigure my rbtree to work with data pairs.
+// Setting location 
+(SET 'location 'value)
+// Or for convenience
+(SETQ location 'value)
+
+// Just need to implement them as while and unless
+(?? ... only true path..)
+
+(!?? ....)
+
+// Define function
+(fun name args code)
+
 
 
 //Add escapes for strings.

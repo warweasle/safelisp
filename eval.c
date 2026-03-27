@@ -289,6 +289,36 @@ void* eval_list(void* list, void* env) {
       }
       break;
 
+      case N_NIF:
+      {
+	void* pred = cdr(list);
+	void* truth = cdr(cdr(list));
+	
+	if(!pred) {
+	  return ERROR("ERROR: nothing to IF!");
+	}
+
+	if(!truth) {
+	  return ERROR("Nothing to execute in IF statement!\n");
+	}
+	
+	void* predicate = eval(car(pred), env);
+
+	if(!is_true(predicate)) {
+	  return eval(car(truth), env);
+	}
+	else {
+	  void* falsehood = cdr(truth);
+	  if(falsehood) {
+	    return eval(car(falsehood), env);
+	  }
+	  else {
+	    return NULL;
+	  }
+	}
+      }
+      break;
+      
     case N_COND:
       {
 	if(!cdr(list) || !car(cdr(list))) {
@@ -570,6 +600,7 @@ void* eval_list(void* list, void* env) {
 
 	  case TYPE_RB_TREE:
 	    {
+	      printf("AAAAAAAAAAAa\n");
 	      void* found = mapget(car(i), name);
 	      if(is_error(found)) return found;
 
@@ -580,7 +611,9 @@ void* eval_list(void* list, void* env) {
 		cdr(found) = value;
 	      }
 	      else {
+		printf("I assumme?\n");
 		mapset(car(i), name, value);
+		printf("what?\n");
 	      }
 	      return value;
 	    }

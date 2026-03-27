@@ -42,8 +42,11 @@ void* mapadd(void* map, void* object, void* value) {
 
 void* mapset(void* map, void* object, void* value) {
 
+  printf("BBBBBBBBBB\n");
   cc c = to_cons(mapget(map, object));
-
+  print(stdout, c, 10);
+  printf("\n");
+  printf("CCCCCCCCC\n");
   if(c) {
     
     if(c && is_cons(c)) {
@@ -55,7 +58,8 @@ void* mapset(void* map, void* object, void* value) {
   }
   // Add instead...
   else {
-    return ERROR("KEY DOESN'T EXIST!");
+    cc_rb_insert(map, object, rbObjectCompare, NULL);
+    
   }
   return value;
 }

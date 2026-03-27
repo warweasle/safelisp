@@ -166,6 +166,12 @@ return ATOM;}
     return ATOM;
 }
 
+[!][?]          {
+
+    yylval->p = create_native_int_type(N_NIF);
+    return ATOM;
+}
+
 [?][.][.][.]          {
 
     yylval->p = create_native_int_type(N_COND);
@@ -214,12 +220,12 @@ return ATOM;}
     return ATOM;
 }
 
-[lL][oO][oO][pP] {
+[<][>] {
     yylval->p = create_native_int_type(N_LOOP);
     return ATOM;
 }
 
-[wW][hH][iI][lL][eE]  {
+[<][?][>]  {
    yylval->p = create_native_int_type(N_WHILE);
     return ATOM;
 }

@@ -54,9 +54,9 @@ This is a work in progress, please look at the safelisp_parser.l for a list of c
 // Let behaves as let*, where previous values are available
 // as soon as they are declared.
 
-(let ((a 1)
-      (b (+ a 1)))
-  (print b)) 
+(LET ((A 1)
+      (B (+ A 1)))
+  (PRINT B)) 
 
 // SET evaluates its first argument. SETQ does not. (currently broken)
 (SET 'location 'value)
@@ -130,19 +130,41 @@ NULL
      code)
 
 // Read Eval Print Loop
-(<> (print (eval (read))))
+(<> (PRINT (EVAL (READ))))
 
 // return last in block and first in block.
 (... code)
 (1... code)
 
 // lambda
-(lambda (args) code)
+(LAMBDA (ARGS) CODE)
 
-(let ((a 1)
+(LET ((a 1)
       (b 2)
       (l (lambda (c d) (print (+ c d)))))
    (l a b))
+
+//----COMING SOON!!!
+
+// Defining global functions
+(FUN (FUNC-NAME ARGS ARGS ...) CODE)
+
+// Defining global macros
+(MAC (MACRO-NAME ARGS ARGS ...) CODE)
+
+// Local functions
+(FLET ((func1 (args args) code))
+        ((func2 (args args) code)))
+
+   (func1 ...)
+   (func2 ...))
+
+// Local macros
+(MLET ((macro1 (args args) code))
+       ((macro2 (args args) code)))
+
+   (macro1 ...)
+   (macro2 ...))
 
 
 ```

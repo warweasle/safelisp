@@ -122,7 +122,7 @@ NULL
 
 // Loops are surrounded by <>
 // |> break
-// <| continue
+// <| continue (Not yet implemented!)
 (<>
    (PRINT "FOREVER!"))
 
@@ -155,6 +155,9 @@ Unlike traditional lisps, there are no reader macros since it's a security night
 SafeLisp uses garbage collection and bignums to minimize errors.
 It also uses short, easy to read functions for minimal mental load.
 It is a scheme-1 which means there is only one symbol space for both functions and variables.
+
+Evaluation is simple left to right, from inside out.
+Special forms excluded. 
 
 The idea is to make a simple, fast lisp that is familiar to C programmers.
 

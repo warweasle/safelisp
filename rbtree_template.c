@@ -124,6 +124,15 @@ void RB_FUNC(insert)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void
   RB_NODE_TYPE* current = RB_ROOT(tree);
   int dir = 0;
 
+  printf("node\n");
+  print(stdout, key, 10);
+  printf("\n");
+  
+  printf("current\n");
+  print(stdout, current, 10);
+  printf("\n");
+  
+  
   // Step 2: Walk tree to find parent
   while (current) {
     parent = current;
@@ -143,7 +152,10 @@ void RB_FUNC(insert)(RB_TREE_TYPE* tree, RB_KEY_TYPE* key, RB_CMP_FUNC cmp, void
   RB_SET_RIGHT(node, NULL);
   RB_SET_COLOR(node, RB_RED);
 
+  printf("AAAAAAAAA\n");
+  
   if (!parent) {
+    printf("BBBBBBBBBB\n");
     RB_SET_ROOT(tree, node);
   } else if (dir == 0) {
     RB_SET_LEFT(parent, node);

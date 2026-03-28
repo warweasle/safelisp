@@ -28,7 +28,7 @@ extern "C" {
 #define RB_SET_PARENT(node, val) (cdr(cdr(cdr(node))) = (val))
 
 #define RB_ROOT(tree)      ((tree) ? (tree)->car : NULL)
-#define RB_SET_ROOT(tree, val) do { if ((tree)) (tree)->cdr = (val); } while (0)
+#define RB_SET_ROOT(tree, val) { car(tree) = (val); }
   
   /* #define RB_GET_COLOR(node) ((node) && is_red_black_flag_set(node) ? RB_RED : RB_BLACK) */
 #define RB_GET_COLOR(p)   ((p) ? (is_red_black_flag_set(p) ? 1 : 0)	\

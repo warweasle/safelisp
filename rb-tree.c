@@ -17,6 +17,8 @@ cc create_rb_node(void* key, cc left, cc right, cc parent) {
 int rbObjectPairCompare(void* data, void* a, void* b) {
   (void)data; // unused for now
 
+  printf("rbObjectPairCompare\n");
+  
   if(!a && !b) return 0;
   if(!a) return -1;
   if(!b) return 1;
@@ -27,6 +29,8 @@ int rbObjectPairCompare(void* data, void* a, void* b) {
 int rbObjectCompare(void* data, void* a, void* b) {
   (void)data; // unused for now
 
+  printf("rbObjectCompare\n");
+  
   if(!b) return 1;
   
   return compare(a, car(b));
@@ -58,7 +62,7 @@ void* mapset(void* map, void* object, void* value) {
 
   printf("BBBBBBBBBB\n");
   cc c = to_cons(mapget(map, object));
-  print(stdout, c, 10);
+  print(stdout, map, 10);
   printf("\n");
   printf("CCCCCCCCC\n");
   if(c) {
@@ -72,7 +76,7 @@ void* mapset(void* map, void* object, void* value) {
   }
   // Add instead...
   else {
-    cc_rb_insert(map, object, rbObjectPairCompare, NULL);
+    cc_rb_insert(map, (void*) cons(object, value), rbObjectPairCompare, NULL);
     
   }
   return value;

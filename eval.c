@@ -22,19 +22,19 @@ void* quasiquote(void* list, void* env, int depth) {
   case TYPE_COMMA:
     
     if(depth == 0) {
-      return eval(car(list), env);
+      return ERROR("COMMA: COMMA MUST BE IN A LIST!!!");
     }
     else {
-      return quasiquote(car(list), env, depth +1);
+      return eval(car(list), env);
     }
     break;
     
   case TYPE_BACKTICK:
     if(depth == 0) {
-      return quasiquote(car(list), env, depth + 1);
+            return ERROR("COMMA: COMMA MUST BE IN A LIST!!!");
     }
     else {
-      return list;
+      return quasiquote(car(list), env, depth + 1);
     }
     break;
 
@@ -1755,6 +1755,64 @@ void* eval_list(void* list, void* env) {
       void* e = butlast(car(env));
       return create_lambda(e, cons(car(cdr(list)), cdr(cdr(list))));
       break;
+
+    case N_CAT:
+
+      void* args = cdr(list);
+      
+      if(!args) {
+	return to_string("");
+      }
+
+      int slen = 0;
+      for(void* o = args; o != NULL; o = cdr(o)) {
+	switch(get_type(car(o))) {
+	case TYPE_STRING:
+	  slen += to_string(car(o))->size;
+	  break;
+	  
+	case TYPE_RESIZABLE_STRING:
+	  slen += ((resizable_string_type*) (car(o)))->len;
+	  break;
+	  
+	default:
+	  
+	  return ERROR("CAT only works with string types!");
+	}
+      }
+
+      int p = 0;
+      string_type* newstr = create_string_type(TYPE_STRING, slen);
+
+      printf("newstr careated...\n");
+      
+      for(void* o = args; o != NULL; o = cdr(o)) {
+	switch(get_type(car(o))) {
+	case TYPE_STRING:
+	  {
+	    string_type* ostr = to_string(car(o));
+	    for(int i=0; i<ostr->size; i++) {
+	      newstr->str[p] = ostr->str[i];
+	      p++;
+	    }
+	  }
+	  break;
+	  
+	case TYPE_RESIZABLE_STRING:
+	  resizable_string_type* rstr = ((resizable_string_type*) car(o));
+	  for(int i=0; i<rstr->len; i++) {
+	      newstr->str[p] = rstr->str[i];
+	      p++;
+	    }
+	  break;
+	}
+      }
+      newstr->str[p] = '\0';
+
+      printf("trying to return...\n");
+      
+      return newstr;
+      break;
       
     default:
       
@@ -1814,12 +1872,12 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
       }
-
+      
       // reset the end so we don't mess up the closure.
       if(closure) {
 	cdr(l) = NULL;
       }
-
+      
       car(env) = oldenv;
       return ret;
     }

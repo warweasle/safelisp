@@ -1782,16 +1782,15 @@ void* eval_list(void* list, void* env) {
       }
 
       int p = 0;
-      string_type* newstr = create_string_type(TYPE_STRING, slen);
+      string_type* newstr = create_string_type(slen, TYPE_STRING);
 
-      printf("newstr careated...\n");
-      
       for(void* o = args; o != NULL; o = cdr(o)) {
 	switch(get_type(car(o))) {
 	case TYPE_STRING:
 	  {
+	    
 	    string_type* ostr = to_string(car(o));
-	    for(int i=0; i<ostr->size; i++) {
+	    for(int i=0; i < ostr->size; i++) {
 	      newstr->str[p] = ostr->str[i];
 	      p++;
 	    }
@@ -1799,17 +1798,18 @@ void* eval_list(void* list, void* env) {
 	  break;
 	  
 	case TYPE_RESIZABLE_STRING:
+	  printf("copyint resizeable string\n");
 	  resizable_string_type* rstr = ((resizable_string_type*) car(o));
 	  for(int i=0; i<rstr->len; i++) {
 	      newstr->str[p] = rstr->str[i];
 	      p++;
 	    }
 	  break;
+
+	  
 	}
       }
       newstr->str[p] = '\0';
-
-      printf("trying to return...\n");
       
       return newstr;
       break;

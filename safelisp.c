@@ -241,7 +241,7 @@ string_type* create_string_type_and_copy(size_t len, const char* str, ValueType 
   if (!sym) return NULL; // Check for allocation failure
 
   sym->type = Type;
-  strncpy(sym->str, str, len+1); // Copy up to len characters
+  strncpy(sym->str, str, len); // Copy up to len characters
   sym->size = len;
   sym->str[len+1] = '\0'; // Ensure null termination
 

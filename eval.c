@@ -1757,16 +1757,41 @@ void* eval_list(void* list, void* env) {
       break;
 
     case N_CAT:
-
-      void* args = cdr(list);
+      {
+	void* args = cdr(list);
       
-      if(!args) {
-	return to_string("");
-      }
+	if(!args) {
+	  return to_string("");
+	}
 
+	void* ret = NULL;
+	cc next = NULL;
+      
+      for(void* i=cdr(list); i; i=cdr(i)) {
+	void* tmp = eval(car(i), env);
+	
+	if(ret) {
+	  cc c = cons(tmp, NULL);
+	  next->cdr = c;
+	  next = c;
+	}
+	else {
+	  
+	  ret = cons(tmp, NULL);
+	  next = ret;
+	}
+      }
+      args = ret;
+      
       int slen = 0;
       for(void* o = args; o != NULL; o = cdr(o)) {
 	switch(get_type(car(o))) {
+	case TYPE_TRUE:
+	case TYPE_NULL:
+	  slen += 4;
+	  break;
+	  
+	case TYPE_SYMBOL:
 	case TYPE_STRING:
 	  slen += to_string(car(o))->size;
 	  break;
@@ -1776,8 +1801,10 @@ void* eval_list(void* list, void* env) {
 	  break;
 	  
 	default:
+
 	  
-	  return ERROR("CAT only works with string types!");
+	  
+	  return ERROR("CAT only works with strings and symbols types!");
 	}
       }
 
@@ -1786,6 +1813,22 @@ void* eval_list(void* list, void* env) {
 
       for(void* o = args; o != NULL; o = cdr(o)) {
 	switch(get_type(car(o))) {
+	case TYPE_TRUE:
+	  newstr->str[p++] = 'T';
+	  newstr->str[p++] = 'R';
+	  newstr->str[p++] = 'U';
+	  newstr->str[p++] = 'E';
+	  break;
+
+	  
+	case TYPE_NULL:
+	  newstr->str[p++] = 'N';
+	  newstr->str[p++] = 'U';
+	  newstr->str[p++] = 'L';
+	  newstr->str[p++] = 'L';
+	  break;
+	  
+	case TYPE_SYMBOL:
 	case TYPE_STRING:
 	  {
 	    
@@ -1813,7 +1856,7 @@ void* eval_list(void* list, void* env) {
       
       return newstr;
       break;
-      
+      }
     default:
       
       return ERROR("Unknown native int function!!!\n");

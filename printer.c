@@ -1,6 +1,100 @@
 #include <gmp.h>
 #include "printer.h"
 
+void* print_to_string(void* o, int base) {
+
+  if(o == NULL) return create_string_type_and_copy(4, "NULL", TYPE_STRING);
+  
+  int t = get_type(o);
+  switch(t) {
+  case TYPE_TRUE:
+    return create_string_type_and_copy(4, "TRUE", TYPE_STRING);
+    break;
+    
+  case TYPE_QUOTE:
+    return create_string_type_and_copy(4, "'", TYPE_STRING);
+    break;
+
+  case TYPE_BACKTICK:
+    return create_string_type_and_copy(4, "`", TYPE_STRING);
+    break;
+
+  case TYPE_COMMA:
+    return create_string_type_and_copy(4, ",", TYPE_STRING);
+    break;
+
+  case TYPE_SPLICE:
+    return create_string_type_and_copy(4, ",@", TYPE_STRING);
+    break;
+
+  case TYPE_SYMBOL:
+    return create_string_type_and_copy(((string_type*)o)->size, ((string_type*)o)->str, TYPE_STRING);
+    break;
+	
+  case TYPE_STRING:
+    return o;
+    break;
+    
+  case TYPE_INT:
+    {
+      char* str = mpz_get_str(NULL, base, to_int(o)->num);
+      return create_string_type_from_string(str, TYPE_STRING);
+    }
+    break;
+
+  case TYPE_FLOAT:
+    {
+      return ERROR("TO-STRING doesn't support floats yet!!\n"); 
+    }
+    break;
+    
+   case TYPE_RATIONAL:
+     return ERROR("TO-STRING doesn't support rational numbers yet!!\n"); 
+  /*   mpq_out_str(output, base, to_rational(o)->num); */
+     break; 
+
+  case TYPE_CHAR:
+    {
+      string_type* str = create_string_type(1, TYPE_STRING);
+      str->str[0] = to_char(o)->c;
+      str->str[1] = '\0';
+      return str;
+    }
+    break;
+    
+  /* case TYPE_POINTER: */
+  /*   fprintf(output, "<POINTER:%p>", to_pointer(o)->p); */
+  /*   break; */
+
+  /* case TYPE_RB_TREE: */
+  /*   fprintf(output, "(MAPMAKE"); */
+  /*   if(car(o)) { */
+  /*     printf(" "); */
+  /*     print(output, car(o), base); */
+  /*   } */
+  /*   fprintf(output, ")"); */
+    
+  /*   break; */
+
+  /* case TYPE_CNR: */
+  /*   fprintf(output, "C%sR", to_string(car(o))->str); */
+  /*   break; */
+
+    
+  case TYPE_CONS:
+    return ERROR("TO-STRING does not work with lists yet!");
+    break;
+    
+  default:
+
+    return ERROR("type not yet implemented in print_to_string.");
+
+  }
+  
+  
+  return ERROR("TO-STRING not yet implemented!!");
+}
+
 void print(FILE* output, void* o, int base) {
   
   if(o == NULL) {

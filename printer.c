@@ -1,3 +1,5 @@
+#include <stdlib.h>
+void (*old_free2)(void*) = free;
 #include <gmp.h>
 #include "printer.h"
 
@@ -44,15 +46,46 @@ void* print_to_string(void* o, int base) {
 
   case TYPE_FLOAT:
     {
-      return ERROR("TO-STRING doesn't support floats yet!!\n"); 
+      char* buf = NULL;
+      size_t size = 0;
+      FILE* mem = open_memstream(&buf, &size);
+
+      if(!mem) {
+	return ERROR("open_memstream failed");
+      }
+     
+      mpf_out_str(mem, base, 0, to_float(o)->num);
+      
+      fclose(mem);
+      
+      string_type* s = create_string_type_from_string(buf, TYPE_STRING);
+      old_free2(buf);
+      
+      return s;
     }
     break;
     
    case TYPE_RATIONAL:
-     return ERROR("TO-STRING doesn't support rational numbers yet!!\n"); 
-  /*   mpq_out_str(output, base, to_rational(o)->num); */
+     {
+       char* buf = NULL;
+       size_t size = 0;
+       FILE* mem = open_memstream(&buf, &size);
+       
+       if(!mem) {
+	 return ERROR("open_memstream failed");
+       }
+       
+       mpq_out_str(mem, base, to_rational(o)->num);
+       
+       fclose(mem);
+       
+       string_type* s = create_string_type_from_string(buf, TYPE_STRING);
+       old_free2(buf);
+       
+       return s;
+     }
      break; 
-
+     
   case TYPE_CHAR:
     {
       string_type* str = create_string_type(1, TYPE_STRING);
@@ -62,25 +95,42 @@ void* print_to_string(void* o, int base) {
     }
     break;
     
-  /* case TYPE_POINTER: */
-  /*   fprintf(output, "<POINTER:%p>", to_pointer(o)->p); */
-  /*   break; */
-
-  /* case TYPE_RB_TREE: */
-  /*   fprintf(output, "(MAPMAKE"); */
-  /*   if(car(o)) { */
-  /*     printf(" "); */
-  /*     print(output, car(o), base); */
-  /*   } */
-  /*   fprintf(output, ")"); */
+    /* case TYPE_POINTER: */
+    /*   fprintf(output, "<POINTER:%p>", to_pointer(o)->p); */
+    /*   break; */
     
-  /*   break; */
-
-  /* case TYPE_CNR: */
-  /*   fprintf(output, "C%sR", to_string(car(o))->str); */
-  /*   break; */
-
+    /* case TYPE_RB_TREE: */
+    /*   fprintf(output, "(MAPMAKE"); */
+    /*   if(car(o)) { */
+    /*     printf(" "); */
+    /*     print(output, car(o), base); */
+    /*   } */
+    /*   fprintf(output, ")"); */
     
+    /*   break; */
+    
+  case TYPE_CNR:
+    {
+      string_type* input = to_string(car(o));
+      string_type* ret = create_string_type(input->size + 2, TYPE_STRING);
+
+      ret->str[0] = 'C';
+      for(int i=0; i<input->size; i++) {
+	ret->str[i+1] = input->str[i];
+      }
+      
+      ret->str[ret->size-1] = 'R';
+      ret->str[ret->size] = '\0';
+
+      return ret;
+    }
+    break;
+
+  case TYPE_ERROR:
+    
+  case TYPE_LAMBDA:
+  
+        
   case TYPE_CONS:
     return ERROR("TO-STRING does not work with lists yet!");
     break;

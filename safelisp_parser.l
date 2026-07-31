@@ -246,6 +246,16 @@ return ATOM;}
     return ATOM;
 }
 
+[wW][iI][tT][hH][rR][eE][sS][tT][aA][rR][tT] {
+    yylval->p = create_native_int_type(N_WITH_RESTART);
+    return ATOM;
+}
+
+[iI][nN][vV][oO][kK][eE][rR][eE][sS][tT][aA][rR][tT] {
+    yylval->p = create_native_int_type(N_INVOKE_RESTART);
+    return ATOM;
+}
+
 [tT][yY][pP][eE] {
     yylval->p = create_native_int_type(N_TYPE);
     return ATOM;
@@ -291,6 +301,11 @@ return ATOM;}
     return ATOM;
 }
 
+[aA][pP][pP][lL][yY] {
+    yylval->p = create_native_int_type(N_APPLY);
+    return ATOM;
+}
+
 
 [cC][aA][tT] {
     yylval->p = create_native_int_type(N_CAT);
@@ -304,6 +319,11 @@ return ATOM;}
 
 [lL][aA][mM][bB][dD][aA] {
     yylval->p = create_native_int_type(N_LAMBDA);
+    return ATOM;
+}
+
+[mM][aA][cC][rR][oO] {
+    yylval->p = create_native_int_type(N_MACRO);
     return ATOM;
 }
 

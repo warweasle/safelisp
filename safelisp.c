@@ -330,7 +330,19 @@ cc create_lambda(void* args, void* code) {
 
   ret->type = TYPE_LAMBDA;
   ret->car = args;
-  ret->cdr = code;  
+  ret->cdr = code;
+  return ret;
+}
+
+// Structurally identical to a lambda -- (closure . (args . code)) -- only
+// the type tag differs, so call-time dispatch can tell "expand this" apart
+// from "just apply this."
+cc create_macro(void* args, void* code) {
+  cc ret = (cc) GC_malloc(sizeof(cons_cell));
+
+  ret->type = TYPE_MACRO;
+  ret->car = args;
+  ret->cdr = code;
   return ret;
 }
 
@@ -527,6 +539,7 @@ int compare(void* a, void* b) {
   case TYPE_RESIZABLE_STRING:
   case TYPE_NATIVE:
   case TYPE_LAMBDA:
+  case TYPE_MACRO:
   case TYPE_RAW:
   case TYPE_INT8:
   case TYPE_UINT8:
@@ -624,6 +637,8 @@ char* return_type_c_string(void* o) {
     return "NATIVE_POINTER";
   case TYPE_LAMBDA:
     return "LAMBDA";
+  case TYPE_MACRO:
+    return "MACRO";
   case TYPE_RAW:
     return "RAW";
   case TYPE_INT8:

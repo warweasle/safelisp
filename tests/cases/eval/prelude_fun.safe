@@ -1,0 +1,2 @@
+(... (FUN SQUARE (X) (* X X))
+     (PRINT (SQUARE 5)))

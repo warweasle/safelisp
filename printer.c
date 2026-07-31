@@ -202,6 +202,14 @@ static void stringify_lambda(resizable_string_type* buf, void* o, int base) {
   putch_resizable_array(buf, ')');
 }
 
+static void stringify_macro(resizable_string_type* buf, void* o, int base) {
+  putstr_resizable_array(buf, "(MACRO ");
+  stringify_dispatch(buf, car(cdr(o)), base);
+  putch_resizable_array(buf, ' ');
+  stringify_dispatch(buf, cdr(cdr(o)), base);
+  putch_resizable_array(buf, ')');
+}
+
 static void stringify_unprintable_array(resizable_string_type* buf) {
   putstr_resizable_array(buf, "Specialized array type data isn't printable yet, defaulting to hex.");
 }
@@ -236,6 +244,7 @@ static void stringify_dispatch(resizable_string_type* buf, void* o, int base) {
   case TYPE_CNR:       stringify_cnr(buf, o); break;
   case TYPE_ERROR:     stringify_error(buf, o, base); break;
   case TYPE_LAMBDA:    stringify_lambda(buf, o, base); break;
+  case TYPE_MACRO:     stringify_macro(buf, o, base); break;
 
   case TYPE_INT8: case TYPE_UINT8: case TYPE_FLOAT8: case TYPE_DOUBLE8: case TYPE_LONG_DOUBLE8:
   case TYPE_INT16: case TYPE_UINT16: case TYPE_FLOAT16: case TYPE_DOUBLE16: case TYPE_LONG_DOUBLE16:

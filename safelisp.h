@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <setjmp.h>
 
 #include <gc.h>
 #include <gmp.h>
@@ -58,6 +59,7 @@ extern "C" {
     TYPE_RATIONAL,
     TYPE_FLOAT,
     TYPE_LAMBDA,
+    TYPE_MACRO,
     TYPE_RAW,
     TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8,
     TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16,
@@ -115,6 +117,7 @@ extern "C" {
 	N_MAPSET,
 	N_MAPDEL,
 	N_LAMBDA,
+	N_MACRO,
 	N_LET,
 	N_CAT,
 	N_MULT,
@@ -122,7 +125,10 @@ extern "C" {
 	N_ADD,
 	N_SUB,
 	N_PROGN,
-	N_PROG1
+	N_PROG1,
+	N_WITH_RESTART,
+	N_INVOKE_RESTART,
+	N_APPLY
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
@@ -252,6 +258,7 @@ extern "C" {
 
   pointer_type* create_pointer_type(void* p, ValueType Type);
   cc create_lambda(void* args, void* code);
+  cc create_macro(void* args, void* code);
   cc make_cnr(void* cnr);
   
   // Important functions

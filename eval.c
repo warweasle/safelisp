@@ -1,5 +1,20 @@
 #include "eval.h"
 
+// State for one established WITH-RESTART, reached via INVOKE-RESTART.
+// GC-allocated (not stack-local) so nothing ever takes the address of a C
+// stack variable -- the only real safety requirement for longjmp is that
+// the C stack frame which called setjmp still be on the call stack when
+// longjmp fires, which is guaranteed here by construction: a restart_frame
+// only becomes reachable via the fresh env cell WITH-RESTART builds for its
+// own body, and that env cell is never stored anywhere outside this call's
+// dynamic extent (never leaked to a caller, never mutated onto shared
+// state), so INVOKE-RESTART can only ever find one whose establishing
+// WITH-RESTART is still active.
+typedef struct restart_frame {
+  jmp_buf buf;
+  void* value;
+} restart_frame;
+
 // PRINT and TO-STRING always succeed at their own job (displaying/converting
 // whatever they're given), even when that value happens to be an ERROR
 // object printed as data. A sequence runner (PROGN/PROG1/WHEN/UNLESS)
@@ -21,19 +36,23 @@ typedef enum {
   ARGS_RAW_NOEVAL  // args are unevaluated forms; bind them AS FORMS, no evaluation at all
 } ArgMode;
 
-// The single place a callable (TYPE_LAMBDA or TYPE_NATIVE) gets applied to
-// its arguments. callEnv is the environment raw argument forms are evaluated
-// in (ARGS_RAW_EVAL only); env is the environment used to build the callee's
-// closure chain. Keeping them separate means evaluating arguments and
-// constructing a closure never get conflated. TYPE_MACRO is intentionally
-// not handled here -- macro-vs-not is decided by the caller, before this
-// function is ever invoked, since that decision determines whether argument
-// forms get evaluated at all.
+// The single place a callable (TYPE_LAMBDA, TYPE_MACRO, or TYPE_NATIVE) gets
+// applied to its arguments. callEnv is the environment raw argument forms
+// are evaluated in (ARGS_RAW_EVAL only); env is the environment used to
+// build the callee's closure chain. Keeping them separate means evaluating
+// arguments and constructing a closure never get conflated. Whether the
+// CALLER should treat the result as a value or as an expansion form to
+// eval() again is decided by the caller (via which argMode it passes),
+// since deciding "is this a macro" has to happen before argument forms are
+// evaluated at all -- this function itself is agnostic to that distinction,
+// it just binds args to params either way, using the identical storage
+// shape TYPE_LAMBDA and TYPE_MACRO share.
 static void* apply_callable(void* callee, void* args, ArgMode argMode, void* callEnv, void* env) {
 
   switch(get_type(callee)) {
 
   case TYPE_LAMBDA:
+  case TYPE_MACRO:
     {
       void* lambda = callee;
       void* closure = car(lambda);
@@ -61,7 +80,8 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
       void* nextFrame = NULL;
 
       if(car(lambdaArgs)) {
-	for(void* i = lambdaArgs; i; i=cdr(i)) {
+	void* i = lambdaArgs;
+	for(; is_cons(i); i=cdr(i)) {
 
 	  if(!vals) {
 	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
@@ -72,7 +92,19 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	  vals = cdr(vals);
 	}
 
-	if(vals) {
+	if(i) {
+	  // Dotted param list -- i is the rest-parameter symbol (not NULL,
+	  // not a cons). Bind it to everything left in vals, as a list.
+	  void* rest = NULL;
+	  void* restLast = NULL;
+	  for(; vals; vals=cdr(vals)) {
+	    void* val = (argMode == ARGS_RAW_EVAL) ? eval(car(vals), callEnv) : car(vals);
+	    if(!rest) { rest = cons(val, NULL); restLast = rest; }
+	    else { cdr(restLast) = cons(val, NULL); restLast = cdr(restLast); }
+	  }
+	  nextFrame = cons(cons(i, rest), nextFrame);
+	}
+	else if(vals) {
 	  return ERROR("TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
 	}
 
@@ -131,6 +163,60 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
       }
 
       return f(ret, env);
+    }
+
+  case TYPE_NATIVE_INT:
+    {
+      // Built-in operators (+, CAR, PRINT, ...) are TYPE_NATIVE_INT values,
+      // not TYPE_LAMBDA/TYPE_NATIVE -- eval_list's big NATIVE_INT switch is
+      // the only place that knows how to run them, and every one of its
+      // ~40 cases hand-rolls its own eval(car(...), env) on its raw operand
+      // forms. Rather than touch every case, re-enter that switch but wrap
+      // each final VALUE in a QUOTE first for any type eval() would
+      // otherwise treat specially (symbols, cons cells, the quote-family
+      // types) -- QUOTE's eval() just returns car(list) unevaluated, so
+      // this makes the switch's own eval() a no-op on values that are
+      // already final, without touching ~40 case bodies. Self-evaluating
+      // types (numbers, strings, TRUE, lambdas, ...) pass through unwrapped
+      // since a second eval() of those is already a no-op. NULL is never
+      // wrapped -- QUOTE on NULL is nonsensical here and NULL is always
+      // self-evaluating anyway.
+      //
+      // If argMode is ARGS_RAW_EVAL, args are still raw forms at this point
+      // (mirroring TYPE_NATIVE's own handling just above) and must be
+      // evaluated in callEnv first to get final values; otherwise they're
+      // already final values (ARGS_VALUES/ARGS_RAW_NOEVAL).
+      void* wrapped = NULL;
+      void* last = NULL;
+      for(void* i=args; i; i=cdr(i)) {
+
+	void* val = (argMode == ARGS_RAW_EVAL) ? eval(car(i), callEnv) : car(i);
+	if(is_error(val)) return val;
+
+	switch(val ? get_type(val) : TYPE_NULL) {
+	case TYPE_SYMBOL:
+	case TYPE_CONS:
+	case TYPE_QUOTE:
+	case TYPE_BACKTICK:
+	case TYPE_COMMA:
+	case TYPE_SPLICE:
+	  val = create_quotetype(TYPE_QUOTE, val);
+	  break;
+	default:
+	  break;
+	}
+
+	if(!wrapped) {
+	  wrapped = cons(val, NULL);
+	  last = wrapped;
+	}
+	else {
+	  cdr(last) = cons(val, NULL);
+	  last = cdr(last);
+	}
+      }
+
+      return eval_list(cons(callee, wrapped), env);
     }
 
   default:
@@ -293,8 +379,12 @@ void* eval_list(void* list, void* env) {
       void* f = eval(car(list), env);
       if(is_error(f)) return f;
 
-      // Macro detection (once TYPE_MACRO exists) belongs here, before any
-      // argument form is evaluated -- macros need the raw forms, not values.
+      if(is_type(f, TYPE_MACRO)) {
+	void* expansion = apply_callable(f, cdr(list), ARGS_RAW_NOEVAL, env, env);
+	if(is_error(expansion)) return expansion;
+	return eval(expansion, env);
+      }
+
       return apply_callable(f, cdr(list), ARGS_RAW_EVAL, env, env);
     }
     break;
@@ -1536,29 +1626,142 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_LOOP:
+      {
+	void* start = cdr(list);
+	if(!start || !car(start)) {
+	  return ERROR("LOOP requires at least one argument!");
+	}
 
-      void* oldenv = NULL;
-      oldenv = cdr(env);
-      
-      void* start = cdr(list);
-      if(!start || !car(start)) {
-	return ERROR("LOOP requires at least one argument!");
-      }
+	// Fresh env cell, never mutates the caller's env -- same pattern as
+	// the TYPE_LAMBDA/apply_callable fix: nothing here is reachable from
+	// env, so there is nothing to restore, and a future non-local exit
+	// (a restart) can safely unwind through this frame without leaking
+	// a stale *BREAK* binding onto shared state.
+	void* newenv = cons(car(env), cons(cons(create_symbol("*BREAK*"), NULL), cdr(env)));
 
-      cdr(env) = cons(cons(create_symbol("*BREAK*"), NULL), cdr(env));
-      
-      void* i = start;
-      void* ret = cdr(cassoc("*BREAK*", cdr(env)));
-      while(!ret) {
-	eval(car(i), env);
-	ret = cdr(cassoc("*BREAK*", cdr(env)));
-	
-	if(cdr(i)) i = cdr(i);
-	else       i = start;
+	void* i = start;
+	void* ret = cdr(cassoc("*BREAK*", cdr(newenv)));
+	while(!ret) {
+	  eval(car(i), newenv);
+	  ret = cdr(cassoc("*BREAK*", cdr(newenv)));
+
+	  if(cdr(i)) i = cdr(i);
+	  else       i = start;
+	}
+
+	return ret;
       }
-      cdr(env) = oldenv;
-      
-      return ret;
+      break;
+
+    // A minimal restart system -- NOT a full Common Lisp condition system
+    // (no condition classes, no signal/handler-bind, no search-by-type).
+    // Exactly one dynamic-extent recovery point, established lexically,
+    // found dynamically by name, invoked to transfer control back to its
+    // establishment point with a value. ERROR-as-a-returned-value is
+    // untouched: this is for structured recovery control flow, not for
+    // representing failures, which continue to work via ERROR()/is_error()
+    // exactly as before.
+    case N_WITH_RESTART:
+      {
+	void* rest = cdr(list);
+	if(!rest || !car(rest)) {
+	  return ERROR("WITH-RESTART requires a name!");
+	}
+	void* name = car(rest);
+	if(!is_type(name, TYPE_SYMBOL)) {
+	  return ERROR("WITH-RESTART: name must be a symbol!");
+	}
+
+	rest = cdr(rest);
+	if(!rest || !car(rest)) {
+	  return ERROR("WITH-RESTART requires a recovery lambda!");
+	}
+	void* recovery = eval(car(rest), env);
+	if(is_error(recovery)) return recovery;
+
+	void* body = cdr(rest);
+
+	restart_frame* frame = GC_malloc(sizeof(restart_frame));
+	frame->value = NULL;
+
+	if(setjmp(frame->buf)) {
+	  // INVOKE-RESTART jumped back here.
+	  void* args = cons(frame->value, NULL);
+	  return apply_callable(recovery, args, ARGS_VALUES, env, env);
+	}
+
+	// Fresh env cell, same pattern as N_LOOP's *BREAK* frame -- never
+	// mutates the caller's env, so there is nothing to leak or restore
+	// if this dynamic extent ends via a normal return.
+	void* newenv = cons(car(env),
+			     cons(cons(to_string(name), create_pointer_type(frame, TYPE_POINTER)),
+				  cdr(env)));
+
+	void* ret = NULL;
+	for(void* i=body; i; i=cdr(i)) {
+
+	  void* tmp = eval(car(i), newenv);
+
+	  if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+
+	  ret = tmp;
+	}
+
+	return ret;
+      }
+      break;
+
+    case N_INVOKE_RESTART:
+      {
+	void* rest = cdr(list);
+	if(!rest || !car(rest)) {
+	  return ERROR("INVOKE-RESTART requires a name!");
+	}
+	void* name = car(rest);
+	if(!is_type(name, TYPE_SYMBOL)) {
+	  return ERROR("INVOKE-RESTART: name must be a symbol!");
+	}
+
+	void* pair = cassoc(to_string(name)->str, cdr(env));
+	if(!pair) {
+	  return ERROR("INVOKE-RESTART: no such restart!");
+	}
+
+	restart_frame* frame = to_pointer(cdr(pair))->p;
+
+	void* valueForm = cdr(rest);
+	if(valueForm && car(valueForm)) {
+	  frame->value = eval(car(valueForm), env);
+	  if(is_error(frame->value)) return frame->value;
+	}
+	else {
+	  frame->value = NULL;
+	}
+
+	longjmp(frame->buf, 1);
+	// never reached
+	return NULL;
+      }
+      break;
+
+    case N_APPLY:
+      {
+	// (APPLY callee valueList) -- valueList's elements are bound as-is,
+	// never re-evaluated, since they're already values.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("APPLY requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("APPLY requires 2 arguments!");
+
+	void* callee = eval(car(a1), env);
+	if(is_error(callee)) return callee;
+
+	void* values = eval(car(a2), env);
+	if(is_error(values)) return values;
+	if(values && !is_cons(values)) return ERROR("APPLY requires a list!");
+
+	return apply_callable(callee, values, ARGS_VALUES, env, env);
+      }
       break;
 
     case N_READ:
@@ -1659,24 +1862,20 @@ void* eval_list(void* list, void* env) {
       break;
 
     case N_MAP:
-      //return ERROR("MAP NOT YET IMPLEMENTED!");
-      printf("I wrote this in one big block after having too much coffee. Does it work? IDK.\n");
       {
-	// If i were to spitball this..
-
-	// I would need to break apart the list.
-	// verify there is a lambda expression
 	if(!cdr(list) || !car(cdr(list)) ||
 	   !cdr(cdr(list))) {
 	  return ERROR("MAP requires at least 2 arguments!");
 	}
-	
-	void* func  = car(cdr(list));
+
+	void* func = eval(car(cdr(list)), env);
+	if(is_error(func)) return func;
+
 	void* lists = cdr(cdr(list));
 	void* ret = NULL;
 	void* lret = NULL;
 	// then a dumb loop
-	
+
 	void* clists = NULL;
 	void* tmp = NULL;
 	for(void* i=lists; i; i=cdr(i)) {
@@ -1684,7 +1883,7 @@ void* eval_list(void* list, void* env) {
 	  void* e = eval(car(i), env);
 	  if(is_error(e)) return e;
 	  if(!is_cons(e)) return ERROR("Map requires lists... as of now...");
-	  
+
 	  if(!clists) {
 	    clists = cons(e, NULL);
 	    tmp = clists;
@@ -1694,19 +1893,19 @@ void* eval_list(void* list, void* env) {
 	    tmp = cdr(tmp);
 	  }
 	}
-      
+
 	while(clists) {
 	  // stripe across the lists and zip them up...
 	  // and also the clists.
 	  void* args = NULL;
 	  tmp = NULL;
 	  void* tmp2 = NULL;
-	  
+
 	  for(void* i=clists; i; i=cdr(i)) {
 
 	    // if car(i) is null then we end?
 	    if(!car(i)) return ret;
-	    
+
 	    if(!args) {
 	      args = cons(car(car(i)), NULL);
 	      tmp = args;
@@ -1720,11 +1919,13 @@ void* eval_list(void* list, void* env) {
 
 	      cdr(tmp2) = cons(cdr(car(i)), NULL);
 	      tmp2 = cdr(tmp2);
-	    }	  
+	    }
 	  }
 
-	  // here we need to call the function on the valules...
-	  void* a = eval_list(cons(func, args), env);
+	  // args are already-evaluated values -- apply directly, no re-eval.
+	  void* a = apply_callable(func, args, ARGS_VALUES, env, env);
+	  if(is_error(a)) return a;
+
 	  if(!ret) {
 	    ret = cons(a, NULL);
 	    lret = ret;
@@ -1740,11 +1941,70 @@ void* eval_list(void* list, void* env) {
       break;
 
     case N_REDUCE:
-      return ERROR("REDUCE NOT YET IMPLEMENTED!");
+      {
+	// (REDUCE func list initial)
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("REDUCE requires 3 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("REDUCE requires 3 arguments!");
+	void* a3 = cdr(a2);
+	if(!a3 || !car(a3)) return ERROR("REDUCE requires 3 arguments!");
+
+	void* func = eval(car(a1), env);
+	if(is_error(func)) return func;
+
+	void* target = eval(car(a2), env);
+	if(is_error(target)) return target;
+	if(!is_cons(target)) return ERROR("REDUCE requires a list!");
+
+	void* acc = eval(car(a3), env);
+	if(is_error(acc)) return acc;
+
+	for(void* i=target; i; i=cdr(i)) {
+	  acc = apply_callable(func, cons(acc, cons(car(i), NULL)), ARGS_VALUES, env, env);
+	  if(is_error(acc)) return acc;
+	}
+
+	return acc;
+      }
       break;
 
     case N_FILTER:
-      return ERROR("FILTER NOT YET IMPLEMENTED!");
+      {
+	// (FILTER pred list)
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("FILTER requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("FILTER requires 2 arguments!");
+
+	void* pred = eval(car(a1), env);
+	if(is_error(pred)) return pred;
+
+	void* target = eval(car(a2), env);
+	if(is_error(target)) return target;
+	if(!is_cons(target)) return ERROR("FILTER requires a list!");
+
+	void* ret = NULL;
+	void* last = NULL;
+
+	for(void* i=target; i; i=cdr(i)) {
+	  void* keep = apply_callable(pred, cons(car(i), NULL), ARGS_VALUES, env, env);
+	  if(is_error(keep)) return keep;
+
+	  if(is_true(keep)) {
+	    if(!ret) {
+	      ret = cons(car(i), NULL);
+	      last = ret;
+	    }
+	    else {
+	      cdr(last) = cons(car(i), NULL);
+	      last = cdr(last);
+	    }
+	  }
+	}
+
+	return ret;
+      }
       break;
       
     case N_LET:
@@ -1859,6 +2119,28 @@ void* eval_list(void* list, void* env) {
 
       void* e = butlast(car(env));
       return create_lambda(e, cons(car(cdr(list)), cdr(cdr(list))));
+      break;
+
+    case N_MACRO:
+
+      // Same shape as LAMBDA -- (TYPE_MACRO closure args code). At call
+      // time, a macro's params bind to the caller's RAW unevaluated forms
+      // (never values), the body runs to produce an expansion form, and
+      // that expansion is then eval'd in the CALLER's environment -- this
+      // is simple, unhygienic, textual-expansion-style substitution (no
+      // gensym); symbol capture is possible and is an accepted limitation.
+      if(!cdr(list) || !car(cdr(list))) {
+	return ERROR("MACRO requires 2 arguments!");
+      }
+
+      if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
+	return ERROR("MACRO requires 2 arguments!");
+      }
+
+      {
+	void* e2 = butlast(car(env));
+	return create_macro(e2, cons(car(cdr(list)), cdr(cdr(list))));
+      }
       break;
 
     case N_CAT:
@@ -2017,12 +2299,16 @@ void* eval_list(void* list, void* env) {
       void* f = eval(o, env);
       if(is_error(f)) return f;
 
-      // Macro detection (once TYPE_MACRO exists) belongs here, before any
-      // argument form is evaluated -- macros need the raw forms, not values.
+      if(is_type(f, TYPE_MACRO)) {
+	void* expansion = apply_callable(f, cdr(list), ARGS_RAW_NOEVAL, env, env);
+	if(is_error(expansion)) return expansion;
+	return eval(expansion, env);
+      }
+
       return apply_callable(f, cdr(list), ARGS_RAW_EVAL, env, env);
     }
     break;
-        
+
   default:
 
     printf("This type doesn't have a function handler eval_list (type = %s)!!!\n", return_type_c_string(o));

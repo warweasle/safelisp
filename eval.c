@@ -330,8 +330,14 @@ static void* eval_raw(void* list, void* env) {
 
 	case TYPE_RB_TREE:
 	  {
-	    void* found = mapget(car(i), list, env);
-	    if(found) return found;
+	    // Use mapget_pair (returns the (key . value) pair), not mapget
+	    // (returns the value alone) -- a variable legitimately bound to
+	    // NULL must still be found here. Checking mapget's return value
+	    // for truthiness can't tell "found, bound to NULL" apart from
+	    // "not found", and would wrongly fall through to the next frame.
+	    void* pair = mapget_pair(car(i), list, env);
+	    if(is_error(pair)) return pair;
+	    if(pair) return cdr(pair);
 	  }
 	  break;
 

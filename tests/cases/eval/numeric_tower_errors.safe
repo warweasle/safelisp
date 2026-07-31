@@ -1,0 +1,5 @@
+(... (PRINT (MOD 5 0))
+     (PRINT (MOD 1.5 2))
+     (PRINT (SQRT -4))
+     (PRINT (EXPT 2 -1))
+     (PRINT (GCD 1.5 2)))

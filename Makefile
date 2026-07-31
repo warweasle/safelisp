@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -g -pthread  
-LDFLAGS=-pthread -lgc -lgmp 
+LDFLAGS=-pthread -lgc -lgmp -lm
 LEX=flex
 YACC=bison
 YFLAGS=-d

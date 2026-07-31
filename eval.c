@@ -1,4 +1,5 @@
 #include "eval.h"
+#include <math.h>
 
 // State for one established WITH-RESTART, reached via INVOKE-RESTART.
 // GC-allocated (not stack-local) so nothing ever takes the address of a C
@@ -1005,16 +1006,12 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_RATIONAL:
 	      {
-		/// int and rational ... so a rational
-		
-		rational_type* ar = create_rational_type(); 
-	     	mpq_set_z(ar->num, to_int(b)->num);
-	        mpq_add(ar->num, ar->num, to_rational(b)->num);
-		a = ar;
-
-		
+		float_type* af = create_float_type();
+		mpf_set_q(af->num, to_rational(b)->num);
+		mpf_add(af->num, to_float(a)->num, af->num);
+		a = af;
 	      }
-	
+
 	      break;
 
 	    default:
@@ -1040,8 +1037,8 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_FLOAT:
 	      {
-		float_type* af = create_float_type(); 
-		mpf_set_z(af->num, to_int(a)->num);
+		float_type* af = create_float_type();
+		mpf_set_q(af->num, to_rational(a)->num);
 		mpf_add(af->num, af->num, to_float(b)->num);
 		a = af;
 	      }
@@ -1049,12 +1046,11 @@ void* eval_list(void* list, void* env) {
 
 	    case TYPE_RATIONAL:
 	      {
-		rational_type* ar = create_rational_type(); 
-		mpq_set_z(ar->num, to_int(a)->num);
-		mpq_add(ar->num, ar->num, to_rational(b)->num);
+		rational_type* ar = create_rational_type();
+		mpq_add(ar->num, to_rational(a)->num, to_rational(b)->num);
 		a = ar;
 	      }
-	
+
 	      break;
 
 	    default:
@@ -1218,16 +1214,50 @@ void* eval_list(void* list, void* env) {
 	    break;
 
 	  case TYPE_RATIONAL:
-	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		rational_type* bq = create_rational_type();
+		mpq_set_z(bq->num, to_int(b)->num);
+		mpq_sub(bq->num, to_rational(a)->num, bq->num);
+		a = bq;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type();
+		mpf_set_q(af->num, to_rational(a)->num);
+		mpf_sub(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type();
+		mpq_sub(ar->num, to_rational(a)->num, to_rational(b)->num);
+		a = ar;
+	      }
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+
+	      break;
+	    }
+
 	    break;
 
 	  default:
 
 	    return ERROR("Only integers, floats and rationals can be added!");
-		      
+
 	    break;
 	  }
-	  
+
 	}
 
 	if(is_rational(a)) {
@@ -1342,23 +1372,57 @@ void* eval_list(void* list, void* env) {
 	    break;
 
 	  case TYPE_RATIONAL:
-	    
+	    switch(get_type(b)) {
+
+	    case TYPE_INT:
+	      {
+		rational_type* bq = create_rational_type();
+		mpq_set_z(bq->num, to_int(b)->num);
+		mpq_mul(bq->num, to_rational(a)->num, bq->num);
+		a = bq;
+	      }
+	      break;
+
+	    case TYPE_FLOAT:
+	      {
+		float_type* af = create_float_type();
+		mpf_set_q(af->num, to_rational(a)->num);
+		mpf_mul(af->num, af->num, to_float(b)->num);
+		a = af;
+	      }
+	      break;
+
+	    case TYPE_RATIONAL:
+	      {
+		rational_type* ar = create_rational_type();
+		mpq_mul(ar->num, to_rational(a)->num, to_rational(b)->num);
+		a = ar;
+	      }
+	      break;
+
+	    default:
+
+	      return ERROR("Only integers, floats and rationals can be added!");
+
+	      break;
+	    }
+
 	    break;
 
 	  default:
 
 	    return ERROR("Only integers, floats and rationals can be added!");
-		      
+
 	    break;
 	  }
-	  
+
 	}
 
 	if(is_rational(a)) {
 	  mpq_canonicalize(to_rational(a)->num);
-	  
+
 	  if (mpz_cmp_ui(mpq_denref(to_rational(a)->num), 1) == 0) {
-	    
+
 	    int_type* newint = create_int_type(0);
 	    mpz_set(newint->num, mpq_numref(to_rational(a)->num));
 	    a = newint;
@@ -1761,6 +1825,672 @@ void* eval_list(void* list, void* env) {
 	if(values && !is_cons(values)) return ERROR("APPLY requires a list!");
 
 	return apply_callable(callee, values, ARGS_VALUES, env, env);
+      }
+      break;
+
+    case N_MOD:
+      {
+	// (MOD a b) -- integer modulo, sign follows the divisor (GMP mpz_mod).
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("MOD requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("MOD requires 2 arguments!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(a2), env);
+	if(is_error(b)) return b;
+
+	if(!is_int(a) || !is_int(b)) return ERROR("MOD requires two integers!");
+	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE BY ZERO!!!");
+
+	int_type* ret = create_int_type(0);
+	mpz_mod(ret->num, to_int(a)->num, to_int(b)->num);
+	return ret;
+      }
+      break;
+
+    case N_QUOTIENT:
+      {
+	// (QUOTIENT a b) -- truncating integer division.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("QUOTIENT requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("QUOTIENT requires 2 arguments!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(a2), env);
+	if(is_error(b)) return b;
+
+	if(!is_int(a) || !is_int(b)) return ERROR("QUOTIENT requires two integers!");
+	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE BY ZERO!!!");
+
+	int_type* ret = create_int_type(0);
+	mpz_tdiv_q(ret->num, to_int(a)->num, to_int(b)->num);
+	return ret;
+      }
+      break;
+
+    case N_REMAINDER:
+      {
+	// (REMAINDER a b) -- truncating-division remainder, sign follows
+	// the dividend (distinct from MOD, whose sign follows the divisor).
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("REMAINDER requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("REMAINDER requires 2 arguments!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(a2), env);
+	if(is_error(b)) return b;
+
+	if(!is_int(a) || !is_int(b)) return ERROR("REMAINDER requires two integers!");
+	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE BY ZERO!!!");
+
+	int_type* ret = create_int_type(0);
+	mpz_tdiv_r(ret->num, to_int(a)->num, to_int(b)->num);
+	return ret;
+      }
+      break;
+
+    case N_FLOOR:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("FLOOR requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	if(is_int(a)) return a;
+
+	if(is_float(a)) {
+	  float_type* ret = create_float_type();
+	  mpf_floor(ret->num, to_float(a)->num);
+	  return ret;
+	}
+
+	if(is_rational(a)) {
+	  int_type* ret = create_int_type(0);
+	  mpz_fdiv_q(ret->num, mpq_numref(to_rational(a)->num), mpq_denref(to_rational(a)->num));
+	  return ret;
+	}
+
+	return ERROR("FLOOR requires a number!");
+      }
+      break;
+
+    case N_CEILING:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("CEILING requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	if(is_int(a)) return a;
+
+	if(is_float(a)) {
+	  float_type* ret = create_float_type();
+	  mpf_ceil(ret->num, to_float(a)->num);
+	  return ret;
+	}
+
+	if(is_rational(a)) {
+	  int_type* ret = create_int_type(0);
+	  mpz_cdiv_q(ret->num, mpq_numref(to_rational(a)->num), mpq_denref(to_rational(a)->num));
+	  return ret;
+	}
+
+	return ERROR("CEILING requires a number!");
+      }
+      break;
+
+    case N_TRUNCATE:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("TRUNCATE requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	if(is_int(a)) return a;
+
+	if(is_float(a)) {
+	  float_type* ret = create_float_type();
+	  mpf_trunc(ret->num, to_float(a)->num);
+	  return ret;
+	}
+
+	if(is_rational(a)) {
+	  int_type* ret = create_int_type(0);
+	  mpz_tdiv_q(ret->num, mpq_numref(to_rational(a)->num), mpq_denref(to_rational(a)->num));
+	  return ret;
+	}
+
+	return ERROR("TRUNCATE requires a number!");
+      }
+      break;
+
+    case N_ROUND:
+      {
+	// Round-half-to-even. Ints pass through. Floats/rationals: take the
+	// floor and the fractional remainder, decide based on the remainder
+	// vs 1/2, breaking exact ties to the even neighbor.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("ROUND requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	if(is_int(a)) return a;
+
+	if(is_float(a)) {
+	  float_type* ret = create_float_type();
+	  float_type* flo = create_float_type();
+	  mpf_floor(flo->num, to_float(a)->num);
+
+	  float_type* frac = create_float_type();
+	  mpf_sub(frac->num, to_float(a)->num, flo->num);
+
+	  float_type* half = create_float_type();
+	  mpf_set_d(half->num, 0.5);
+
+	  int cmp = mpf_cmp(frac->num, half->num);
+	  if(cmp < 0) {
+	    mpf_set(ret->num, flo->num);
+	  }
+	  else if(cmp > 0) {
+	    mpf_add_ui(ret->num, flo->num, 1);
+	  }
+	  else {
+	    // exact .5 -- round to even
+	    mpz_t flooriz;
+	    mpz_init(flooriz);
+	    mpz_set_f(flooriz, flo->num);
+	    if(mpz_even_p(flooriz)) {
+	      mpf_set(ret->num, flo->num);
+	    }
+	    else {
+	      mpf_add_ui(ret->num, flo->num, 1);
+	    }
+	    mpz_clear(flooriz);
+	  }
+	  return ret;
+	}
+
+	if(is_rational(a)) {
+	  mpz_t floorz, num, den, rem2, den2;
+	  mpz_init(floorz); mpz_init(num); mpz_init(den); mpz_init(rem2); mpz_init(den2);
+	  mpz_set(num, mpq_numref(to_rational(a)->num));
+	  mpz_set(den, mpq_denref(to_rational(a)->num));
+	  mpz_fdiv_q(floorz, num, den);
+
+	  // remainder = num - floor*den; compare 2*remainder to den
+	  mpz_t rem, floorTimesDen;
+	  mpz_init(rem); mpz_init(floorTimesDen);
+	  mpz_mul(floorTimesDen, floorz, den);
+	  mpz_sub(rem, num, floorTimesDen);
+	  mpz_mul_ui(rem2, rem, 2);
+
+	  int cmp = mpz_cmp(rem2, den);
+	  int_type* ret = create_int_type(0);
+	  if(cmp < 0) {
+	    mpz_set(ret->num, floorz);
+	  }
+	  else if(cmp > 0) {
+	    mpz_add_ui(ret->num, floorz, 1);
+	  }
+	  else {
+	    // exact .5 -- round to even
+	    if(mpz_even_p(floorz)) {
+	      mpz_set(ret->num, floorz);
+	    }
+	    else {
+	      mpz_add_ui(ret->num, floorz, 1);
+	    }
+	  }
+
+	  mpz_clear(floorz); mpz_clear(num); mpz_clear(den);
+	  mpz_clear(rem2); mpz_clear(den2); mpz_clear(rem); mpz_clear(floorTimesDen);
+	  return ret;
+	}
+
+	return ERROR("ROUND requires a number!");
+      }
+      break;
+
+    case N_ABS:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("ABS requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	if(is_int(a)) {
+	  int_type* ret = create_int_type(0);
+	  mpz_abs(ret->num, to_int(a)->num);
+	  return ret;
+	}
+
+	if(is_float(a)) {
+	  float_type* ret = create_float_type();
+	  mpf_abs(ret->num, to_float(a)->num);
+	  return ret;
+	}
+
+	if(is_rational(a)) {
+	  rational_type* ret = create_rational_type();
+	  mpq_abs(ret->num, to_rational(a)->num);
+	  return ret;
+	}
+
+	return ERROR("ABS requires a number!");
+      }
+      break;
+
+    case N_SQRT:
+      {
+	// Floats via mpf_sqrt. Integers: mpz_sqrt truncates to the integer
+	// square root -- always promote to float here, since GMP gives no
+	// direct way to tell "was this exact" without a second check, and
+	// this keeps the type contract simple (SQRT always returns a float,
+	// except NULL is never returned). Rationals promote to float too.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("SQRT requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	if(is_int(a)) {
+	  if(mpz_sgn(to_int(a)->num) < 0) return ERROR("SQRT of a negative number!");
+	  float_type* ret = create_float_type();
+	  mpf_t tmp;
+	  mpf_init(tmp);
+	  mpf_set_z(tmp, to_int(a)->num);
+	  mpf_sqrt(ret->num, tmp);
+	  mpf_clear(tmp);
+	  return ret;
+	}
+
+	if(is_float(a)) {
+	  if(mpf_sgn(to_float(a)->num) < 0) return ERROR("SQRT of a negative number!");
+	  float_type* ret = create_float_type();
+	  mpf_sqrt(ret->num, to_float(a)->num);
+	  return ret;
+	}
+
+	if(is_rational(a)) {
+	  if(mpq_sgn(to_rational(a)->num) < 0) return ERROR("SQRT of a negative number!");
+	  float_type* ret = create_float_type();
+	  mpf_t tmp;
+	  mpf_init(tmp);
+	  mpf_set_q(tmp, to_rational(a)->num);
+	  mpf_sqrt(ret->num, tmp);
+	  mpf_clear(tmp);
+	  return ret;
+	}
+
+	return ERROR("SQRT requires a number!");
+      }
+      break;
+
+    case N_EXPT:
+      {
+	// (EXPT base exp) -- exp must be a non-negative integer. Integer
+	// base stays exact via mpz_pow_ui; float/rational base promotes
+	// through <math.h> pow() for float, or repeated rational
+	// multiplication for rational (kept exact).
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("EXPT requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("EXPT requires 2 arguments!");
+
+	void* base = eval(car(a1), env);
+	if(is_error(base)) return base;
+	void* exp = eval(car(a2), env);
+	if(is_error(exp)) return exp;
+
+	if(!is_int(exp) || mpz_sgn(to_int(exp)->num) < 0) {
+	  return ERROR("EXPT requires a non-negative integer exponent!");
+	}
+	unsigned long e = mpz_get_ui(to_int(exp)->num);
+
+	if(is_int(base)) {
+	  int_type* ret = create_int_type(0);
+	  mpz_pow_ui(ret->num, to_int(base)->num, e);
+	  return ret;
+	}
+
+	if(is_rational(base)) {
+	  rational_type* ret = create_rational_type();
+	  mpz_pow_ui(mpq_numref(ret->num), mpq_numref(to_rational(base)->num), e);
+	  mpz_pow_ui(mpq_denref(ret->num), mpq_denref(to_rational(base)->num), e);
+	  mpq_canonicalize(ret->num);
+	  return ret;
+	}
+
+	if(is_float(base)) {
+	  float_type* ret = create_float_type();
+	  double baseD = mpf_get_d(to_float(base)->num);
+	  mpf_set_d(ret->num, pow(baseD, (double)e));
+	  return ret;
+	}
+
+	return ERROR("EXPT requires a number base!");
+      }
+      break;
+
+    case N_MIN:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("MIN requires at least 1 argument!");
+
+	void* best = eval(car(a1), env);
+	if(is_error(best)) return best;
+
+	for(void* i=cdr(a1); i; i=cdr(i)) {
+	  void* v = eval(car(i), env);
+	  if(is_error(v)) return v;
+	  if(compare(v, best) < 0) best = v;
+	}
+
+	return best;
+      }
+      break;
+
+    case N_MAX:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("MAX requires at least 1 argument!");
+
+	void* best = eval(car(a1), env);
+	if(is_error(best)) return best;
+
+	for(void* i=cdr(a1); i; i=cdr(i)) {
+	  void* v = eval(car(i), env);
+	  if(is_error(v)) return v;
+	  if(compare(v, best) > 0) best = v;
+	}
+
+	return best;
+      }
+      break;
+
+    case N_GCD:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("GCD requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("GCD requires 2 arguments!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(a2), env);
+	if(is_error(b)) return b;
+
+	if(!is_int(a) || !is_int(b)) return ERROR("GCD requires two integers!");
+
+	int_type* ret = create_int_type(0);
+	mpz_gcd(ret->num, to_int(a)->num, to_int(b)->num);
+	return ret;
+      }
+      break;
+
+    case N_LCM:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("LCM requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("LCM requires 2 arguments!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(a2), env);
+	if(is_error(b)) return b;
+
+	if(!is_int(a) || !is_int(b)) return ERROR("LCM requires two integers!");
+
+	int_type* ret = create_int_type(0);
+	mpz_lcm(ret->num, to_int(a)->num, to_int(b)->num);
+	return ret;
+      }
+      break;
+
+    case N_EXACTP:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("EXACT? requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	return (is_int(a) || is_rational(a)) ? create_true_type() : NULL;
+      }
+      break;
+
+    case N_INEXACTP:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("INEXACT? requires 1 argument!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+
+	return is_float(a) ? create_true_type() : NULL;
+      }
+      break;
+
+    case N_TYPEIS:
+      {
+	// (TYPE? x 'TAGNAME) -- TRUE iff x's type name (return_type_c_string)
+	// equals TAGNAME's symbol name. The primitive underneath the
+	// individual ?-named type predicates in prelude.safe.
+	//
+	// A few type-name spellings collide with reserved keywords (CONS,
+	// TRUE, LAMBDA, MACRO): quoting one of those words doesn't produce
+	// the plain symbol "CONS" etc, it produces the keyword's own native
+	// value (the lexer turns the bare word into that keyword's token
+	// before quoting ever sees it). Those specific predicates (CONS?,
+	// PROCEDURE?) get their own dedicated native forms instead of going
+	// through TYPE?, so TYPE? itself only ever needs to handle a plain
+	// symbol tag.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("TYPE? requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("TYPE? requires 2 arguments!");
+
+	void* x = eval(car(a1), env);
+	if(is_error(x)) return x;
+
+	void* tag = eval(car(a2), env);
+	if(is_error(tag)) return tag;
+	if(!is_type(tag, TYPE_SYMBOL)) return ERROR("TYPE? requires a symbol tag!");
+
+	return (strcmp(return_type_c_string(x), to_string(tag)->str) == 0)
+	       ? create_true_type() : NULL;
+      }
+      break;
+
+    case N_NULLP:
+      {
+	// (NULL? x) -- TRUE iff x's evaluated value is the NULL pointer.
+	// Note: !car(a1) would wrongly reject a present-but-NULL argument as
+	// "missing" -- check !a1 alone (is there a second list cell at all).
+	void* a1 = cdr(list);
+	if(!a1) return ERROR("NULL? requires 1 argument!");
+
+	void* v = eval(car(a1), env);
+	if(is_error(v)) return v;
+
+	return (v == NULL) ? create_true_type() : NULL;
+      }
+      break;
+
+    case N_CONSP:
+      {
+	// (CONS? x) -- TRUE iff x's evaluated value is a cons cell. Its own
+	// dedicated native (not routed through TYPE?) since the word CONS
+	// is itself a reserved keyword -- there's no way to quote it into
+	// the plain symbol "CONS" as data to compare against.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("CONS? requires 1 argument!");
+
+	void* v = eval(car(a1), env);
+	if(is_error(v)) return v;
+
+	return is_cons(v) ? create_true_type() : NULL;
+      }
+      break;
+
+    case N_PROCEDUREP:
+      {
+	// (PROCEDURE? x) -- TRUE iff x is callable: a LAMBDA, a MACRO, or a
+	// bare native operator (TYPE_NATIVE_INT, e.g. + or CAR). Its own
+	// dedicated native for the same reason as CONS? -- LAMBDA/MACRO are
+	// reserved keywords, not quotable as plain symbols.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("PROCEDURE? requires 1 argument!");
+
+	void* v = eval(car(a1), env);
+	if(is_error(v)) return v;
+
+	ValueType t = get_type(v);
+	return (t == TYPE_LAMBDA || t == TYPE_MACRO || t == TYPE_NATIVE_INT)
+	       ? create_true_type() : NULL;
+      }
+      break;
+
+    case N_LEN:
+      {
+	// (LEN x) -- one length primitive for both strings and lists.
+	// list_length(NULL) returns -1 (its "not a proper list" sentinel,
+	// since NULL isn't TYPE_CONS) -- special-case NULL to 0 rather than
+	// passing that sentinel through as if it were a real length.
+	// Note: check !a1 alone, not !car(a1) -- NULL is a legitimate value
+	// to pass here (LEN NULL) should be 0, not "argument missing".
+	void* a1 = cdr(list);
+	if(!a1) return ERROR("LEN requires 1 argument!");
+
+	void* x = eval(car(a1), env);
+	if(is_error(x)) return x;
+
+	if(x == NULL) return create_int_type(0);
+
+	if(is_str(x)) return create_int_type(to_string(x)->size);
+
+	if(is_cons(x)) {
+	  int n = list_length(x);
+	  if(n < 0) return ERROR("LEN: not a proper list!");
+	  return create_int_type(n);
+	}
+
+	return ERROR("LEN requires a list or a string!");
+      }
+      break;
+
+    case N_SUBSTR:
+      {
+	// (SUBSTR s start end) -- end exclusive, Scheme substring-style.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("SUBSTR requires 3 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("SUBSTR requires 3 arguments!");
+	void* a3 = cdr(a2);
+	if(!a3 || !car(a3)) return ERROR("SUBSTR requires 3 arguments!");
+
+	void* s = eval(car(a1), env);
+	if(is_error(s)) return s;
+	if(!is_str(s)) return ERROR("SUBSTR requires a string!");
+
+	void* startV = eval(car(a2), env);
+	if(is_error(startV)) return startV;
+	void* endV = eval(car(a3), env);
+	if(is_error(endV)) return endV;
+	if(!is_int(startV) || !is_int(endV)) return ERROR("SUBSTR requires integer bounds!");
+
+	long start = mpz_get_si(to_int(startV)->num);
+	long end = mpz_get_si(to_int(endV)->num);
+	int size = to_string(s)->size;
+
+	if(start < 0 || end < start || end > size) {
+	  return ERROR("SUBSTR: index out of range!");
+	}
+
+	return create_string_type_and_copy(end - start, to_string(s)->str + start, TYPE_STRING);
+      }
+      break;
+
+    case N_STRREF:
+      {
+	// (STRREF s i) -- single character, bounds-checked.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("STRREF requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("STRREF requires 2 arguments!");
+
+	void* s = eval(car(a1), env);
+	if(is_error(s)) return s;
+	if(!is_str(s)) return ERROR("STRREF requires a string!");
+
+	void* iV = eval(car(a2), env);
+	if(is_error(iV)) return iV;
+	if(!is_int(iV)) return ERROR("STRREF requires an integer index!");
+
+	long i = mpz_get_si(to_int(iV)->num);
+	if(i < 0 || i >= to_string(s)->size) return ERROR("STRREF: index out of range!");
+
+	return create_char_type(to_string(s)->str[i]);
+      }
+      break;
+
+    case N_STRUPPER:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("STRUPPER requires 1 argument!");
+
+	void* s = eval(car(a1), env);
+	if(is_error(s)) return s;
+	if(!is_str(s)) return ERROR("STRUPPER requires a string!");
+
+	string_type* ret = create_string_type_and_copy(to_string(s)->size, to_string(s)->str, TYPE_STRING);
+	for(int i = 0; i < ret->size; i++) ret->str[i] = toupper((unsigned char)ret->str[i]);
+	return ret;
+      }
+      break;
+
+    case N_STRLOWER:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("STRLOWER requires 1 argument!");
+
+	void* s = eval(car(a1), env);
+	if(is_error(s)) return s;
+	if(!is_str(s)) return ERROR("STRLOWER requires a string!");
+
+	string_type* ret = create_string_type_and_copy(to_string(s)->size, to_string(s)->str, TYPE_STRING);
+	for(int i = 0; i < ret->size; i++) ret->str[i] = tolower((unsigned char)ret->str[i]);
+	return ret;
+      }
+      break;
+
+    case N_STREQ:
+      {
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("STREQ requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("STREQ requires 2 arguments!");
+
+	void* a = eval(car(a1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(a2), env);
+	if(is_error(b)) return b;
+
+	if(!is_str(a) || !is_str(b)) return ERROR("STREQ requires two strings!");
+
+	return (string_compare(a, b) == 0) ? create_true_type() : NULL;
       }
       break;
 

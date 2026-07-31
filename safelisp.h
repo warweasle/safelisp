@@ -75,6 +75,7 @@ extern "C" {
     TYPE_SPLICE,
     TYPE_CNR,
     TYPE_ERROR,
+    TYPE_VALUES,
   } ValueType;
 
   typedef enum {
@@ -128,7 +129,36 @@ extern "C" {
 	N_PROG1,
 	N_WITH_RESTART,
 	N_INVOKE_RESTART,
-	N_APPLY
+	N_APPLY,
+	N_MOD,
+	N_QUOTIENT,
+	N_REMAINDER,
+	N_FLOOR,
+	N_CEILING,
+	N_ROUND,
+	N_TRUNCATE,
+	N_ABS,
+	N_SQRT,
+	N_EXPT,
+	N_MIN,
+	N_MAX,
+	N_GCD,
+	N_LCM,
+	N_EXACTP,
+	N_INEXACTP,
+	N_TYPEIS,
+	N_NULLP,
+	N_CONSP,
+	N_PROCEDUREP,
+	N_LEN,
+	N_SUBSTR,
+	N_STRREF,
+	N_STRUPPER,
+	N_STRLOWER,
+	N_STREQ,
+	N_VALUES,
+	N_NTHVALUE,
+	N_MULTIPLEVALUELIST
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
@@ -140,9 +170,9 @@ extern "C" {
 #define is_error(ptr) (is_type(ptr, TYPE_ERROR))
 #define is_rb_tree(ptr) (is_type(ptr, TYPE_RB_TREE))
 #define is_str(ptr) (is_type(ptr, TYPE_STRING))
-#define is_int(ptr) (is_type(ptr, TYPE_STRING))
-#define is_float(ptr) (is_type(ptr, TYPE_STRING))
-#define is_rational(ptr) (is_type(ptr, TYPE_STRING))
+#define is_int(ptr) (is_type(ptr, TYPE_INT))
+#define is_float(ptr) (is_type(ptr, TYPE_FLOAT))
+#define is_rational(ptr) (is_type(ptr, TYPE_RATIONAL))
 #define is_number(ptr) (is_int(ptr) || is_float(ptr) || is_rational(ptr))
 #define car(o) (((cons_cell*)o)->car)
 #define cdr(o) (((cons_cell*)o)->cdr)

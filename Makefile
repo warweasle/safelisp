@@ -31,3 +31,8 @@ safelisp_parser.tab.c safelisp_parser.tab.h: safelisp_parser.y
 
 clean:
 	rm -f safelisp safelisp_parser.tab.* safelisp_parser.yy.* main.o *.o
+
+test: safelisp
+	tests/run_tests.sh
+
+.PHONY: test

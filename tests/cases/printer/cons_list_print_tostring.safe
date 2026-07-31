@@ -1,0 +1,2 @@
+(LET ((l (LIST 1 2 3)))
+   (... (PRINT l) (PRINT (TOSTRING l))))

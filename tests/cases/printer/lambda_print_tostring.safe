@@ -1,0 +1,2 @@
+(LET ((f (LAMBDA (X) (+ X 1))))
+   (... (PRINT f) (PRINT (TOSTRING f))))

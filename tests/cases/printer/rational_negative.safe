@@ -1,0 +1,2 @@
+(LET ((r (/ 1 (- 0 3))))
+   (... (PRINT r) (PRINT (TOSTRING r))))

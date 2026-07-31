@@ -149,7 +149,7 @@ return ATOM;}
       s[i] = toupper(s[i]);
    }
 
-   yylval->p = make_cnr(create_string_type_and_copy(n-3, s+1, TYPE_STRING));
+   yylval->p = make_cnr(create_string_type_and_copy(n-2, s+1, TYPE_STRING));
    return ATOM;
 }
 
@@ -219,7 +219,7 @@ return ATOM;}
     return ATOM;
 }
 
-[tT][oO][sT][tT][rR][iI][nN][gG]          {
+[tT][oO][sS][tT][rR][iI][nN][gG]          {
 
     yylval->p = create_native_int_type(N_TO_STRING);
     return ATOM;

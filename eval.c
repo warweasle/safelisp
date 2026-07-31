@@ -1,6 +1,18 @@
-#include <stdlib.h>
-void (*old_free)(void*) = free;
 #include "eval.h"
+
+// PRINT and TO-STRING always succeed at their own job (displaying/converting
+// whatever they're given), even when that value happens to be an ERROR
+// object printed as data. A sequence runner (PROGN/PROG1/WHEN/UNLESS)
+// shouldn't abort just because one of its steps was one of these calls.
+static int is_never_aborting_call(void* form) {
+  if(!is_cons(form)) return 0;
+
+  void* head = car(form);
+  if(get_type(head) != TYPE_NATIVE_INT) return 0;
+
+  char c = to_char(head)->c;
+  return c == N_PRINT || c == N_TO_STRING;
+}
 
 void* quasiquote(void* list, void* env, int depth) {
   
@@ -332,14 +344,14 @@ void* eval_list(void* list, void* env) {
 	  void* ret = NULL;
 	  // loop over the code...
 	  for(void* i=truth; i; i=cdr(i)) {
-	    
+
 	    void* tmp = eval(car(i), env);;
-	    
-	    if(is_error(tmp)) return tmp;
-	    
+
+	    if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+
 	    ret = tmp;
 	  }
-	  
+
 	  return ret;
 	}
 	else {
@@ -367,11 +379,11 @@ void* eval_list(void* list, void* env) {
 	  void* ret = NULL;
 	  // loop over the code...
 	  for(void* i=truth; i; i=cdr(i)) {
-	    
+
 	    void* tmp = eval(car(i), env);;
-	    
-	    if(is_error(tmp)) return tmp;
-	    
+
+	    if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+
 	    ret = tmp;
 	  }
 	  
@@ -619,24 +631,12 @@ void* eval_list(void* list, void* env) {
       
     case N_TO_STRING:
       {
-	char *buf = NULL;
-	size_t size = 0;
-
 	if(!cdr(list)) {
 	  return ERROR("TO-STRING requires ONE argument!\n");
 	}
 
 	void* p = eval(car(cdr(list)), env);
-	FILE *f = open_memstream(&buf, &size);
-	
-	print(f, p, 10);
-	
-	fflush(f);
-	fclose(f);   // IMPORTANT: finalizes buffer
-	
-	void* ret = create_string_type_from_string(buf, TYPE_STRING);
-	old_free(buf);
-	return ret;
+	return to_string_type(p, 10);
       }
       break;
       
@@ -1707,32 +1707,32 @@ void* eval_list(void* list, void* env) {
 	void* code = cdr(list);
 	// loop over the code...
 	for(void* i=code; i; i=cdr(i)) {
-	  
+
 	  void* tmp = eval(car(i), env);;
-	
-	  if(is_error(tmp)) return tmp;
-	  
+
+	  if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+
 	  ret = tmp;
 	}
 
 	return ret;
       }
       break;
-      
+
     case N_PROG1:
       {
 	if(!cdr(list) || !car(cdr(list))) return NULL;
 
 	void* ret = eval(car(cdr(list)), env);
-	if(is_error(ret)) return ret;
-	
+	if(is_error(ret) && !is_never_aborting_call(car(cdr(list)))) return ret;
+
 	void* code = cdr(cdr(list));
 	// loop over the code...
 	for(void* i=code; i; i=cdr(i)) {
-	  
+
 	  void* tmp = eval(car(i), env);;
-	  
-	  if(is_error(tmp)) return tmp;
+
+	  if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
 	}
 
 	return ret;

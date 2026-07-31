@@ -1,457 +1,254 @@
-#include <stdlib.h>
-void (*old_free2)(void*) = free;
 #include "printer.h"
 #include <gmp.h>
 
-void* print_to_string(void* o, int base) {
+// Every stringify_* function appends its type's representation onto buf,
+// which is backed by GC memory (see putch_resizable_array/putstr_resizable_array).
+// No libc heap (malloc/open_memstream/free) is used anywhere in this file.
 
-  if(o == NULL) return create_string_type_and_copy(4, "NULL", TYPE_STRING);
-  
-  int t = get_type(o);
-  switch(t) {
-  case TYPE_TRUE:
-    return create_string_type_and_copy(4, "TRUE", TYPE_STRING);
-    break;
-    
-  case TYPE_QUOTE:
-    return create_string_type_and_copy(4, "'", TYPE_STRING);
-    break;
+static void stringify_dispatch(resizable_string_type* buf, void* o, int base);
 
-  case TYPE_BACKTICK:
-    return create_string_type_and_copy(4, "`", TYPE_STRING);
-    break;
-
-  case TYPE_COMMA:
-    return create_string_type_and_copy(4, ",", TYPE_STRING);
-    break;
-
-  case TYPE_SPLICE:
-    return create_string_type_and_copy(4, ",@", TYPE_STRING);
-    break;
-
-  case TYPE_SYMBOL:
-    return create_string_type_and_copy(((string_type*)o)->size, ((string_type*)o)->str, TYPE_STRING);
-    break;
-	
-  case TYPE_STRING:
-    return o;
-    break;
-    
-  case TYPE_INT:
-    {
-      char* str = mpz_get_str(NULL, base, to_int(o)->num);
-      return create_string_type_from_string(str, TYPE_STRING);
-    }
-    break;
-
-  case TYPE_FLOAT:
-    {
-      char* buf = NULL;
-      size_t size = 0;
-      FILE* mem = open_memstream(&buf, &size);
-
-      if(!mem) {
-	return ERROR("open_memstream failed");
-      }
-     
-      mpf_out_str(mem, base, 0, to_float(o)->num);
-      
-      fclose(mem);
-      
-      string_type* s = create_string_type_from_string(buf, TYPE_STRING);
-      old_free2(buf);
-      
-      return s;
-    }
-    break;
-    
-   case TYPE_RATIONAL:
-     {
-       char* buf = NULL;
-       size_t size = 0;
-       FILE* mem = open_memstream(&buf, &size);
-       
-       if(!mem) {
-	 return ERROR("open_memstream failed");
-       }
-       
-       mpq_out_str(mem, base, to_rational(o)->num);
-       
-       fclose(mem);
-       
-       string_type* s = create_string_type_from_string(buf, TYPE_STRING);
-       old_free2(buf);
-       
-       return s;
-     }
-     break; 
-     
-  case TYPE_CHAR:
-    {
-      string_type* str = create_string_type(1, TYPE_STRING);
-      str->str[0] = to_char(o)->c;
-      str->str[1] = '\0';
-      return str;
-    }
-    break;
-    
-    /* case TYPE_POINTER: */
-    /*   fprintf(output, "<POINTER:%p>", to_pointer(o)->p); */
-    /*   break; */
-    
-    /* case TYPE_RB_TREE: */
-    /*   fprintf(output, "(MAPMAKE"); */
-    /*   if(car(o)) { */
-    /*     printf(" "); */
-    /*     print(output, car(o), base); */
-    /*   } */
-    /*   fprintf(output, ")"); */
-    
-    /*   break; */
-    
-  case TYPE_CNR:
-    {
-      string_type* input = to_string(car(o));
-      string_type* ret = create_string_type(input->size + 2, TYPE_STRING);
-
-      ret->str[0] = 'C';
-      for(int i=0; i<input->size; i++) {
-	ret->str[i+1] = input->str[i];
-      }
-      
-      ret->str[ret->size-1] = 'R';
-      ret->str[ret->size] = '\0';
-
-      return ret;
-    }
-    break;
-
-  case TYPE_ERROR:
-    
-  case TYPE_LAMBDA:
-  
-        
-  case TYPE_CONS:
-    return ERROR("TO-STRING does not work with lists yet!");
-    break;
-    
-  default:
-
-    return ERROR("type not yet implemented in print_to_string.");
-
-  }
-  
-  
-  return ERROR("TO-STRING not yet implemented!!");
+static void stringify_null(resizable_string_type* buf) {
+  putstr_resizable_array(buf, "NULL");
 }
 
-void print(FILE* output, void* o, int base) {
-  
-  if(o == NULL) {
-    fprintf(output, "NULL");
-    fflush(output);
+static void stringify_true(resizable_string_type* buf) {
+  putstr_resizable_array(buf, "TRUE");
+}
+
+static void stringify_symbol(resizable_string_type* buf, void* o) {
+  putstr_resizable_array(buf, ((string_type*)o)->str);
+}
+
+static void stringify_string(resizable_string_type* buf, void* o) {
+  putch_resizable_array(buf, '"');
+  putstr_resizable_array(buf, to_string(o)->str);
+  putch_resizable_array(buf, '"');
+}
+
+static void stringify_char(resizable_string_type* buf, void* o) {
+  putch_resizable_array(buf, to_char(o)->c);
+}
+
+static void stringify_int(resizable_string_type* buf, void* o, int base) {
+  char* digits = mpz_get_str(NULL, base, to_int(o)->num);
+  putstr_resizable_array(buf, digits);
+}
+
+static void stringify_rational(resizable_string_type* buf, void* o, int base) {
+  char* digits = mpq_get_str(NULL, base, to_rational(o)->num);
+  putstr_resizable_array(buf, digits);
+}
+
+// mpf_get_str returns bare significant digits (an implicit radix point to
+// the left of the first digit) plus an exponent, rather than a formatted
+// string. Reassemble those into plain decimal notation, e.g. "3.14159".
+static void stringify_float(resizable_string_type* buf, void* o, int base) {
+  mp_exp_t exp;
+  char* digits = mpf_get_str(NULL, &exp, base, 0, to_float(o)->num);
+
+  int neg = (digits[0] == '-');
+  char* d = digits + neg;
+  size_t ndigits = strlen(d);
+
+  if(neg) putch_resizable_array(buf, '-');
+
+  if(ndigits == 0) {
+    // op was zero.
+    putstr_resizable_array(buf, "0.0");
     return;
   }
 
-  int t = get_type(o);
-  switch(t) {
-
-  case TYPE_TRUE:
-    fprintf(output, "TRUE");
-    break;
-    
-  case TYPE_CONS:
-    {
-      fprintf(output, "(");
-
-      char first = 1;
-      for(; o != NULL && is_cons(o); o=cdr(o)) {
-      
-	void* tmp = car(o);
-	if(first) {first = 0;}
-	else {fprintf(output, " ");}
-
-	fflush(output);
-	print(output, tmp, base);
-	//if so that's fine move along. But if cdr != cons then dot notation.
-      
-	if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
-	  fprintf(output, " . ");
-	  fflush(output);
-	  print(output, to_cons(o)->cdr, base);
-	  break;
-	}
-      }
-      fprintf(output, ")");
-    }
-    
-    break;
-
-    /* case TYPE_RB_TREE: */
-
-    /* 	{ */
-    /* 	  //fprintf(output, "(RB:"); */
-	
-    /* 	  print(output, ((rb_treetype*) car(o))->root, base); */
-
-    /* 	//fprintf(output, ")"); */
-    /* 	} */
-    /* break; */
-	
-  case TYPE_QUOTE:
-    fprintf(output, "'");
-    fflush(output);
-    print(output, to_cons(o)->car, base);
-    break;
-
-  case TYPE_BACKTICK:
-    fprintf(output, "`");
-    fflush(output);
-    print(output, to_cons(o)->car, base);
-    break;
-
-  case TYPE_COMMA:
-    fprintf(output, ",");
-    fflush(output);
-    print(output, to_cons(o)->car, base);
-    break;
-
-  case TYPE_SPLICE:
-    fprintf(output, ",@");
-    fflush(output);
-    print(output, to_cons(o)->car, base);
-    break;
-		
-  case TYPE_SYMBOL:
-    fprintf(output, "%s", ((string_type*)o)->str);
-    break;
-	
-  case TYPE_INT:
-    mpz_out_str(output, base, to_int(o)->num);
-    break;
-
-  case TYPE_NATIVE_INT:
-    // Placeholder until we get a real native print list.
-    {
-      char_type* n = to_char(o);
-
-      switch(n->c) {
-
-      case N_CONS:
-	fprintf(output, "CONS");
-	break;
-
-      case N_LIST:
-	fprintf(output, "LIST");
-	break;
-
-      case N_IF:
-	fprintf(output, "?");
-	break;
-
-      case N_TYPE:
-	fprintf(output, "TYPE");
-	break;
-		
-      case N_NOT:
-	fprintf(output, "!");
-	break;
-		
-      case N_AND:
-	fprintf(output, "&&");
-	break;
-		
-      case N_OR:
-	fprintf(output, "||");
-	break;
-		
-      case N_APPEND:
-	fprintf(output, "APPEND");
-	break;
-		
-      case N_ASSOC:
-	fprintf(output, "ASSOC");
-	break;
-		
-      case N_EVAL:
-	fprintf(output, "EVAL");
-	break;
-
-      case N_PRINT:
-	fprintf(output, "PRINT");
-	break;
-
-      case N_SET:
-	fprintf(output, "=");
-	break;
-
-      case N_CAR:
-	fprintf(output, "CAR");
-	break;
-
-      case N_CDR:
-	fprintf(output, "CDR");
-	break;
-
-      case N_TO_STRING:
-	fprintf(output, "TO-STRING");
-	break;
-
-      case N_BREAK:
-	fprintf(output, "BREAK");
-	break;
-	
-      case N_LOOP:
-	fprintf(output, "LOOP");
-	break;
-      
-      case N_WHILE:
-	fprintf(output, "WHILE");
-	break;
-
-      case N_LET:
-	fprintf(output, "LET");
-	break;
-
-      case N_LAMBDA:
-	fprintf(output, "lambda");
-	break;
-
-      case N_ADD:
-	fprintf(output, "+");
-	break;
-	
-      case N_SUB:
-	fprintf(output, "-");
-	break;
-	
-      case N_MULT:
-	fprintf(output, "*");
-	break;
-	
-      case N_DIV:
-	fprintf(output, "/");
-	break;      
-
-      case N_PROGN:
-	fprintf(output, "...");
-	break;
-	
-      case N_PROG1:
-	fprintf(output, "1...");
-	break;
-
-      case N_MAP:
-	fprintf(output, "MAP");
-	break;
-
-      case N_REDUCE:
-	fprintf(output, "REDUCE");
-	break;
-
-      case N_FILTER:
-	fprintf(output, "FILTER");
-	break;
-	
-      default:
-
-	fprintf(output, "UNKNOW_NATIVE");
-      }
-    }
-    break;
-	
-  case TYPE_FLOAT:
-    mpf_out_str(output, base, 0, to_float(o)->num);
-    break;
-
-  case TYPE_RATIONAL:
-    mpq_out_str(output, base, to_rational(o)->num);
-    break;
-    
-  case TYPE_STRING:
-    fprintf(output, "\"%s\"", to_string(o)->str);
-    break;
-
-    /* case TYPE_CHAR: */
-    /*   fprintf(output, "#\\%c", to_string(o)->str[0]); */
-    /* 	break; */
-
-  case TYPE_POINTER:
-    fprintf(output, "<POINTER:%p>", to_pointer(o)->p);
-    break;
-
-  case TYPE_RB_TREE:
-    fprintf(output, "(MAPMAKE");
-    if(car(o)) {
-      printf(" ");
-      print(output, car(o), base);
-    }
-    fprintf(output, ")");
-    
-    break;
-
-  case TYPE_CNR:
-    fprintf(output, "C%sR", to_string(car(o))->str);
-    break;
-    
-  case TYPE_INT8:
-  case TYPE_UINT8:
-  case TYPE_FLOAT8:
-  case TYPE_DOUBLE8:
-  case TYPE_LONG_DOUBLE8:
-  case TYPE_INT16:
-  case TYPE_UINT16:
-  case TYPE_FLOAT16:
-  case TYPE_DOUBLE16:
-  case TYPE_LONG_DOUBLE16:
-  case TYPE_INT32:
-  case TYPE_UINT32:
-  case TYPE_FLOAT32:
-  case TYPE_DOUBLE32:
-  case TYPE_LONG_DOUBLE32:
-  case TYPE_INT64:
-  case TYPE_UINT64:
-  case TYPE_FLOAT64:
-  case TYPE_DOUBLE64:
-  case TYPE_LONG_DOUBLE64:
-  case TYPE_INT128:
-  case TYPE_UINT128:
-  case TYPE_FLOAT128:
-  case TYPE_DOUBLE128:
-  case TYPE_LONG_DOUBLE128:
-  case TYPE_CHAR_ARRAY:
-
-    printf("Specialized array type data isn't printable yet, defaulting to hex.\n");
-    /* case TYPE_RAW: */
-    /* 	fprintf(output, "#x"); */
-    /* 	{ */
-    /* 	  rawtype* raw = to_raw(o); */
-
-    /*     for (size_t i = 0; i < raw->size; ++i) { */
-    /* 		fprintf(output, "%02x", (unsigned char)raw->data[i]); */
-    /*     } */
-    /*   } */
-    /*   break; */
-
-  case TYPE_ERROR:
-    fprintf(output, "<ERROR: ");
-    print(output, to_cons(o)->cdr, base);
-    fprintf(output, ">");
-    break;
-
-  case TYPE_LAMBDA:
-    fprintf(output, "(LAMBDA ");
-    print(output, car(cdr(o)), base);
-    fprintf(output, " ");
-    print(output, cdr(cdr(o)), base);
-    fprintf(output, ")"); 
-
-    break;
-	
-  default:
-    printf("We have no idea what %p is.\n", o);
+  if(exp <= 0) {
+    putstr_resizable_array(buf, "0.");
+    for(mp_exp_t i = 0; i < -exp; i++) putch_resizable_array(buf, '0');
+    putstr_resizable_array(buf, d);
   }
-
-  fflush(output);
+  else if((size_t)exp >= ndigits) {
+    putstr_resizable_array(buf, d);
+    for(size_t i = ndigits; i < (size_t)exp; i++) putch_resizable_array(buf, '0');
+    putstr_resizable_array(buf, ".0");
+  }
+  else {
+    char saved = d[exp];
+    d[exp] = '\0';
+    putstr_resizable_array(buf, d);
+    putch_resizable_array(buf, '.');
+    d[exp] = saved;
+    putstr_resizable_array(buf, d + exp);
+  }
 }
 
+static const char* native_int_name(char c) {
+  switch(c) {
+  case N_CONS:      return "CONS";
+  case N_LIST:      return "LIST";
+  case N_IF:        return "?";
+  case N_TYPE:      return "TYPE";
+  case N_NOT:       return "!";
+  case N_AND:       return "&&";
+  case N_OR:        return "||";
+  case N_APPEND:    return "APPEND";
+  case N_ASSOC:     return "ASSOC";
+  case N_EVAL:      return "EVAL";
+  case N_PRINT:     return "PRINT";
+  case N_SET:       return "=";
+  case N_CAR:       return "CAR";
+  case N_CDR:       return "CDR";
+  case N_TO_STRING: return "TO-STRING";
+  case N_BREAK:     return "BREAK";
+  case N_LOOP:      return "LOOP";
+  case N_WHILE:     return "WHILE";
+  case N_LET:       return "LET";
+  case N_LAMBDA:    return "lambda";
+  case N_ADD:       return "+";
+  case N_SUB:       return "-";
+  case N_MULT:      return "*";
+  case N_DIV:       return "/";
+  case N_PROGN:     return "...";
+  case N_PROG1:     return "1...";
+  case N_MAP:       return "MAP";
+  case N_REDUCE:    return "REDUCE";
+  case N_FILTER:    return "FILTER";
+  default:          return "UNKNOW_NATIVE";
+  }
+}
+
+static void stringify_native_int(resizable_string_type* buf, void* o) {
+  putstr_resizable_array(buf, native_int_name(to_char(o)->c));
+}
+
+static void stringify_pointer(resizable_string_type* buf, void* o) {
+  char tmp[32];
+  snprintf(tmp, sizeof(tmp), "<POINTER:%p>", to_pointer(o)->p);
+  putstr_resizable_array(buf, tmp);
+}
+
+// QUOTE/BACKTICK/COMMA/SPLICE all share the same shape: a marker followed
+// by the recursively stringified inner form.
+static void stringify_marked_form(resizable_string_type* buf, void* o, int base, const char* marker) {
+  putstr_resizable_array(buf, marker);
+  stringify_dispatch(buf, to_cons(o)->car, base);
+}
+
+static void stringify_cons(resizable_string_type* buf, void* o, int base) {
+  putch_resizable_array(buf, '(');
+
+  char first = 1;
+  for(; o != NULL && is_cons(o); o = cdr(o)) {
+
+    void* tmp = car(o);
+    if(first) { first = 0; }
+    else { putch_resizable_array(buf, ' '); }
+
+    stringify_dispatch(buf, tmp, base);
+
+    if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
+      putstr_resizable_array(buf, " . ");
+      stringify_dispatch(buf, to_cons(o)->cdr, base);
+      break;
+    }
+  }
+  putch_resizable_array(buf, ')');
+}
+
+static void stringify_rb_tree(resizable_string_type* buf, void* o, int base) {
+  putstr_resizable_array(buf, "(MAPMAKE");
+  if(car(o)) {
+    putch_resizable_array(buf, ' ');
+    stringify_dispatch(buf, car(o), base);
+  }
+  putch_resizable_array(buf, ')');
+}
+
+static void stringify_cnr(resizable_string_type* buf, void* o) {
+  putch_resizable_array(buf, 'C');
+  putstr_resizable_array(buf, to_string(car(o))->str);
+  putch_resizable_array(buf, 'R');
+}
+
+static void stringify_error(resizable_string_type* buf, void* o, int base) {
+  putstr_resizable_array(buf, "<ERROR: ");
+  stringify_dispatch(buf, to_cons(o)->cdr, base);
+  putch_resizable_array(buf, '>');
+}
+
+static void stringify_lambda(resizable_string_type* buf, void* o, int base) {
+  putstr_resizable_array(buf, "(LAMBDA ");
+  stringify_dispatch(buf, car(cdr(o)), base);
+  putch_resizable_array(buf, ' ');
+  stringify_dispatch(buf, cdr(cdr(o)), base);
+  putch_resizable_array(buf, ')');
+}
+
+static void stringify_unprintable_array(resizable_string_type* buf) {
+  putstr_resizable_array(buf, "Specialized array type data isn't printable yet, defaulting to hex.");
+}
+
+static void stringify_unknown(resizable_string_type* buf, void* o) {
+  char tmp[48];
+  snprintf(tmp, sizeof(tmp), "We have no idea what %p is.", o);
+  putstr_resizable_array(buf, tmp);
+}
+
+static void stringify_dispatch(resizable_string_type* buf, void* o, int base) {
+
+  if(o == NULL) { stringify_null(buf); return; }
+
+  switch(get_type(o)) {
+
+  case TYPE_TRUE:      stringify_true(buf); break;
+  case TYPE_CONS:      stringify_cons(buf, o, base); break;
+  case TYPE_QUOTE:     stringify_marked_form(buf, o, base, "'"); break;
+  case TYPE_BACKTICK:  stringify_marked_form(buf, o, base, "`"); break;
+  case TYPE_COMMA:     stringify_marked_form(buf, o, base, ","); break;
+  case TYPE_SPLICE:    stringify_marked_form(buf, o, base, ",@"); break;
+  case TYPE_SYMBOL:    stringify_symbol(buf, o); break;
+  case TYPE_INT:       stringify_int(buf, o, base); break;
+  case TYPE_NATIVE_INT: stringify_native_int(buf, o); break;
+  case TYPE_FLOAT:     stringify_float(buf, o, base); break;
+  case TYPE_RATIONAL:  stringify_rational(buf, o, base); break;
+  case TYPE_STRING:    stringify_string(buf, o); break;
+  case TYPE_CHAR:      stringify_char(buf, o); break;
+  case TYPE_POINTER:   stringify_pointer(buf, o); break;
+  case TYPE_RB_TREE:   stringify_rb_tree(buf, o, base); break;
+  case TYPE_CNR:       stringify_cnr(buf, o); break;
+  case TYPE_ERROR:     stringify_error(buf, o, base); break;
+  case TYPE_LAMBDA:    stringify_lambda(buf, o, base); break;
+
+  case TYPE_INT8: case TYPE_UINT8: case TYPE_FLOAT8: case TYPE_DOUBLE8: case TYPE_LONG_DOUBLE8:
+  case TYPE_INT16: case TYPE_UINT16: case TYPE_FLOAT16: case TYPE_DOUBLE16: case TYPE_LONG_DOUBLE16:
+  case TYPE_INT32: case TYPE_UINT32: case TYPE_FLOAT32: case TYPE_DOUBLE32: case TYPE_LONG_DOUBLE32:
+  case TYPE_INT64: case TYPE_UINT64: case TYPE_FLOAT64: case TYPE_DOUBLE64: case TYPE_LONG_DOUBLE64:
+  case TYPE_INT128: case TYPE_UINT128: case TYPE_FLOAT128: case TYPE_DOUBLE128: case TYPE_LONG_DOUBLE128:
+  case TYPE_CHAR_ARRAY:
+    stringify_unprintable_array(buf);
+    break;
+
+  default:
+    stringify_unknown(buf, o);
+  }
+}
+
+// Public: append o's printed representation onto buf (creating buf if NULL).
+// Shared by both PRINT and TO-STRING so there is exactly one formatting
+// implementation per type.
+resizable_string_type* stringify(resizable_string_type* buf, void* o, int base) {
+  if(!buf) buf = create_resizable_string_type(64, TYPE_RESIZABLE_STRING);
+  stringify_dispatch(buf, o, base);
+  return buf;
+}
+
+string_type* to_string_type(void* o, int base) {
+  // TO-STRING on a string returns its raw content, unlike PRINT which
+  // wraps it in quotes as write-syntax.
+  if(o && is_type(o, TYPE_STRING)) return to_string(o);
+
+  resizable_string_type* buf = stringify(NULL, o, base);
+  return create_string_type_from_resizable_string(buf);
+}
+
+void print(FILE* output, void* o, int base) {
+  resizable_string_type* buf = stringify(NULL, o, base);
+  fwrite(buf->str, 1, buf->pos, output);
+  fflush(output);
+}

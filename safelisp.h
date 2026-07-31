@@ -238,7 +238,7 @@ extern "C" {
   resizable_string_type* create_resizable_string_type_from_string(const char* str, ValueType Type);
   string_type* create_string_type_from_resizable_string(resizable_string_type* resizeable);
   resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c);
-  resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* s);
+  resizable_string_type* putstr_resizable_array(resizable_string_type* arr, const char* s);
 
   char* return_type_c_string(void* o);
   

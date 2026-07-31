@@ -350,58 +350,56 @@ string_type* create_string_type_from_resizable_string(resizable_string_type* res
 }
 
 resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c) {
-  
+
   if(!is_type(arr, TYPE_RESIZABLE_STRING)) {
-	
+
     printf("Error, not a resizeable string!\n");
     return NULL;
   }
-  
-  // Is there enough space? 
-  if(arr->pos >= arr->len - 2) {
-	
+
+  // Is there enough space for the char plus a trailing NULL?
+  if(arr->pos + 2 > arr->len) {
+
     // Gotta make some room...
-    resize_resizable_array(arr, arr->len * 2);
+    if(!resize_resizable_array(arr, arr->len * 2)) return NULL;
   }
 
   if(arr->str != NULL) {
-  
+
     arr->str[arr->pos] = c;
     arr->pos++;
     arr->str[arr->pos] = '\0';
   }
-  
+
   return arr;
 }
 
-resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* s) {
+resizable_string_type* putstr_resizable_array(resizable_string_type* arr, const char* s) {
 
   if(!is_type(arr, TYPE_RESIZABLE_STRING)) {
-	
+
     printf("Error, not a resizeable string!\n");
     return NULL;
   }
 
   size_t strl = strlen(s);
+  size_t totalRequired = arr->pos + strl + 1; // +1 for the trailing NULL
 
-  // if this is the first item then add an extra space for the NULL.
-  if(arr->pos == 0) strl += 1;
-  size_t totalRequired = arr->pos + strl;
-						 
-  if(totalRequired >= arr->len - 1) {
+  if(totalRequired > arr->len) {
 
-    // Gotta make some room...
-		
-    arr->len = totalRequired * totalRequired; 
-    arr->str = resize_string(arr->str, arr->len);
+    // Gotta make some room... double until it fits.
+    size_t newlen = arr->len ? arr->len * 2 : 1;
+    while(newlen < totalRequired) newlen *= 2;
+
+    if(!resize_resizable_array(arr, newlen)) return NULL;
   }
 
   if(arr->str != NULL) {
-  
-    strncpy(arr->str + arr->pos, s, strl +1);
-    arr->pos = totalRequired;
+
+    memcpy(arr->str + arr->pos, s, strl + 1); // +1 copies the trailing NULL too
+    arr->pos += strl;
   }
-  
+
   return arr;
 }
 

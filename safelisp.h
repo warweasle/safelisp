@@ -76,6 +76,7 @@ extern "C" {
     TYPE_CNR,
     TYPE_ERROR,
     TYPE_VALUES,
+    TYPE_RESTART,
   } ValueType;
 
   typedef enum {
@@ -158,7 +159,8 @@ extern "C" {
 	N_STREQ,
 	N_VALUES,
 	N_NTHVALUE,
-	N_MULTIPLEVALUELIST
+	N_MULTIPLEVALUELIST,
+	N_AVAILABLERESTARTS
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)

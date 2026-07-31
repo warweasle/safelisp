@@ -492,6 +492,11 @@ return ATOM;}
     return ATOM;
 }
 
+[aA][vV][aA][iI][lL][aA][bB][lL][eE][rR][eE][sS][tT][aA][rR][tT][sS] {
+    yylval->p = create_native_int_type(N_AVAILABLERESTARTS);
+    return ATOM;
+}
+
 \.\.\. {
     yylval->p = create_native_int_type(N_PROGN);
     return ATOM;

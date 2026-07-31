@@ -1,0 +1,3 @@
+(... (PRINT (AVAILABLERESTARTS))
+     (PRINT (<> (WITHRESTART R (LAMBDA (V) V)
+                   (BREAK (AVAILABLERESTARTS))))))

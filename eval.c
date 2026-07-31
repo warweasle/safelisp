@@ -1760,9 +1760,13 @@ void* eval_list(void* list, void* env) {
 
 	// Fresh env cell, same pattern as N_LOOP's *BREAK* frame -- never
 	// mutates the caller's env, so there is nothing to leak or restore
-	// if this dynamic extent ends via a normal return.
+	// if this dynamic extent ends via a normal return. TYPE_RESTART
+	// (rather than the generic TYPE_POINTER) tags this binding so
+	// AVAILABLERESTARTS can walk cdr(env) and pick out restart entries
+	// unambiguously, distinct from *BREAK* and any other dynamic binding
+	// that might share this same list.
 	void* newenv = cons(car(env),
-			     cons(cons(to_string(name), create_pointer_type(frame, TYPE_POINTER)),
+			     cons(cons(to_string(name), create_quotetype(TYPE_RESTART, frame)),
 				  cdr(env)));
 
 	void* ret = NULL;
@@ -1791,11 +1795,11 @@ void* eval_list(void* list, void* env) {
 	}
 
 	void* pair = cassoc(to_string(name)->str, cdr(env));
-	if(!pair) {
+	if(!pair || !is_type(cdr(pair), TYPE_RESTART)) {
 	  return ERROR("INVOKE-RESTART: no such restart!");
 	}
 
-	restart_frame* frame = to_pointer(cdr(pair))->p;
+	restart_frame* frame = car(cdr(pair));
 
 	void* valueForm = cdr(rest);
 	if(valueForm && car(valueForm)) {
@@ -1809,6 +1813,29 @@ void* eval_list(void* list, void* env) {
 	longjmp(frame->buf, 1);
 	// never reached
 	return NULL;
+      }
+      break;
+
+    case N_AVAILABLERESTARTS:
+      {
+	// (AVAILABLERESTARTS) -- names of every currently-active restart,
+	// innermost first, matching cassoc's own search order. Walks
+	// cdr(env) the same way WITH-RESTART/INVOKE-RESTART do, filtering
+	// on the TYPE_RESTART tag so *BREAK* and any other dynamic binding
+	// sharing this list is skipped.
+	void* ret = NULL;
+	void* last = NULL;
+
+	for(void* i=cdr(env); i; i=cdr(i)) {
+	  void* pair = car(i);
+	  if(!pair || !is_cons(pair) || !is_type(cdr(pair), TYPE_RESTART)) continue;
+
+	  void* name = car(pair);
+	  if(!ret) { ret = cons(name, NULL); last = ret; }
+	  else { cdr(last) = cons(name, NULL); last = cdr(last); }
+	}
+
+	return ret;
       }
       break;
 

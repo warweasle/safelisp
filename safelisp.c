@@ -243,7 +243,7 @@ string_type* create_string_type_and_copy(size_t len, const char* str, ValueType 
   sym->type = Type;
   strncpy(sym->str, str, len); // Copy up to len characters
   sym->size = len;
-  sym->str[len+1] = '\0'; // Ensure null termination
+  sym->str[len] = '\0'; // Ensure null termination
 
   return sym;
 }

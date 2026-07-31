@@ -1,7 +1,7 @@
 #include <stdlib.h>
 void (*old_free2)(void*) = free;
-#include <gmp.h>
 #include "printer.h"
+#include <gmp.h>
 
 void* print_to_string(void* o, int base) {
 

@@ -194,6 +194,15 @@ static void stringify_error(resizable_string_type* buf, void* o, int base) {
   putch_resizable_array(buf, '>');
 }
 
+static void stringify_values(resizable_string_type* buf, void* o, int base) {
+  // A raw TYPE_VALUES normally never reaches here -- eval()'s wrapper
+  // collapses it to its first value before most consumers see it. This
+  // only fires if something inspects the wrapper directly.
+  putstr_resizable_array(buf, "#<VALUES ");
+  stringify_dispatch(buf, car(o), base);
+  putch_resizable_array(buf, '>');
+}
+
 static void stringify_lambda(resizable_string_type* buf, void* o, int base) {
   putstr_resizable_array(buf, "(LAMBDA ");
   stringify_dispatch(buf, car(cdr(o)), base);
@@ -243,6 +252,7 @@ static void stringify_dispatch(resizable_string_type* buf, void* o, int base) {
   case TYPE_RB_TREE:   stringify_rb_tree(buf, o, base); break;
   case TYPE_CNR:       stringify_cnr(buf, o); break;
   case TYPE_ERROR:     stringify_error(buf, o, base); break;
+  case TYPE_VALUES:    stringify_values(buf, o, base); break;
   case TYPE_LAMBDA:    stringify_lambda(buf, o, base); break;
   case TYPE_MACRO:     stringify_macro(buf, o, base); break;
 

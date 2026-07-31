@@ -1,1 +1,1 @@
-(... (PRINT (/ 1 0)) (PRINT (TOSTRING (/ 1 0))))
+(PRINT (/ 1 0))

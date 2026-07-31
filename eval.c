@@ -16,20 +16,6 @@ typedef struct restart_frame {
   void* value;
 } restart_frame;
 
-// PRINT and TO-STRING always succeed at their own job (displaying/converting
-// whatever they're given), even when that value happens to be an ERROR
-// object printed as data. A sequence runner (PROGN/PROG1/WHEN/UNLESS)
-// shouldn't abort just because one of its steps was one of these calls.
-static int is_never_aborting_call(void* form) {
-  if(!is_cons(form)) return 0;
-
-  void* head = car(form);
-  if(get_type(head) != TYPE_NATIVE_INT) return 0;
-
-  char c = to_char(head)->c;
-  return c == N_PRINT || c == N_TO_STRING;
-}
-
 // How the "args" list passed to apply_callable should be treated.
 typedef enum {
   ARGS_RAW_EVAL,   // args are unevaluated forms; evaluate each in callEnv before binding
@@ -279,7 +265,10 @@ void* quasiquote(void* list, void* env, int depth) {
   return list;
 }
 
-void* eval(void* list, void* env) {
+// The real evaluator. Never collapses a TYPE_VALUES result -- that's
+// eval()'s job (see below). NTHVALUE/MULTIPLEVALUELIST call this directly
+// for their inner expression so they see an uncollapsed TYPE_VALUES.
+static void* eval_raw(void* list, void* env) {
 
   ValueType type = get_type(list);
 
@@ -361,8 +350,23 @@ void* eval(void* list, void* env) {
   default:
     return list;
   }
-  
+
   return list;
+}
+
+// Public evaluator. Identical to eval_raw, except a TYPE_VALUES result
+// collapses to its first value -- so VALUES works transparently everywhere
+// except inside NTHVALUE/MULTIPLEVALUELIST, which call eval_raw directly
+// on their inner expression to see the uncollapsed result.
+void* eval(void* list, void* env) {
+  void* ret = eval_raw(list, env);
+
+  if(ret && get_type(ret) == TYPE_VALUES) {
+    // car(ret) is the wrapped VALUES list; its own car is the first value.
+    return car(car(ret));
+  }
+
+  return ret;
 }
 
 void* eval_list(void* list, void* env) {
@@ -546,7 +550,7 @@ void* eval_list(void* list, void* env) {
 
 	    void* tmp = eval(car(i), env);;
 
-	    if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+	    if(is_error(tmp)) return tmp;
 
 	    ret = tmp;
 	  }
@@ -581,7 +585,7 @@ void* eval_list(void* list, void* env) {
 
 	    void* tmp = eval(car(i), env);;
 
-	    if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+	    if(is_error(tmp)) return tmp;
 
 	    ret = tmp;
 	  }
@@ -1766,7 +1770,7 @@ void* eval_list(void* list, void* env) {
 
 	  void* tmp = eval(car(i), newenv);
 
-	  if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+	  if(is_error(tmp)) return tmp;
 
 	  ret = tmp;
 	}
@@ -2494,6 +2498,86 @@ void* eval_list(void* list, void* env) {
       }
       break;
 
+    case N_VALUES:
+      {
+	// (VALUES a b c ...) -- zero or more. Wraps its evaluated arguments
+	// in a TYPE_VALUES tag; eval()'s wrapper collapses that to the
+	// first value everywhere except inside NTHVALUE/MULTIPLEVALUELIST,
+	// which see the real, uncollapsed TYPE_VALUES by calling eval_raw
+	// on this form directly instead of going through eval().
+	cc ret = NULL;
+	cc next = NULL;
+
+	for(cc i=cdr(list); i; i=cdr(i)) {
+	  void* tmp = eval(car(i), env);
+	  if(is_error(tmp)) return tmp;
+
+	  if(ret) {
+	    cc c = cons(tmp, NULL);
+	    next->cdr = c;
+	    next = c;
+	  }
+	  else {
+	    ret = cons(tmp, NULL);
+	    next = ret;
+	  }
+	}
+
+	return create_quotetype(TYPE_VALUES, ret);
+      }
+      break;
+
+    case N_NTHVALUE:
+      {
+	// (NTHVALUE n expr) -- 0-indexed. expr is evaluated via eval_raw
+	// (not eval) so a VALUES result arrives unwrapped rather than
+	// already collapsed to its first element.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("NTHVALUE requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("NTHVALUE requires 2 arguments!");
+
+	void* nV = eval(car(a1), env);
+	if(is_error(nV)) return nV;
+	if(!is_int(nV)) return ERROR("NTHVALUE requires an integer index!");
+	long n = mpz_get_si(to_int(nV)->num);
+	if(n < 0) return ERROR("NTHVALUE: index out of range!");
+
+	void* result = eval_raw(car(a2), env);
+	if(is_error(result)) return result;
+
+	if(result && get_type(result) == TYPE_VALUES) {
+	  void* i = car(result);
+	  for(long k = 0; k < n && i; k++) i = cdr(i);
+	  if(!i) return ERROR("NTHVALUE: index out of range!");
+	  return car(i);
+	}
+
+	// Ordinary single value: only index 0 is in range.
+	if(n != 0) return ERROR("NTHVALUE: index out of range!");
+	return result;
+      }
+      break;
+
+    case N_MULTIPLEVALUELIST:
+      {
+	// (MULTIPLEVALUELIST expr) -- expr via eval_raw for the same reason
+	// as NTHVALUE. Returns the wrapped values as a plain list, or a
+	// one-element list if expr was an ordinary single value.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("MULTIPLEVALUELIST requires 1 argument!");
+
+	void* result = eval_raw(car(a1), env);
+	if(is_error(result)) return result;
+
+	if(result && get_type(result) == TYPE_VALUES) {
+	  return car(result);
+	}
+
+	return cons(result, NULL);
+      }
+      break;
+
     case N_READ:
       return tread(env);
       break;
@@ -2805,7 +2889,7 @@ void* eval_list(void* list, void* env) {
 
 	  void* tmp = eval(car(i), env);;
 
-	  if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+	  if(is_error(tmp)) return tmp;
 
 	  ret = tmp;
 	}
@@ -2819,7 +2903,7 @@ void* eval_list(void* list, void* env) {
 	if(!cdr(list) || !car(cdr(list))) return NULL;
 
 	void* ret = eval(car(cdr(list)), env);
-	if(is_error(ret) && !is_never_aborting_call(car(cdr(list)))) return ret;
+	if(is_error(ret)) return ret;
 
 	void* code = cdr(cdr(list));
 	// loop over the code...
@@ -2827,7 +2911,7 @@ void* eval_list(void* list, void* env) {
 
 	  void* tmp = eval(car(i), env);;
 
-	  if(is_error(tmp) && !is_never_aborting_call(car(i))) return tmp;
+	  if(is_error(tmp)) return tmp;
 	}
 
 	return ret;

@@ -540,6 +540,7 @@ int compare(void* a, void* b) {
   case TYPE_NATIVE:
   case TYPE_LAMBDA:
   case TYPE_MACRO:
+  case TYPE_VALUES:
   case TYPE_RAW:
   case TYPE_INT8:
   case TYPE_UINT8:
@@ -639,6 +640,8 @@ char* return_type_c_string(void* o) {
     return "LAMBDA";
   case TYPE_MACRO:
     return "MACRO";
+  case TYPE_VALUES:
+    return "VALUES";
   case TYPE_RAW:
     return "RAW";
   case TYPE_INT8:

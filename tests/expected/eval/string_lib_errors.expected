@@ -1,4 +1,2 @@
 <ERROR: "SUBSTR: index out of range!">
-<ERROR: "STRREF: index out of range!">
-<ERROR: "LEN requires a list or a string!">
-<ERROR: "LEN requires a list or a string!">
+<ERROR: "SUBSTR: index out of range!">

@@ -1,2 +1,2 @@
-(MAPMAKE NULL (LAMBDA (A B) ((- B A))))
-(MAPMAKE NULL (LAMBDA (A B) ((- B A))))
+(MAPMAKE NULL (LAMBDA (A B) (- B A)))
+(MAPMAKE NULL (LAMBDA (A B) (- B A)))

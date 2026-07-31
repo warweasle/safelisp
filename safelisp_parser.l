@@ -281,6 +281,11 @@ return ATOM;}
     return ATOM;
 }
 
+[mM][aA][pP][sS][eE][tT] {
+    yylval->p = create_native_int_type(N_MAPSET);
+    return ATOM;
+}
+
 [mM][aA][pP][dD][eE][lL] {
     yylval->p = create_native_int_type(N_MAPDEL);
     return ATOM;

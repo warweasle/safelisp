@@ -154,6 +154,8 @@ static void stringify_cons(resizable_string_type* buf, void* o, int base) {
 // A tree NODE is (key . (left . (right . parent))) -- printing it via the
 // generic cons walker would eventually follow a non-root node's parent
 // pointer back up the tree and loop forever. Walk key/left/right only.
+// RB_GET_KEY(node) is the (key . value) pair itself (see mapadd/rb-tree.c),
+// so this reproduces the pairs list MAPMAKE's new list-of-pairs arg expects.
 static void stringify_rb_node(resizable_string_type* buf, void* node, int base) {
   if(!node) return;
 
@@ -173,12 +175,33 @@ static void stringify_rb_node(resizable_string_type* buf, void* node, int base) 
   }
 }
 
+// Mirrors the new (MAPMAKE pairs-list optional-comparator) input syntax so a
+// printed tree can be copy-pasted back in to reconstruct it. MAPMAKE
+// evaluates its arguments, so a non-empty pairs-list is quoted -- otherwise
+// pasting it back in would try to evaluate each (key . value) pair as a
+// call. An empty tree omits the pairs-list entirely -- (MAPMAKE) -- unless
+// there's a comparator to print, in which case the empty pairs-list is
+// spelled out as NULL: (MAPMAKE NULL comparator).
 static void stringify_rb_tree(resizable_string_type* buf, void* o, int base) {
+  void* root = car(o);
+  void* comparator = cdr((cc)o);
+
   putstr_resizable_array(buf, "(MAPMAKE");
-  if(car(o)) {
-    putch_resizable_array(buf, ' ');
-    stringify_rb_node(buf, car(o), base);
+
+  if(root) {
+    putstr_resizable_array(buf, " '(");
+    stringify_rb_node(buf, root, base);
+    putch_resizable_array(buf, ')');
   }
+  else if(comparator) {
+    putstr_resizable_array(buf, " NULL");
+  }
+
+  if(comparator) {
+    putch_resizable_array(buf, ' ');
+    stringify_dispatch(buf, comparator, base);
+  }
+
   putch_resizable_array(buf, ')');
 }
 

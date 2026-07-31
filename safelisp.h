@@ -241,7 +241,7 @@ extern "C" {
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
-  cc make_rb_tree();
+  cc make_rb_tree(void* comparator);
   cc error(void* car, void* cdr);
   int list_length(void* list);
   int is_list(void* list);

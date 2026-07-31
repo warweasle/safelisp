@@ -1,0 +1,4 @@
+(... (SET M (MAPMAKE))
+     (MAPADD M 'A 1)
+     (MAPSET M 'A 100)
+     (PRINT (MAPGET M 'A)))

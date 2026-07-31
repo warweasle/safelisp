@@ -32,7 +32,7 @@ void* init_safelisp(FILE* input, FILE* output) {
   ret = cons(cons(create_symbol("*INPUT*"), create_pointer_type(input, TYPE_POINTER)), ret);
   ret = cons(cons(create_symbol("*OUTPUT*"), create_pointer_type(output, TYPE_POINTER)), ret);
   
-  return cons(cons(make_rb_tree(), NULL), ret);
+  return cons(cons(make_rb_tree(NULL), NULL), ret);
 }
 
 // Set the event flag
@@ -109,11 +109,18 @@ cc make_cnr(void* cnr) {
   return ret;
 }
 
-cc make_rb_tree() {
+// comparator is NULL (the default -- plain compare()) or a Lisp callable
+// (TYPE_NATIVE/TYPE_LAMBDA/TYPE_MACRO) stashed in cdr(ret) -- the only
+// place a tree's comparator is ever set. Every other map operation
+// (MAPADD/MAPGET/MAPSET/MAPDEL) only ever reads cdr(map), never assigns
+// it, so a tree's ordering rule can't change out from under it after
+// creation.
+cc make_rb_tree(void* comparator) {
 
   cc ret = (cc) GC_malloc(sizeof(cons_cell));
 
   ret->type = TYPE_RB_TREE;
+  ret->cdr = comparator;
   return ret;
 }
 

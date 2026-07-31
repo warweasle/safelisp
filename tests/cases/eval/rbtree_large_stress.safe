@@ -1,0 +1,7 @@
+(... (SET M (MAPMAKE))
+     (SET N 0)
+     (<> (?... (((== N 50) (BREAK NULL))))
+         (MAPADD M N (* N N))
+         (SET N (+ N 1)))
+     (PRINT (LIST (MAPGET M 0) (MAPGET M 1) (MAPGET M 7) (MAPGET M 25)
+                  (MAPGET M 49) (MAPGET M 13) (MAPGET M 38))))

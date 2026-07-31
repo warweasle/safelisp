@@ -1,0 +1,1 @@
+(PRINT (MAPMAKE (LIST (CONS 1 'A) (CONS 2 'B) (CONS 3 'C)) (LAMBDA (X Y) (- Y X))))

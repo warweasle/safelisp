@@ -211,6 +211,14 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
   }
 }
 
+// Public wrapper around apply_callable for callers outside eval.c that
+// only ever need "call this with already-evaluated values" -- currently
+// just rb-tree.c's custom-comparator support. Keeps ArgMode/apply_callable
+// itself internal to eval.c.
+void* apply_with_values(void* callee, void* args, void* env) {
+  return apply_callable(callee, args, ARGS_VALUES, env, env);
+}
+
 void* quasiquote(void* list, void* env, int depth) {
   
   switch(get_type(list)) {
@@ -322,7 +330,7 @@ static void* eval_raw(void* list, void* env) {
 
 	case TYPE_RB_TREE:
 	  {
-	    void* found = mapget(car(i), list);
+	    void* found = mapget(car(i), list, env);
 	    if(found) return found;
 	  }
 	  break;
@@ -867,7 +875,7 @@ void* eval_list(void* list, void* env) {
 
 	  case TYPE_RB_TREE:
 	    {
-	      void* pair = mapget_pair(car(i), name);
+	      void* pair = mapget_pair(car(i), name, env);
 	      if(is_error(pair)) return pair;
 
 	      value = eval(value, env);
@@ -877,7 +885,7 @@ void* eval_list(void* list, void* env) {
 		cdr(pair) = value;
 	      }
 	      else {
-		mapset(car(i), name, value);
+		mapset(car(i), name, value, env);
 	      }
 	      return value;
 	    }
@@ -2610,7 +2618,68 @@ void* eval_list(void* list, void* env) {
       break;
       
     case N_MAPMAKE:
-      return make_rb_tree();
+      {
+	// (MAPMAKE), (MAPMAKE pairs-list), or (MAPMAKE pairs-list comparator)
+	// -- strictly positional: arg1 is always the pairs-list (a list of
+	// (key . value) pairs, or NULL for none), arg2 is always the
+	// comparator (a callable, or NULL/omitted for the default compare()).
+	// There is no single-argument comparator-only form -- a comparator
+	// with no pairs is (MAPMAKE NULL comparator). This mirrors what
+	// PRINT shows for an existing tree -- (MAPMAKE '((1 . A) (2 . B))
+	// comparator) or (MAPMAKE NULL comparator) -- so a printed tree can
+	// be copy-pasted back in to reconstruct it.
+	//
+	// This is the ONLY place a tree's comparator is ever set -- once
+	// make_rb_tree returns, every MAPADD call below (and every other
+	// MAP* operation afterward) only ever reads it.
+	void* args = cdr(list);
+
+	if(args && cdr(args) && cdr(cdr(args))) {
+	  return ERROR("MAPMAKE: too many arguments!");
+	}
+
+	void* pairs = NULL;
+	void* comparator = NULL;
+
+	if(args) {
+	  pairs = eval(car(args), env);
+	  if(is_error(pairs)) return pairs;
+
+	  if(cdr(args)) {
+	    comparator = eval(car(cdr(args)), env);
+	    if(is_error(comparator)) return comparator;
+	  }
+	}
+
+	if(comparator) {
+	  ValueType t = get_type(comparator);
+	  if(t != TYPE_NATIVE && t != TYPE_LAMBDA && t != TYPE_MACRO) {
+	    return ERROR("MAPMAKE: comparator must be a function!");
+	  }
+	}
+
+	if(pairs && !is_cons(pairs)) {
+	  return ERROR("MAPMAKE: expected a list of (key . value) pairs!");
+	}
+
+	for(void* i=pairs; i; i=cdr(i)) {
+	  // A (key . value) pair is just a cons cell -- value may itself be
+	  // any type, including a list (which is also a cons chain, so this
+	  // check must not reject that). We only need "is this a cons at
+	  // all," not "is the cdr specifically non-cons."
+	  if(!is_cons(car(i))) {
+	    return ERROR("MAPMAKE: expected a (key . value) pair!");
+	  }
+	}
+
+	cc tree = make_rb_tree(comparator);
+	for(void* i=pairs; i; i=cdr(i)) {
+	  void* pair = car(i);
+	  mapadd(tree, car(pair), cdr(pair), env);
+	}
+
+	return tree;
+      }
       break;
 
     case N_MAPADD:
@@ -2635,7 +2704,7 @@ void* eval_list(void* list, void* env) {
 	void* b = eval(car(tmp2), env);
 	void* c = eval(car(tmp3), env);
 
-	return mapadd(a, b, c);
+	return mapadd(a, b, c, env);
       }
       break;
       
@@ -2654,7 +2723,7 @@ void* eval_list(void* list, void* env) {
 	void* a = eval(car(tmp1), env);
 	void* b = eval(car(tmp2), env);
 
-	return mapget(a, b);
+	return mapget(a, b, env);
       }
       break;
       
@@ -2679,7 +2748,7 @@ void* eval_list(void* list, void* env) {
 	void* b = eval(car(tmp2), env);
 	void* c = eval(car(tmp3), env);
 
-	return mapset(a, b, c);
+	return mapset(a, b, c, env);
       }
       break;
 
@@ -2698,7 +2767,7 @@ void* eval_list(void* list, void* env) {
 	void* a = eval(car(tmp1), env);
 	void* b = eval(car(tmp2), env);
 
-	return mapdel(a, b);
+	return mapdel(a, b, env);
       }
       break;
 

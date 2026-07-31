@@ -1,0 +1,13 @@
+(... (SET M (MAPMAKE NULL (LAMBDA (A B) (- A B))))
+     (SET N 0)
+     (<> (?... (((== N 100000) (BREAK NULL))))
+         (MAPADD M N (* N N))
+         (SET N (+ N 1)))
+
+     (SET N 0)
+     (<> (?... (((== N 100000) (BREAK NULL))))
+         (?? (== 0 (MOD N 2))
+             (MAPDEL M N))
+         (SET N (+ N 1)))
+
+     (PRINT (LIST (MAPGET M 0) (MAPGET M 1) (MAPGET M 99999))))

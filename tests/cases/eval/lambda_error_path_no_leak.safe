@@ -1,0 +1,3 @@
+(... (SET F (LAMBDA (X) (CAR X)))
+     (PRINT (F 5))
+     (PRINT "after"))

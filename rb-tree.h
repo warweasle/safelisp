@@ -54,6 +54,7 @@ extern "C" {
   typedef int (*RB_CMP_FUNC)(void* data, RB_KEY_TYPE left, RB_KEY_TYPE right);
 
   void* mapget(void* map, void* object);
+  void* mapget_pair(void* map, void* object);
   void* mapadd(void* map, void* object, void* value);
   void* mapset(void* map, void* object, void* value);
   void* mapdel(void* map, void* object);

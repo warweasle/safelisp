@@ -1,0 +1,5 @@
+(... (SET F (LAMBDA (X) (+ X 1)))
+     (F 1)
+     (F 2)
+     (F 3)
+     (PRINT "done"))

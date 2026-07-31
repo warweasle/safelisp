@@ -14,6 +14,130 @@ static int is_never_aborting_call(void* form) {
   return c == N_PRINT || c == N_TO_STRING;
 }
 
+// How the "args" list passed to apply_callable should be treated.
+typedef enum {
+  ARGS_RAW_EVAL,   // args are unevaluated forms; evaluate each in callEnv before binding
+  ARGS_VALUES,     // args are already-evaluated values; bind as-is
+  ARGS_RAW_NOEVAL  // args are unevaluated forms; bind them AS FORMS, no evaluation at all
+} ArgMode;
+
+// The single place a callable (TYPE_LAMBDA or TYPE_NATIVE) gets applied to
+// its arguments. callEnv is the environment raw argument forms are evaluated
+// in (ARGS_RAW_EVAL only); env is the environment used to build the callee's
+// closure chain. Keeping them separate means evaluating arguments and
+// constructing a closure never get conflated. TYPE_MACRO is intentionally
+// not handled here -- macro-vs-not is decided by the caller, before this
+// function is ever invoked, since that decision determines whether argument
+// forms get evaluated at all.
+static void* apply_callable(void* callee, void* args, ArgMode argMode, void* callEnv, void* env) {
+
+  switch(get_type(callee)) {
+
+  case TYPE_LAMBDA:
+    {
+      void* lambda = callee;
+      void* closure = car(lambda);
+      void* lambdaArgs = car(cdr(lambda));
+      void* vals = args;
+
+      // newenv is always a FRESH cons distinct from env in both branches
+      // below, so nothing here ever mutates the caller's env object -- no
+      // save/restore needed, and no risk of leaking a pushed frame if a
+      // future non-local exit (e.g. a restart) ever unwinds through this
+      // frame.
+      void* newenv = NULL;
+      void* l = NULL;
+      if(closure) {
+	l = last(closure);
+	cdr(l) = car(car(env));
+	newenv = cons(l, car(env));
+      }
+      else {
+	newenv = cons(car(env), cdr(env));
+      }
+
+      if(!lambdaArgs && vals) return ERROR("Sent args to a function and accepts none!");
+
+      void* nextFrame = NULL;
+
+      if(car(lambdaArgs)) {
+	for(void* i = lambdaArgs; i; i=cdr(i)) {
+
+	  if(!vals) {
+	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
+	  }
+
+	  void* val = (argMode == ARGS_RAW_EVAL) ? eval(car(vals), callEnv) : car(vals);
+	  nextFrame = cons(cons(car(i), val), nextFrame);
+	  vals = cdr(vals);
+	}
+
+	if(vals) {
+	  return ERROR("TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
+	}
+
+	// set the new env with the lambda list...
+	car(newenv) = cons(nextFrame, car(newenv));
+      }
+      else if(vals) {
+	return ERROR("TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
+      }
+
+      // run the code with the new env
+      void* ret = NULL;
+      for(void* i=cdr(cdr(lambda)); i; i=cdr(i)) {
+
+	ret = eval(car(i), newenv);
+
+	if(is_error(ret)) {
+	  return ret;
+	}
+      }
+
+      // reset the end so we don't mess up the closure.
+      if(closure) {
+	cdr(l) = NULL;
+      }
+
+      return ret;
+    }
+
+  case TYPE_NATIVE:
+    {
+      native_func f = to_pointer(callee)->p;
+
+      if(argMode != ARGS_RAW_EVAL) {
+	return f(args, env);
+      }
+
+      void* ret = NULL;
+      void* last = NULL;
+      for(void* i=args; i; i=cdr(i)) {
+
+	void* val = eval(car(i), callEnv);
+
+	if(is_error(val)) {
+	  return val;
+	}
+
+	if(!ret) {
+	  ret = cons(val, NULL);
+	  last = ret;
+	}
+	else {
+	  cdr(last) = cons(val, NULL);
+	  last = cdr(last);
+	}
+      }
+
+      return f(ret, env);
+    }
+
+  default:
+    return ERROR("Cannot apply: not a function!");
+  }
+}
+
 void* quasiquote(void* list, void* env, int depth) {
   
   switch(get_type(list)) {
@@ -122,11 +246,11 @@ void* eval(void* list, void* env) {
 
 	case TYPE_RB_TREE:
 	  {
-	    void* found = mapget(i, list);
+	    void* found = mapget(car(i), list);
 	    if(found) return found;
 	  }
 	  break;
-	  
+
 	case TYPE_CONS:
 	  {
 	    void* tmp = assoc(list, car(i));
@@ -169,25 +293,9 @@ void* eval_list(void* list, void* env) {
       void* f = eval(car(list), env);
       if(is_error(f)) return f;
 
-      void* args = NULL;
-      void* last = NULL;
-      
-      for(void* i=cdr(list); i; i=cdr(i)) {
-
-	void* a = eval(car(i), env);
-	if(is_error(a)) return a;
-	
-	if(args == NULL) {
-	  args = cons(a, NULL);
-	  last = args;
-	}
-	else {
-	  cdr(last) = cons(a, NULL);
-	  last = cdr(last);
-	}
-      }
-
-      return eval(cons(f, args), env);
+      // Macro detection (once TYPE_MACRO exists) belongs here, before any
+      // argument form is evaluated -- macros need the raw forms, not values.
+      return apply_callable(f, cdr(list), ARGS_RAW_EVAL, env, env);
     }
     break;
 
@@ -664,20 +772,17 @@ void* eval_list(void* list, void* env) {
 
 	  case TYPE_RB_TREE:
 	    {
-	      printf("AAAAAAAAAAAa\n");
-	      void* found = mapget(car(i), name);
-	      if(is_error(found)) return found;
+	      void* pair = mapget_pair(car(i), name);
+	      if(is_error(pair)) return pair;
 
-	      if(found) {
-		value = eval(value, env);
-		if(is_error(value)) return value;
+	      value = eval(value, env);
+	      if(is_error(value)) return value;
 
-		cdr(found) = value;
+	      if(pair) {
+		cdr(pair) = value;
 	      }
 	      else {
-		printf("I assumme?\n");
 		mapset(car(i), name, value);
-		printf("what?\n");
 	      }
 	      return value;
 	    }
@@ -1863,69 +1968,7 @@ void* eval_list(void* list, void* env) {
     }
 
   case TYPE_LAMBDA:
-    {
-
-      void* lambda = car(list);
-      void* closure = car(lambda);
-      void* args = car(cdr(lambda));
-      void* vals = cdr(list);
-
-      void* oldenv = car(env);
-      
-      // first deal with the closure...
-      void* newenv = NULL;
-      void* l = NULL;
-      if(closure) {
-	l = last(closure);
-	cdr(l) = car(car(env));
-	newenv = cons(l, car(env));
-      }
-      else {
-	newenv = env;
-      }
-      
-      if(!args && vals) return ERROR("Sent args to a function and accepts none!");
-
-      void* nextFrame = NULL;
-
-      if(car(args)) {
-	for(void* i = args; i; i=cdr(i)) {
-
-	  if(!vals) {
-	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
-	  }
-
-	  void* val = eval(car(vals), newenv);
-	  nextFrame = cons(cons(car(i), val), nextFrame);
-	  vals = cdr(vals);
-	}
-
-	// set the new env with the lambda list...
-	car(newenv) = cons(nextFrame, car(newenv));
-      }
-      
-      // run the code with the new env
-      void* ret = NULL;
-      for(void* i=cdr(cdr(lambda)); i; i=cdr(i)) {
-
-	ret = eval(car(i), newenv);
-
-	if(is_error(ret)) {
-	  car(env) = oldenv;
-	  return ret;
-	}
-      }
-      
-      // reset the end so we don't mess up the closure.
-      if(closure) {
-	cdr(l) = NULL;
-      }
-      
-      car(env) = oldenv;
-      return ret;
-    }
-
-    return NULL;
+    return apply_callable(car(list), cdr(list), ARGS_RAW_EVAL, env, env);
     break;
     
   case TYPE_CNR:
@@ -1966,42 +2009,17 @@ void* eval_list(void* list, void* env) {
     break;
 
   case TYPE_NATIVE:
-
-    {
-      native_func f = to_pointer(o)->p;
-
-      // run the code with the new env
-      void* ret = NULL;
-      void* last = NULL;
-      for(void* i=cdr(list); i; i=cdr(i)) {
-
-	void* val = eval(car(i), env);
-
-	if(is_error(val)) {
-	  return ret;
-	}
-
-	if(ret) {
-	  ret = cons(val, NULL);
-	  last = ret;
-	}
-	else {
-
-	  cdr(last) = cons(val, NULL);
-	  last = cdr(last);
-	}
-      }
-
-      return f(ret, env);
-      
-    }
+    return apply_callable(o, cdr(list), ARGS_RAW_EVAL, env, env);
     break;
-    
+
   case TYPE_SYMBOL:
     {
-      // ok, we need to do more...
-      void* ret = eval(o, env);
-      return eval(cons(ret, cdr(list)), env);
+      void* f = eval(o, env);
+      if(is_error(f)) return f;
+
+      // Macro detection (once TYPE_MACRO exists) belongs here, before any
+      // argument form is evaluated -- macros need the raw forms, not values.
+      return apply_callable(f, cdr(list), ARGS_RAW_EVAL, env, env);
     }
     break;
         

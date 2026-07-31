@@ -1,0 +1,2 @@
+(LET ((D 'FOO))
+   (PRINT ((LAMBDA (X) X) D)))

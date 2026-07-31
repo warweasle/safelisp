@@ -17,8 +17,6 @@ cc create_rb_node(void* key, cc left, cc right, cc parent) {
 int rbObjectPairCompare(void* data, void* a, void* b) {
   (void)data; // unused for now
 
-  printf("rbObjectPairCompare\n");
-  
   if(!a && !b) return 0;
   if(!a) return -1;
   if(!b) return 1;
@@ -29,8 +27,6 @@ int rbObjectPairCompare(void* data, void* a, void* b) {
 int rbObjectCompare(void* data, void* a, void* b) {
   (void)data; // unused for now
 
-  printf("rbObjectCompare\n");
-  
   if(!b) return 1;
   
   return compare(a, car(b));
@@ -39,9 +35,18 @@ int rbObjectCompare(void* data, void* a, void* b) {
 
 
 void* mapget(void* map, void* object) {
-  void* ret = cc_rb_find(map, object, rbObjectCompare, NULL); 
-  if(ret) return cdr(ret);
+  // cc_rb_find returns the tree NODE (key . (left . (right . parent))),
+  // not the key pair itself -- the stored value lives at cdr(car(node)).
+  void* ret = cc_rb_find(map, object, rbObjectCompare, NULL);
+  if(ret) return cdr(car(ret));
   else    return NULL;
+}
+
+// Like mapget, but returns the mutable (key . value) pair itself, so a
+// caller can update the value in place via cdr(pair) = newValue.
+void* mapget_pair(void* map, void* object) {
+  void* ret = cc_rb_find(map, object, rbObjectCompare, NULL);
+  return ret ? car(ret) : NULL;
 }
 
 void* mapadd(void* map, void* object, void* value) {
@@ -60,24 +65,13 @@ void* mapadd(void* map, void* object, void* value) {
 
 void* mapset(void* map, void* object, void* value) {
 
-  printf("BBBBBBBBBB\n");
-  cc c = to_cons(mapget(map, object));
-  print(stdout, map, 10);
-  printf("\n");
-  printf("CCCCCCCCC\n");
-  if(c) {
-    
-    if(c && is_cons(c)) {
-      cdr(cons) = value;
-    }
-    else {
-      return ERROR("Not a valid cons cell!");
-    }
+  cc pair = to_cons(mapget_pair(map, object));
+  if(pair) {
+    cdr(pair) = value;
   }
   // Add instead...
   else {
     cc_rb_insert(map, (void*) cons(object, value), rbObjectPairCompare, NULL);
-    
   }
   return value;
 }

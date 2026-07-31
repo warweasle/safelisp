@@ -127,7 +127,7 @@ return ATOM;}
     return ATOM;
 }
 
-[cC][aR][rR] {
+[cC][aA][rR] {
 
     yylval->p = create_native_int_type(N_CAR);
     return ATOM;

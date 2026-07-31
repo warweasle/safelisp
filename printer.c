@@ -151,11 +151,33 @@ static void stringify_cons(resizable_string_type* buf, void* o, int base) {
   putch_resizable_array(buf, ')');
 }
 
+// A tree NODE is (key . (left . (right . parent))) -- printing it via the
+// generic cons walker would eventually follow a non-root node's parent
+// pointer back up the tree and loop forever. Walk key/left/right only.
+static void stringify_rb_node(resizable_string_type* buf, void* node, int base) {
+  if(!node) return;
+
+  void* left = RB_LEFT(node);
+  void* right = RB_RIGHT(node);
+
+  if(left) {
+    stringify_rb_node(buf, left, base);
+    putch_resizable_array(buf, ' ');
+  }
+
+  stringify_dispatch(buf, RB_GET_KEY(node), base);
+
+  if(right) {
+    putch_resizable_array(buf, ' ');
+    stringify_rb_node(buf, right, base);
+  }
+}
+
 static void stringify_rb_tree(resizable_string_type* buf, void* o, int base) {
   putstr_resizable_array(buf, "(MAPMAKE");
   if(car(o)) {
     putch_resizable_array(buf, ' ');
-    stringify_dispatch(buf, car(o), base);
+    stringify_rb_node(buf, car(o), base);
   }
   putch_resizable_array(buf, ')');
 }

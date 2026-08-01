@@ -1,0 +1,4 @@
+(... (SET N 0)
+     (PRINT (<> (SET N (+ N 1))
+                (WITHRESTART R (LAMBDA (V) (BREAK V))
+                   (?... (((== N 1000) (INVOKERESTART R N))))))))

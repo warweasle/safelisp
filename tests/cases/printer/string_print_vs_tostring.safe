@@ -1,0 +1,2 @@
+(LET ((s "hello world"))
+   (... (PRINT s) (PRINT (TOSTRING s))))

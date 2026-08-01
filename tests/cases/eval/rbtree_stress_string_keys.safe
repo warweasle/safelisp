@@ -1,0 +1,17 @@
+(... (SET M (MAPMAKE))
+     (SET N 0)
+     (<> (?... (((== N 1000000) (BREAK NULL))))
+         (MAPADD M (TOSTRING N) (* N N))
+         (SET N (+ N 1)))
+
+     (SET N 0)
+     (<> (?... (((== N 1000000) (BREAK NULL))))
+         (?? (== 0 (MOD N 2))
+             (MAPDEL M (TOSTRING N)))
+         (SET N (+ N 1)))
+
+     (PRINT (LIST (MAPGET M (TOSTRING 0)) (MAPGET M (TOSTRING 1))
+                  (MAPGET M (TOSTRING 2)) (MAPGET M (TOSTRING 3))
+                  (MAPGET M (TOSTRING 500000)) (MAPGET M (TOSTRING 500001))
+                  (MAPGET M (TOSTRING 750000)) (MAPGET M (TOSTRING 750001))
+                  (MAPGET M (TOSTRING 999998)) (MAPGET M (TOSTRING 999999)))))

@@ -1,0 +1,5 @@
+(... (SET M (MAPMAKE))
+     (MAPADD M 'A 1)
+     (MAPADD M 'B 2)
+     (MAPDEL M 'A)
+     (PRINT (LIST (MAPGET M 'A) (MAPGET M 'B))))

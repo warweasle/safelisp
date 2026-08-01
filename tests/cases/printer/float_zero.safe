@@ -1,0 +1,2 @@
+(LET ((f (- 1.0 1.0)))
+   (... (PRINT f) (PRINT (TOSTRING f))))

@@ -24,6 +24,8 @@ Otherwise, as simple as I can make it.
 - Minimal Lisp core (symbols, lists, numbers, strings)
 - Tree/map structures (RB-tree maps)
 - Closures
+- Simple unhygienic macros (MACRO)
+- A minimal restart system for structured recovery (WITH-RESTART / INVOKE-RESTART)
 - Embeddable interpreter
 - Small dependency footprint
 - Separate environments (local / global / system)
@@ -58,11 +60,11 @@ This is a work in progress, please look at the safelisp_parser.l for a list of c
       (B (+ A 1)))
   (PRINT B)) 
 
-// SET evaluates its first argument. SETQ does not. (currently broken)
-(SET 'location 'value)
+// SET takes the target name unevaluated (bare, not quoted) and evaluates
+// its value argument.
+(SET location 'value)
 
-// Or for convenience
-(SETQ location 'value)
+// SETQ (a non-evaluating variant) is not yet implemented.
 
 // True
 TRUE
@@ -89,12 +91,10 @@ NULL
 (!? predicate
     if-false)
 
-// cond statement 
-(??? (test branch)
-     (test branch)
-     t ...)
+// cond statement -- one argument: a list of (test branch) pairs.
+(?... (((test1 branch1) (test2 branch2))))
 
-// When and unless are here too.. (not yet implemented)
+// When and unless.
 (?? predicate
     code...)
 
@@ -121,10 +121,11 @@ NULL
 (! TRUE)
 
 // Loops are surrounded by <>
-// |> break
-// <| continue (Not yet implemented!)
+// BREAK exits the loop with a value. There is no continue yet.
 (<>
    (PRINT "FOREVER!"))
+
+(<> (?... (((== N 3) (BREAK N)))))
 
 (<?> predicate
      code)
@@ -144,28 +145,46 @@ NULL
       (l (lambda (c d) (print (+ c d)))))
    (l a b))
 
-//----COMING SOON!!!
+// Simple unhygienic macros -- macro params bind to the caller's raw,
+// unevaluated forms; the body produces an expansion form, which is then
+// evaluated once more in the caller's environment.
+(MACRO (ARGS) CODE)
 
-// Defining global functions
-(FUN (FUNC-NAME ARGS ARGS ...) CODE)
+// FUN/MAC/FLET/MLET are provided as prelude.safe macros built on MACRO
+// itself (see prelude.safe), not native C forms:
 
-// Defining global macros
-(MAC (MACRO-NAME ARGS ARGS ...) CODE)
+// Defining a global function
+(FUN FUNC-NAME (ARGS) CODE)
+
+// Defining a global macro
+(MAC MACRO-NAME (ARGS) CODE)
 
 // Local functions
-(FLET ((func1 (args args) code))
-        ((func2 (args args) code)))
-
-   (func1 ...)
-   (func2 ...))
+(FLET ((F1 (ARGS) CODE)
+       (F2 (ARGS) CODE))
+  (F1 ...)
+  (F2 ...))
 
 // Local macros
-(MLET ((macro1 (args args) code))
-       ((macro2 (args args) code)))
+(MLET ((M1 (ARGS) CODE))
+  (M1 ...))
 
-   (macro1 ...)
-   (macro2 ...))
+// A minimal restart system -- not a full condition system, just a named
+// dynamic-extent recovery point. INVOKE-RESTART transfers control back to
+// the matching WITH-RESTART and runs its recovery lambda with that value.
+// Ordinary ERROR values are untouched -- this is for structured recovery,
+// not for representing failures.
+(WITHRESTART NAME RECOVERY-LAMBDA CODE...)
+(INVOKERESTART NAME VALUE)
 
+// Call a function with an already-built list of argument values.
+(APPLY FUNC ARG-LIST)
+
+// Fold a list into a single value.
+(REDUCE FUNC LIST INITIAL)
+
+// Keep only the elements a predicate accepts.
+(FILTER PRED LIST)
 
 ```
 ---
@@ -185,9 +204,9 @@ The idea is to make a simple, fast lisp that is familiar to C programmers.
 
 ## TODO
 
-- Improve RB-tree structure for key/value pairs
-- Implement SET / SETQ
+- Implement SETQ (non-evaluating SET)
 - Add string escape sequences
-- Expand control flow forms (in safelisp)
 - Add char types
 - Add nativeC types
+- Full condition/restart system beyond the minimal WITH-RESTART/INVOKE-RESTART
+  primitives currently provided (no condition classes, no signal/handler-bind)

@@ -1,0 +1,3 @@
+(... (SET M (MAPMAKE))
+     (MAPADD M 'A 1)
+     (PRINT (MAPGET M 'A)))

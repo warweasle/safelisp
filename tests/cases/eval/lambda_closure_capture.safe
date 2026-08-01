@@ -1,0 +1,3 @@
+(LET ((MAKE-ADDER (LAMBDA (N) (LAMBDA (X) (+ X N)))))
+   (LET ((ADD5 (MAKE-ADDER 5)))
+     (PRINT (ADD5 10))))

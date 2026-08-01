@@ -1,0 +1,2 @@
+(MLET ((DOUBLE (X) (LIST '+ X X)))
+  (PRINT (DOUBLE 15)))

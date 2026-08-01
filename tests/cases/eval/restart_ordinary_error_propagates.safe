@@ -1,0 +1,2 @@
+(PRINT (WITHRESTART R (LAMBDA (V) V)
+   (CAR 5)))

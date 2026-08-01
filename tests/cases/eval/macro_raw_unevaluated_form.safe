@@ -1,0 +1,3 @@
+(... (SET A 111)
+     (SET FIRSTOF (MACRO (EXPR) (CAR EXPR)))
+     (PRINT (FIRSTOF (A B C))))

@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <setjmp.h>
 
 #include <gc.h>
 #include <gmp.h>
@@ -58,6 +59,7 @@ extern "C" {
     TYPE_RATIONAL,
     TYPE_FLOAT,
     TYPE_LAMBDA,
+    TYPE_MACRO,
     TYPE_RAW,
     TYPE_INT8, TYPE_UINT8, TYPE_FLOAT8, TYPE_DOUBLE8, TYPE_LONG_DOUBLE8,
     TYPE_INT16, TYPE_UINT16, TYPE_FLOAT16, TYPE_DOUBLE16, TYPE_LONG_DOUBLE16,
@@ -73,6 +75,8 @@ extern "C" {
     TYPE_SPLICE,
     TYPE_CNR,
     TYPE_ERROR,
+    TYPE_VALUES,
+    TYPE_RESTART,
   } ValueType;
 
   typedef enum {
@@ -115,6 +119,7 @@ extern "C" {
 	N_MAPSET,
 	N_MAPDEL,
 	N_LAMBDA,
+	N_MACRO,
 	N_LET,
 	N_CAT,
 	N_MULT,
@@ -122,7 +127,40 @@ extern "C" {
 	N_ADD,
 	N_SUB,
 	N_PROGN,
-	N_PROG1
+	N_PROG1,
+	N_WITH_RESTART,
+	N_INVOKE_RESTART,
+	N_APPLY,
+	N_MOD,
+	N_QUOTIENT,
+	N_REMAINDER,
+	N_FLOOR,
+	N_CEILING,
+	N_ROUND,
+	N_TRUNCATE,
+	N_ABS,
+	N_SQRT,
+	N_EXPT,
+	N_MIN,
+	N_MAX,
+	N_GCD,
+	N_LCM,
+	N_EXACTP,
+	N_INEXACTP,
+	N_TYPEIS,
+	N_NULLP,
+	N_CONSP,
+	N_PROCEDUREP,
+	N_LEN,
+	N_SUBSTR,
+	N_STRREF,
+	N_STRUPPER,
+	N_STRLOWER,
+	N_STREQ,
+	N_VALUES,
+	N_NTHVALUE,
+	N_MULTIPLEVALUELIST,
+	N_AVAILABLERESTARTS
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)
@@ -134,9 +172,9 @@ extern "C" {
 #define is_error(ptr) (is_type(ptr, TYPE_ERROR))
 #define is_rb_tree(ptr) (is_type(ptr, TYPE_RB_TREE))
 #define is_str(ptr) (is_type(ptr, TYPE_STRING))
-#define is_int(ptr) (is_type(ptr, TYPE_STRING))
-#define is_float(ptr) (is_type(ptr, TYPE_STRING))
-#define is_rational(ptr) (is_type(ptr, TYPE_STRING))
+#define is_int(ptr) (is_type(ptr, TYPE_INT))
+#define is_float(ptr) (is_type(ptr, TYPE_FLOAT))
+#define is_rational(ptr) (is_type(ptr, TYPE_RATIONAL))
 #define is_number(ptr) (is_int(ptr) || is_float(ptr) || is_rational(ptr))
 #define car(o) (((cons_cell*)o)->car)
 #define cdr(o) (((cons_cell*)o)->cdr)
@@ -203,7 +241,7 @@ extern "C" {
   
   // Cons cell functions
   cc cons(void* car, void* cdr);
-  cc make_rb_tree();
+  cc make_rb_tree(void* comparator);
   cc error(void* car, void* cdr);
   int list_length(void* list);
   int is_list(void* list);
@@ -238,7 +276,7 @@ extern "C" {
   resizable_string_type* create_resizable_string_type_from_string(const char* str, ValueType Type);
   string_type* create_string_type_from_resizable_string(resizable_string_type* resizeable);
   resizable_string_type* putch_resizable_array(resizable_string_type* arr, char c);
-  resizable_string_type* putstr_resizable_array(resizable_string_type* arr, char* s);
+  resizable_string_type* putstr_resizable_array(resizable_string_type* arr, const char* s);
 
   char* return_type_c_string(void* o);
   
@@ -252,6 +290,7 @@ extern "C" {
 
   pointer_type* create_pointer_type(void* p, ValueType Type);
   cc create_lambda(void* args, void* code);
+  cc create_macro(void* args, void* code);
   cc make_cnr(void* cnr);
   
   // Important functions

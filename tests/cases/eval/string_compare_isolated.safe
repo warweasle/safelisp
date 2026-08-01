@@ -1,0 +1,14 @@
+(... (SET L NULL)
+     (SET N 0)
+     (<> (?... (((== N 1000000) (BREAK NULL))))
+         (SET L (CONS (TOSTRING N) L))
+         (SET N (+ N 1)))
+
+     (SET COUNT 0)
+     (SET CUR L)
+     (<> (?... (((! CUR) (BREAK NULL))))
+         (?? (STREQ (CAR CUR) (CAR (CDR CUR)))
+             (SET COUNT (+ COUNT 1)))
+         (SET CUR (CDR (CDR CUR))))
+
+     (PRINT COUNT))

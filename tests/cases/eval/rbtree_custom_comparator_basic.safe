@@ -1,0 +1,5 @@
+(... (SET M (MAPMAKE NULL (LAMBDA (A B) (- B A))))
+     (MAPADD M 1 'ONE)
+     (MAPADD M 2 'TWO)
+     (MAPADD M 3 'THREE)
+     (PRINT (LIST (MAPGET M 1) (MAPGET M 2) (MAPGET M 3))))

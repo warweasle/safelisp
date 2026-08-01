@@ -1,0 +1,2 @@
+(LET ((f 0.000123))
+   (... (PRINT f) (PRINT (TOSTRING f))))

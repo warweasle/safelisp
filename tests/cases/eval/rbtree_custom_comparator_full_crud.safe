@@ -1,0 +1,6 @@
+(... (SET M (MAPMAKE NULL (LAMBDA (A B) (- A B))))
+     (MAPADD M 1 'ONE)
+     (MAPSET M 1 'UPDATED)
+     (MAPADD M 2 'TWO)
+     (MAPDEL M 2)
+     (PRINT (LIST (MAPGET M 1) (MAPGET M 2))))

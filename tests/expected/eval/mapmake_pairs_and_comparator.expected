@@ -1,0 +1,2 @@
+(MAPMAKE '((3 . C) (2 . B) (1 . A)) (LAMBDA (X Y) (- Y X)))
+(MAPMAKE '((3 . C) (2 . B) (1 . A)) (LAMBDA (X Y) (- Y X)))

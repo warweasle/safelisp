@@ -1,0 +1,1 @@
+(PRINT (MAP (LAMBDA (X) (* X 2)) (LIST 1 2 3)))

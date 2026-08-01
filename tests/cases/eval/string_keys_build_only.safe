@@ -1,0 +1,11 @@
+(... (SET ALLKEYS NULL)
+     (SET DELKEYS NULL)
+     (SET N 0)
+     (<> (?... (((== N 1000000) (BREAK NULL))))
+         (SET K (TOSTRING N))
+         (SET ALLKEYS (CONS K ALLKEYS))
+         (?? (== 0 (MOD N 2))
+             (SET DELKEYS (CONS K DELKEYS)))
+         (SET N (+ N 1)))
+
+     (PRINT (LIST (LEN ALLKEYS) (LEN DELKEYS))))

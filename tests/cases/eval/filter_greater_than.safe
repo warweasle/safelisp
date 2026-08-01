@@ -1,0 +1,1 @@
+(PRINT (FILTER (LAMBDA (X) (> X 3)) (LIST 1 2 3 4 5 6)))

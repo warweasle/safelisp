@@ -1,0 +1,3 @@
+(... (SET INNER (LAMBDA (X) (+ X 100)))
+     (SET OUTER (LAMBDA (X) (INNER (+ X 1))))
+     (PRINT (OUTER 1)))

@@ -1,0 +1,4 @@
+#!/bin/bash
+# Shortcut for tests/run_tests.sh -- run all tests: ./runtests
+# Pass through the same args, e.g.: ./runtests printer   ./runtests --bless
+exec "$(dirname "${BASH_SOURCE[0]}")/tests/run_tests.sh" "$@"

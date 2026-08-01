@@ -1133,7 +1133,7 @@ void* eval_list(void* list, void* env) {
 	    
 	  case TYPE_RATIONAL:
 	    {
-	      rational_type* ret = create_rational_type(0);
+	      rational_type* ret = create_rational_type();
 	      mpq_neg(ret->num, to_rational(a)->num);
 	      return ret;
 	    }
@@ -1468,7 +1468,7 @@ void* eval_list(void* list, void* env) {
 		return ERROR("DIVIDE BY ZERO!!!");
 	      }
 	      
-	      rational_type* ret = create_rational_type(0);
+	      rational_type* ret = create_rational_type();
 	      mpq_set_z(ret->num, to_int(a)->num);
 	      mpq_inv(ret->num, ret->num);
 	      mpq_canonicalize(ret->num);
@@ -1493,7 +1493,7 @@ void* eval_list(void* list, void* env) {
 		return ERROR("DIVIDE BY ZERO!!!");
 	      }
 	      
-	      rational_type* ret = create_rational_type(0);
+	      rational_type* ret = create_rational_type();
 	      mpq_inv(ret->num, to_rational(a)->num);
 	      return ret;
 	    }

@@ -327,7 +327,7 @@ return ATOM;}
     return ATOM;
 }
 
-[mM][aA][cC][rR][oO] {
+[mM][aA][cC] {
     yylval->p = create_native_int_type(N_MACRO);
     return ATOM;
 }

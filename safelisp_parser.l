@@ -511,7 +511,10 @@ return ATOM;}
 
     int n = atoi(yytext);
 
-    if(n == 1) {
+    if(n == 0) {
+      yylval->p = ERROR("N... Must be a positive integer!!!");
+    }
+    else if(n == 1) {
         yylval->p = create_native_int_type(N_PROG1);
     }
     else {

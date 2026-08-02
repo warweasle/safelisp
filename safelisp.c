@@ -112,9 +112,9 @@ cc make_cnr(void* cnr) {
 nprog_type* create_nprog_type(int i) {
   nprog_type* ret = (nprog_type*) GC_malloc(sizeof(nprog_type));
 
-  ret->type = N_NPROG;
+  ret->type = TYPE_NPROG;
   ret->n = i;
-  
+
   return ret;
 }
 

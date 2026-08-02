@@ -262,7 +262,8 @@ The standard prelude builds convenient definition forms on top of `MACRO`. These
 
 ```lisp
 (?... (TEST1 BRANCH1)
-      (TEST2 BRANCH2))
+      (TEST2 BRANCH2)
+      ...)
 ```
 
 ### When and unless

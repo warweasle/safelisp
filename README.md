@@ -339,6 +339,13 @@ There is currently no `continue` form.
 (1... FORM1 FORM2 FORM3)
 ```
 
+`N...` evaluates a block and returns its nth value:
+
+```lisp
+(2... FORM1 FORM2 FORM3) // Returns the second value.
+```
+
+
 ---
 
 ## Lists

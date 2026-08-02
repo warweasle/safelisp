@@ -38,7 +38,7 @@ SafeLisp is its own language rather than an attempt to exactly implement Common 
 - Assignment with `SET`
 - Quoting, quasiquoting, unquoting, and splicing
 - Simple unhygienic macros with `MAC`
-- Sequencing with `...` and `1...`
+- Sequencing with `...`, `1...` and `N...`
 - Left-to-right evaluation, except where special forms define otherwise
 
 ### Collections and functional programming
@@ -632,7 +632,6 @@ The language is intentionally compact and designed to feel approachable to C pro
 
 ## Planned Work
 
-- Implement `SETQ`
 - Add string escape sequences
 - Add character types
 - Complete native C data types

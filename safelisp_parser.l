@@ -507,8 +507,17 @@ return ATOM;}
     return ATOM;
 }
 
-1\.\.\. {
-    yylval->p = create_native_int_type(N_PROG1);
+[1-9][0-9]*\.\.\. {
+
+    int n = atoi(yytext);
+
+    if(n == 1) {
+        yylval->p = create_native_int_type(N_PROG1);
+    }
+    else {
+      /* Create/store an N... operation containing n. */
+      yylval->p = (cc) create_nprog_type(n);
+    }
     return ATOM;
 }
 

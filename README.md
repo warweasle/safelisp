@@ -199,12 +199,12 @@ Procedures are first-class values:
 
 ## Macros
 
-`MACRO` creates a simple unhygienic macro.
+`MAC  ` creates a simple unhygienic macro.
 
 Macro parameters are bound to the caller's raw, unevaluated forms. The macro body produces an expansion form, and that expansion is evaluated in the caller's environment.
 
 ```lisp
-(MACRO (ARGS)
+(MAC (ARGS)
   CODE)
 ```
 

@@ -37,7 +37,7 @@ SafeLisp is its own language rather than an attempt to exactly implement Common 
 - `LET` bindings with `let*` behavior
 - Assignment with `SET`
 - Quoting, quasiquoting, unquoting, and splicing
-- Simple unhygienic macros with `MACRO`
+- Simple unhygienic macros with `MAC`
 - Sequencing with `...` and `1...`
 - Left-to-right evaluation, except where special forms define otherwise
 
@@ -199,16 +199,16 @@ Procedures are first-class values:
 
 ## Macros
 
-`MACRO` creates a simple unhygienic macro.
+`MAC` creates a simple unhygienic macro.
 
 Macro parameters are bound to the caller's raw, unevaluated forms. The macro body produces an expansion form, and that expansion is evaluated in the caller's environment.
 
 ```lisp
-(MACRO (ARGS)
+(MAC (ARGS)
   CODE)
 ```
 
-The standard prelude builds convenient definition forms on top of `MACRO`. These are SafeLisp macros, not native C forms:
+The standard prelude builds convenient definition forms on top of `MAC`. These are SafeLisp macros, not native C forms:
 
 ```lisp
 (FUN FUNCTION-NAME (ARGS)
@@ -555,7 +555,7 @@ The lexer currently recognizes these native forms and operations:
 ### Core
 
 ```text
-SET LET LAMBDA MACRO
+SET LET LAMBDA MAC
 QUOTE / '  BACKTICK / `  COMMA / ,  SPLICE / ,@
 EVAL READ PRINT TOSTRING TYPE TYPE?
 ... 1...

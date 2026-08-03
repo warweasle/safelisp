@@ -61,13 +61,13 @@ return ATOM;
 <STRING>\\n   {yylval->p = putch_resizable_array(yylval->p, '\n');}
 <STRING>\\t   {yylval->p = putch_resizable_array(yylval->p, '\t');}
 <STRING>\\r   {yylval->p = putch_resizable_array(yylval->p, '\r');}
-<STRING>\\.   {BEGIN(INITIAL); yylval->p = ERROR("Unknown escape sequence in string!"); return ATOM;}
+<STRING>\\.   {BEGIN(INITIAL); yylval->p = ERROR("PARSE-ERROR", "Unknown escape sequence in string!"); return ATOM;}
 
 <STRING>.|\n               { //printf("Just got a string char!!!: %c in string: %s\n", yytext[0], yytext);
                           yylval->p = putch_resizable_array(yylval->p, yytext[0]);
                           }
 
-<STRING><<EOF>>  {yylval->p = ERROR("Unterminated string!!! (EOF)");
+<STRING><<EOF>>  {yylval->p = ERROR("PARSE-ERROR", "Unterminated string!!! (EOF)");
 return ATOM;}
 
 
@@ -533,7 +533,7 @@ return ATOM;}
     int n = atoi(yytext);
 
     if(n == 0) {
-      yylval->p = ERROR("N... Must be a positive integer!!!");
+      yylval->p = ERROR("PARSE-ERROR", "N... Must be a positive integer!!!");
     }
     else if(n == 1) {
         yylval->p = create_native_int_type(N_PROG1);
@@ -565,6 +565,6 @@ return ATOM;
     snprintf(buf, sizeof(buf), "LEX: unexpected char '%c' (0x%02X) at line %d\n",
              yytext[0], (unsigned char)yytext[0], yylineno);
 
-    yylval->p = ERROR(buf);
+    yylval->p = ERROR("PARSE-ERROR", buf);
     return ATOM;
 }

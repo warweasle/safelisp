@@ -1,0 +1,23 @@
+(... (SET FUN (MACRO (NAME ARGS . BODY)
+                (LIST 'SET NAME (CONS 'LAMBDA (CONS ARGS BODY)))))
+
+     (SET MAC (MACRO (NAME ARGS . BODY)
+                (LIST 'SET NAME (CONS 'MACRO (CONS ARGS BODY)))))
+
+     (SET FLET (MACRO (BINDINGS . BODY)
+                 (CONS 'LET
+                       (CONS (MAP (LAMBDA (B) (LIST (CAR B) (CONS 'LAMBDA (CDR B)))) BINDINGS)
+                             BODY))))
+
+     (SET MLET (MACRO (BINDINGS . BODY)
+                 (CONS 'LET
+                       (CONS (MAP (LAMBDA (B) (LIST (CAR B) (CONS 'MACRO (CDR B)))) BINDINGS)
+                             BODY))))
+
+     (FUN SYMBOL? (X) (TYPE? X 'SYMBOL))
+     (FUN STRING? (X) (TYPE? X 'STRING))
+     (FUN INT? (X) (TYPE? X 'INTEGER))
+     (FUN FLOAT? (X) (TYPE? X 'FLOAT))
+     (FUN RATIONAL? (X) (TYPE? X 'RATIONAL))
+     (FUN NUMBER? (X) (|| (INT? X) (FLOAT? X) (RATIONAL? X)))
+     (FUN ZERO? (X) (== 0 X)))

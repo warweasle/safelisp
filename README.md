@@ -320,7 +320,7 @@ SafeLisp deliberately uses `==` for equality. There is no ambiguous assignment-v
 
 ```lisp
 (<>
-  (?... ((((== N 3) (BREAK N))))))
+  (?... ((== N 3) (BREAK N))))
 ```
 
 There is currently no `continue` form.

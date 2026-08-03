@@ -219,44 +219,81 @@ void* apply_with_values(void* callee, void* args, void* env) {
   return apply_callable(callee, args, ARGS_VALUES, env, env);
 }
 
+// depth counts how many enclosing backticks a COMMA/SPLICE still needs to
+// unwind through before it's allowed to fire. The outer TYPE_BACKTICK call
+// site enters at depth 1 (one backtick to unwind). A COMMA/SPLICE only
+// evaluates when depth == 1 (it belongs to the innermost/only backtick);
+// at depth > 1 it re-wraps itself one level out (preserving the marker for
+// an enclosing quasiquote to see later) instead of evaluating early --
+// this is what makes nested quasiquotes (`` `(a `(b ,c)) ``) work.
 void* quasiquote(void* list, void* env, int depth) {
-  
+
   switch(get_type(list)) {
 
   case TYPE_CONS:
-    if(car(list) && get_type(car(list)) == TYPE_SPLICE && depth == 0) {
+    if(car(list) && get_type(car(list)) == TYPE_SPLICE && depth == 1) {
 
       void* head = eval(car(car(list)), env);
-      void* test = quasiquote(cdr(list), env, depth);
-      return append(head, test); 
+      if(is_error(head)) return head;
+
+      if(head != NULL && !is_cons(head)) {
+	return ERROR("SPLICE: value is not a list!");
+      }
+
+      void* rest = quasiquote(cdr(list), env, depth);
+      if(is_error(rest)) return rest;
+
+      if(head == NULL) return rest;
+
+      return append(head, rest);
     }
     else {
-      return cons(quasiquote(car(list), env, depth),
-		  quasiquote(cdr(list), env, depth));
-    }	
+      void* carResult = quasiquote(car(list), env, depth);
+      if(is_error(carResult)) return carResult;
+
+      void* cdrResult = quasiquote(cdr(list), env, depth);
+      if(is_error(cdrResult)) return cdrResult;
+
+      return cons(carResult, cdrResult);
+    }
     break;
-    
+
   case TYPE_COMMA:
-    
+
     if(depth == 0) {
       return ERROR("COMMA: COMMA MUST BE IN A LIST!!!");
     }
-    else {
+    else if(depth == 1) {
       return eval(car(list), env);
     }
+    else {
+      return create_quotetype(TYPE_COMMA,
+			      quasiquote(car(list), env, depth - 1));
+    }
     break;
-    
+
   case TYPE_BACKTICK:
+    // A BACKTICK reached here is always a NESTED one (the outermost
+    // backtick is stripped by eval_raw's entry point before quasiquote is
+    // ever called) -- it must be re-wrapped, not just unwrapped, since it
+    // remains quoted data (its own marker) until a matching outer
+    // quasiquote actually evaluates down to it.
     if(depth == 0) {
-            return ERROR("COMMA: COMMA MUST BE IN A LIST!!!");
+      return ERROR("BACKTICK: BACKTICK MUST BE IN A LIST!!!");
     }
     else {
-      return quasiquote(car(list), env, depth + 1);
+      return create_quotetype(TYPE_BACKTICK,
+			      quasiquote(car(list), env, depth + 1));
     }
     break;
 
   case TYPE_SPLICE:
-    if(depth == 0) {
+    // Reached only when a SPLICE appears somewhere the TYPE_CONS case
+    // above didn't catch it (not a list-head position) -- at depth <= 1
+    // there's no "rest of list" to splice into, so it's an error same as
+    // depth == 0. At depth > 1 it re-wraps for an enclosing quasiquote,
+    // same as TYPE_COMMA.
+    if(depth <= 1) {
       return ERROR("SPLICE: SPLICE MUST BE IN A LIST!!!");
     }
     else {

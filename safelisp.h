@@ -28,10 +28,6 @@ extern "C" {
 #define EVENT_FLAG (1<<31)
 #define RED_BLACK_FLAG (1<<30)
 
-/* #define ERROR(msg)		  \ */
-/*   error(create_symbol("ERROR"),					\ */
-/* 	cons(create_string_type_from_string((msg), TYPE_STRING), NULL)) */
-
 #define ERROR(errortype, msg)					\
   error(create_symbol(errortype),					\
 	cons(create_string_type_from_string((msg), TYPE_STRING), NULL))
@@ -281,7 +277,7 @@ extern "C" {
   string_type* create_symbol(const char* str);
   string_type* create_symbol_and_copy(size_t len, const char* str);
 
-    // resizable_string_type functions
+  // resizable_string_type functions
   // Functions to create and manage resizable string types
   resizable_string_type* create_resizable_string_type(size_t buff_size, ValueType Type);
   resizable_string_type* create_resizable_string_type_and_copy(size_t len, const char* str, ValueType Type);

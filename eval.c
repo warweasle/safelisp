@@ -729,10 +729,12 @@ void* eval_list(void* list, void* env) {
 	  return ERROR("ARGUMENT-ERROR", "APPEND requires TWO arguments!\n");
 	}
 
-	cc tmp = car(cdr(list)); 
+	cc tmp = eval(car(cdr(list)), env); 
+	if(is_error(tmp)) return tmp;
 	
-	cc l = car(cdr(cdr(list))); 
-
+	cc l = eval(car(cdr(cdr(list))), env); 
+	if(is_error(l)) return l;
+	
 	return append(tmp, l);
       }
       break;

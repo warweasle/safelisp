@@ -147,6 +147,7 @@ int is_list(void* list) {
 }
 
 void* append(void* a, void* b) {
+
   if(!a || !is_cons(a)) {
     return ERROR("TYPE-ERROR", "APPEND requires the first argument to be a list!");
   }

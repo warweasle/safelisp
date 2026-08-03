@@ -1,0 +1,2 @@
+(... (SET M (MAPMAKE (LIST (CONS 1 'A))))
+     (PRINT (MAPGET M 1)))

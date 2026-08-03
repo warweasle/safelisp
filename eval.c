@@ -2753,6 +2753,12 @@ void* eval_list(void* list, void* env) {
       
     case N_MAPGET:
       {
+	// (MAPGET map key) -- returns (VALUES value found?) so a key
+	// legitimately bound to NULL is distinguishable from a missing key.
+	// Plain usage (e.g. (PRINT (MAPGET m k))) is unaffected: eval()'s
+	// TYPE_VALUES collapse rule reduces this to just the value wherever
+	// the caller doesn't specifically unwrap it via NTHVALUE/
+	// MULTIPLEVALUELIST.
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
 	  return ERROR("ERROR: MAPGET requires 2 arguments!");
@@ -2762,11 +2768,18 @@ void* eval_list(void* list, void* env) {
 	if(!tmp2) {
 	  return ERROR("ERROR: MAPGET requires 2 arguments!");
 	}
-	
-	void* a = eval(car(tmp1), env);
-	void* b = eval(car(tmp2), env);
 
-	return mapget(a, b, env);
+	void* a = eval(car(tmp1), env);
+	if(is_error(a)) return a;
+	void* b = eval(car(tmp2), env);
+	if(is_error(b)) return b;
+
+	void* pair = mapget_pair(a, b, env);
+	if(is_error(pair)) return pair;
+
+	void* value = pair ? cdr(pair) : NULL;
+	void* found = pair ? create_true_type() : NULL;
+	return create_quotetype(TYPE_VALUES, cons(value, cons(found, NULL)));
       }
       break;
       

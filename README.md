@@ -30,7 +30,7 @@ SafeLisp is its own language rather than an attempt to exactly implement Common 
 ### Core language
 
 - Case-insensitive symbols
-- Strings, symbols, lists, dotted pairs, integers, and floating-point numbers
+- Strings, characters, symbols, lists, dotted pairs, integers, and floating-point numbers
 - `TRUE` and `NULL`
 - Lexical closures and first-class procedures
 - A Lisp-1 namespace: functions and values share the same symbol space
@@ -98,7 +98,14 @@ Strings use double quotes:
 "Hello, world"
 ```
 
-The current string reader does not yet implement escape sequences.
+Strings support the escape sequences `\"` `\\` `\n` `\t` `\r`. Any other backslash escape is a parse error.
+
+Character literals use `#\`, either a single character or one of the named forms:
+
+```lisp
+#\A
+#\Space #\Newline #\Tab #\Return #\Null
+```
 
 ---
 
@@ -385,15 +392,22 @@ Useful list operations include:
 
 Maps are backed by red-black trees.
 
-Native map operations are:
+```lisp
+(MAPMAKE)
+(MAPMAKE PAIRS)
+(MAPMAKE PAIRS COMPARATOR)
+```
+
+`PAIRS` is an optional list of `(KEY . VALUE)` pairs to populate the map with. `COMPARATOR` is an optional function `(LAMBDA (A B) ...)` (or a bare native like `-`) that returns a negative, zero, or positive integer, replacing the default ordering; the comparator can only be set at creation. Printing a map produces a form `MAPMAKE` accepts as input, so a printed map can be copy-pasted back in to reconstruct it.
 
 ```lisp
-MAPMAKE
-MAPADD
-MAPGET
-MAPSET
-MAPDEL
+(MAPADD MAP KEY VALUE)
+(MAPSET MAP KEY VALUE)
+(MAPGET MAP KEY)
+(MAPDEL MAP KEY)
 ```
+
+`MAPGET` returns `(VALUES VALUE FOUND?)`, so a key bound to `NULL` can be told apart from a missing key with `NTHVALUE`/`MULTIPLEVALUELIST`. Used directly (e.g. `(PRINT (MAPGET MAP KEY))`), it collapses to just the value.
 
 `MAP` is the higher-order sequence operation and is separate from the map data structure.
 
@@ -523,7 +537,22 @@ Available restart names can be inspected with:
 (AVAILABLERESTARTS)
 ```
 
-This is not yet a full Common Lisp-style condition system. Ordinary error values are unchanged; restarts provide an explicit control-transfer mechanism for recoverable situations.
+Build an error value directly with `ERROR`:
+
+```lisp
+(ERROR TAG MESSAGE)
+```
+
+If the code inside `WITHRESTART` produces an ordinary error (whether from `ERROR` or from any other failing operation), `WITHRESTART` automatically calls its recovery procedure with that error, converted to a plain list so it can be inspected with `CAR`/`CDR` (`CAR` is the tag, `CDR` is the message) -- the same recovery procedure `INVOKERESTART` would have called explicitly:
+
+```lisp
+(WITHRESTART USE-FALLBACK
+  (LAMBDA (E) (LIST 'RECOVERED (CAR E) (CDR E)))
+  (ERROR 'FILE-NOT-FOUND "missing.txt"))
+=> (RECOVERED FILE-NOT-FOUND "missing.txt")
+```
+
+This is not yet a full Common Lisp-style condition system.
 
 ---
 
@@ -564,7 +593,7 @@ EVAL READ PRINT TOSTRING TYPE TYPE?
 ```text
 ? !? ?... ?? !??
 <> <?> BREAK
-WITHRESTART INVOKERESTART AVAILABLERESTARTS
+WITHRESTART INVOKERESTART AVAILABLERESTARTS ERROR
 ```
 
 ### Lists and higher-order operations
@@ -630,8 +659,6 @@ The language is intentionally compact and designed to feel approachable to C pro
 
 ## Planned Work
 
-- Add string escape sequences
-- Add character types
 - Complete native C data types
 - Add an optional restricted foreign-function interface
 - Add an explicitly enabled unsafe/volatile mode for trusted code

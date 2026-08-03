@@ -3176,6 +3176,10 @@ void* eval_list(void* list, void* env) {
 	case TYPE_STRING:
 	  slen += to_string(car(o))->size;
 	  break;
+
+	case TYPE_CHAR:
+	  slen++;
+	  break;
 	  
 	case TYPE_RESIZABLE_STRING:
 	  slen += ((resizable_string_type*) (car(o)))->len;
@@ -3218,6 +3222,14 @@ void* eval_list(void* list, void* env) {
 	      newstr->str[p] = ostr->str[i];
 	      p++;
 	    }
+	  }
+	  break;
+
+	case TYPE_CHAR:
+	  {
+	    char_type* ctype = to_char(car(o));
+	    newstr->str[p] = ctype->c;
+	    p++;
 	  }
 	  break;
 	  

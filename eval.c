@@ -2384,8 +2384,12 @@ void* eval_list(void* list, void* env) {
 	void* a2 = cdr(a1);
 	if(!a2 || !car(a2)) return ERROR("TYPE? requires 2 arguments!");
 
+	// x is NOT short-circuited on is_error(x) here -- unlike every other
+	// primitive in this switch, TYPE? needs to inspect an error value,
+	// not propagate past it, since (TYPE? x 'ERROR) is the only way Lisp
+	// code can detect that x IS an error in the first place. Propagating
+	// early would make that check permanently unreachable.
 	void* x = eval(car(a1), env);
-	if(is_error(x)) return x;
 
 	void* tag = eval(car(a2), env);
 	if(is_error(tag)) return tag;

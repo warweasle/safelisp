@@ -1,0 +1,10 @@
+(... (FUN OPEN-PATH (PATH)
+       (? (STREQ PATH "missing.txt")
+          (STRREF "x" 99)
+          (LIST 'OPENED PATH)))
+
+     (PRINT
+       (WITHRESTART USE-NEW-PATH
+         (LAMBDA (NEWPATH) (OPEN-PATH NEWPATH))
+         (?? (TYPE? (OPEN-PATH "missing.txt") 'ERROR)
+             (INVOKERESTART USE-NEW-PATH "fallback.txt")))))

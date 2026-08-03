@@ -3,5 +3,5 @@
 (1 2 3)
 (5)
 10
-<ERROR: (ERROR "NTHVALUE: index out of range!")>
-<ERROR: (ERROR "NTHVALUE: index out of range!")>
+<ERROR: (LOGICAL-ERROR "NTHVALUE index out of range!")>
+<ERROR: (LOGICAL-ERROR "NTHVALUE index out of range!")>

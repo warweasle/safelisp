@@ -148,7 +148,7 @@ int is_list(void* list) {
 
 void* append(void* a, void* b) {
   if(!a || !is_cons(a)) {
-    return ERROR("APPEND requires the first argument to be a list!");
+    return ERROR("TYPE-ERROR", "APPEND requires the first argument to be a list!");
   }
   
   cc l = last(a);
@@ -749,7 +749,7 @@ void* tread(void* env) {
 
   void* tmp =  cassoc("*INPUT*", cdr(env)); 
   if(!tmp || !cdr(tmp)) {
-    return ERROR("Could not find *INPUT* var!");
+    return ERROR("UNKNOWN-ERROR", "Could not find *INPUT* var!");
   }
   tmp = cdr(tmp);
   FILE* input = (FILE*) to_pointer(tmp)->p;    

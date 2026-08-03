@@ -62,7 +62,7 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	newenv = cons(car(env), cdr(env));
       }
 
-      if(!lambdaArgs && vals) return ERROR2("ARGUMENT-ERROR", "Sent args to a function and accepts none!");
+      if(!lambdaArgs && vals) return ERROR("ARGUMENT-ERROR", "Sent args to a function and accepts none!");
 
       void* nextFrame = NULL;
 
@@ -71,7 +71,7 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	for(; is_cons(i); i=cdr(i)) {
 
 	  if(!vals) {
-	    return ERROR2("ARGUEMENT-ERROR", "NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
+	    return ERROR("ARGUEMENT-ERROR", "NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
 	  }
 
 	  void* val = (argMode == ARGS_RAW_EVAL) ? eval(car(vals), callEnv) : car(vals);
@@ -92,14 +92,14 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	  nextFrame = cons(cons(i, rest), nextFrame);
 	}
 	else if(vals) {
-	  return ERROR2("ARGUEMENT-ERROR", "TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
+	  return ERROR("ARGUEMENT-ERROR", "TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
 	}
 
 	// set the new env with the lambda list...
 	car(newenv) = cons(nextFrame, car(newenv));
       }
       else if(vals) {
-	return ERROR2("ARGUEMENT-ERROR", "TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
+	return ERROR("ARGUEMENT-ERROR", "TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
       }
 
       // run the code with the new env
@@ -207,7 +207,7 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
     }
 
   default:
-    return ERROR2("WRONG-TYPE-ERROR", "Cannot apply: not a function!");
+    return ERROR("WRONG-TYPE-ERROR", "Cannot apply: not a function!");
   }
 }
 
@@ -237,7 +237,7 @@ void* quasiquote(void* list, void* env, int depth) {
       if(is_error(head)) return head;
 
       if(head != NULL && !is_cons(head)) {
-	return ERROR2("WRONG-TYPE-ERROR", "SPLICE: value is not a list!");
+	return ERROR("WRONG-TYPE-ERROR", "SPLICE: value is not a list!");
       }
 
       void* rest = quasiquote(cdr(list), env, depth);
@@ -261,7 +261,7 @@ void* quasiquote(void* list, void* env, int depth) {
   case TYPE_COMMA:
 
     if(depth == 0) {
-      return ERROR("COMMA: COMMA MUST BE IN A LIST!!!");
+      return ERROR("PARSE-ERROR", "COMMA: COMMA MUST BE IN A LIST!!!");
     }
     else if(depth == 1) {
       return eval(car(list), env);
@@ -279,7 +279,7 @@ void* quasiquote(void* list, void* env, int depth) {
     // remains quoted data (its own marker) until a matching outer
     // quasiquote actually evaluates down to it.
     if(depth == 0) {
-      return ERROR2("PARSE-ERROR", "BACKTICK: BACKTICK MUST BE IN A LIST!!!");
+      return ERROR("PARSE-ERROR", "BACKTICK: BACKTICK MUST BE IN A LIST!!!");
     }
     else {
       return create_quotetype(TYPE_BACKTICK,
@@ -294,7 +294,7 @@ void* quasiquote(void* list, void* env, int depth) {
     // depth == 0. At depth > 1 it re-wraps for an enclosing quasiquote,
     // same as TYPE_COMMA.
     if(depth <= 1) {
-      return ERROR2("PARSE-ERROR", "SPLICE: SPLICE MUST BE IN A LIST!!!");
+      return ERROR("PARSE-ERROR", "SPLICE: SPLICE MUST BE IN A LIST!!!");
     }
     else {
       return create_quotetype(TYPE_SPLICE,
@@ -333,7 +333,7 @@ static void* eval_raw(void* list, void* env) {
   case TYPE_QUOTE:
     
     if(!car(list)) {
-      return ERROR2("PARSE-ERROR", "Error: quote requires something after it!\n");
+      return ERROR("PARSE-ERROR", "Error: quote requires something after it!\n");
     }
     
     return car(list);
@@ -341,18 +341,18 @@ static void* eval_raw(void* list, void* env) {
 
   case TYPE_BACKTICK:
     if(!car(list)) {
-      return ERROR2("PARSE-ERROR", "Error: quasiquote requires something after it!\n");
+      return ERROR("PARSE-ERROR", "Error: quasiquote requires something after it!\n");
     }
 
     return quasiquote(car(list), env, 1);
     break;
     
   case TYPE_SPLICE:
-    return ERROR2("PARSE-ERROR", "Error: Splice must be used inside a QUASIQUOTE!");
+    return ERROR("PARSE-ERROR", "Error: Splice must be used inside a QUASIQUOTE!");
     break;
     
   case TYPE_COMMA:
-    return ERROR2("PARSE-ERROR", "Error: Comma must be used inside a QUASIQUOTE!");
+    return ERROR("PARSE-ERROR", "Error: Comma must be used inside a QUASIQUOTE!");
     break;
     
   case TYPE_SYMBOL:
@@ -388,12 +388,12 @@ static void* eval_raw(void* list, void* env) {
 	  break;
 	  
 	default:
-	  ERROR("Found an issue with the environment!!!\n");
+	  ERROR("UNKNOWN-ERROR", "Found an issue with the environment!!!\n");
 	  break;
 	}
       }
 
-      return ERROR("Could not find symbol!");  
+      return ERROR("SYMBOL-NOT-FOUND-ERROR", "Could not find symbol!");  
     }
     break;
       
@@ -452,7 +452,7 @@ void* eval_list(void* list, void* env) {
     case N_CONS:
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  return ERROR("CONS requires TWO arguments!");
+	  return ERROR("ARGUMENT-ERROR", "CONS requires TWO arguments!");
 	}
 	
 	void* tmp = cdr(list);
@@ -471,14 +471,14 @@ void* eval_list(void* list, void* env) {
     case N_CAR:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  return ERROR("CONS requires ONE arguments!");
+	  return ERROR("ARGUMENT-ERROR", "CAR requires ONE arguments!");
 	}
 
 	void* target = car(cdr(list));
 	target = eval(target, env);
 
 	if(!is_cons(target)) {
-	  return ERROR("CONS only works on CONS TYPE!");
+	  return ERROR("TYPE-ERROR", "CAR only works on CONS TYPE!");
 	}
 	return car(target);
       }
@@ -487,14 +487,14 @@ void* eval_list(void* list, void* env) {
     case N_CDR:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  return ERROR("CDR: Requires one argument!!!");
+	  return ERROR("ARGUMENT-ERROR", "CDR: Requires one argument!!!");
 	}
 
 	void* target = car(cdr(list)); 
 	target = eval(target, env);
 
 	if(!is_cons(target)) {
-	  return ERROR("ERROR: CAR only works on cons_cells!");
+	  return ERROR("TYPE-ERROR", "ERROR: CAR only works on cons_cells!");
 	}
 
 	return cdr(target);
@@ -531,11 +531,11 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR("ERROR: nothing to IF!");
+	  return ERROR("ARGUMENT-ERROR", "ERROR: nothing to IF!");
 	}
 
 	if(!truth) {
-	  return ERROR("Nothing to execute in IF statement!\n");
+	  return ERROR("ARGUMENT-ERROR", "Nothing to execute in IF statement!\n");
 	}
 	
 	void* predicate = eval(car(pred), env);
@@ -561,11 +561,11 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR("ERROR: nothing to !?!");
+	  return ERROR("ARGUMENT-ERROR", "No predicate in '!?'!");
 	}
 
 	if(!truth) {
-	  return ERROR("Nothing to execute in !? statement!\n");
+	  return ERROR("ARGUMENT-ERROR", "Nothing to execute in !? statement!\n");
 	}
 	
 	void* predicate = eval(car(pred), env);
@@ -585,11 +585,11 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR("ERROR: nothing to \?\?!");
+	  return ERROR("ARGUMENT-ERROR", "No predicate in '\?\?'!");
 	}
 
 	if(!truth) {
-	  return ERROR("Nothing to execute in ?? statement!\n");
+	  return ERROR("ARGUMENT-ERROR", "Nothing to execute in ?? statement!\n");
 	}
 	
 	void* predicate = eval(car(pred), env);
@@ -621,11 +621,11 @@ void* eval_list(void* list, void* env) {
 	void* truth = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR("ERROR: nothing to \?\?!");
+	  return ERROR("ARGUMENT-ERROR", "No predicate in '\?\?'!");
 	}
 
 	if(!truth) {
-	  return ERROR("Nothing to execute in ?? statement!\n");
+	  return ERROR("ARGUMENT-ERROR", "Nothing to execute in ?? statement!\n");
 	}
 	
 	void* predicate = eval(car(pred), env);
@@ -654,7 +654,7 @@ void* eval_list(void* list, void* env) {
     case N_COND:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  return ERROR("ERROR: COND requires one argument!");
+	  return ERROR("ARGUMENT-ERROR", "COND requires one argument!");
 	}
 
 	for(void* i=car(cdr(list)); i; i = cdr(i)) {
@@ -671,11 +671,11 @@ void* eval_list(void* list, void* env) {
     
     case N_TYPE:
       if(!cdr(list)) {
-	return ERROR("TYPE requires ONE argument!\n");
+	return ERROR("ARGUMENT-ERROR", "TYPE requires ONE argument!\n");
       }
 
       if(cdr(cdr(list))) {
-	return ERROR("TYPE requires only ONE argument!\n");
+	return ERROR("ARGUMENT-ERROR", "TYPE requires only ONE argument!\n");
       }
       
       return return_type(eval(car(cdr(list)), env));
@@ -683,11 +683,11 @@ void* eval_list(void* list, void* env) {
       
     case N_NOT:
       if(!cdr(list)) {
-	return ERROR("NOT requires ONE argument!\n");
+	return ERROR("ARGUMENT-ERROR", "NOT requires ONE argument!\n");
       }
 
       if(cdr(cdr(list))) {
-	return ERROR("NOT requires only ONE argument!\n");
+	return ERROR("ARGUMENT-ERROR", "NOT requires only ONE argument!\n");
       }
 
       void* result = eval(car(cdr(list)), env);
@@ -726,7 +726,7 @@ void* eval_list(void* list, void* env) {
     case N_APPEND:
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  return ERROR("ERROR: APPEND requires TWO arguments!\n");
+	  return ERROR("ARGUMENT-ERROR", "APPEND requires TWO arguments!\n");
 	}
 
 	cc tmp = car(cdr(list)); 
@@ -741,7 +741,7 @@ void* eval_list(void* list, void* env) {
 
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  return ERROR("ERROR: ASSOC requires at least TWO arguments!\n");
+	  return ERROR("ARGUMENT-ERROR", "ASSOC requires at least TWO arguments!\n");
 	}
 	
 	void* item = eval(car(cdr(list)), env);
@@ -753,7 +753,7 @@ void* eval_list(void* list, void* env) {
       
     case N_EVAL:
       if(!cdr(list) || !car(cdr(list))) {
-	return ERROR("EVAL requires ONE argument!\n");
+	return ERROR("ARGUMENT-ERROR", "EVAL requires ONE argument!\n");
       }
 
       return eval(eval(car(cdr(list)), env), env);
@@ -762,10 +762,10 @@ void* eval_list(void* list, void* env) {
     case N_EQL:
       {
 	if(!cdr(list)) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	} 
 	if(!cdr(cdr(list))) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	}
 
 	void* tmp = cdr(list);
@@ -778,10 +778,10 @@ void* eval_list(void* list, void* env) {
       case N_NEQL:
       {
 	if(!cdr(list)) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	}
 
 	void* tmp = cdr(list);
@@ -800,10 +800,10 @@ void* eval_list(void* list, void* env) {
     case N_LT:
       {
       	if(!cdr(list)) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: < requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: < requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: < requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: < requires 2 arguements!");
 	}
 	
 	void* tmp = cdr(list);
@@ -822,10 +822,10 @@ void* eval_list(void* list, void* env) {
     case N_GT:
       {
 	if(!cdr(list)) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: > requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "> requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR("ERROR: > requires 2 arguements!");
+	  return ERROR("ARGUMENT-ERROR", "> requires 2 arguements!");
 	}
 	
 	void* tmp = cdr(list);
@@ -844,10 +844,10 @@ void* eval_list(void* list, void* env) {
     case N_LTE:
       {
 	if(!cdr(list)) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: <= requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: <= requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: <= requires 2 arguements!");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: <= requires 2 arguements!");
 	}
 	
 	void* tmp = cdr(list);
@@ -866,10 +866,10 @@ void* eval_list(void* list, void* env) {
     case N_GTE:
       {
 	if(!cdr(list)) {
-	  return ERROR("ERROR: >= requires 2 arguements!");
+	  return ERROR("ARGUMENT-ERROR", ">= requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR("ERROR: >= requires 2 arguements!");
+	  return ERROR("ARGUMENT-ERROR", ">= requires 2 arguements!");
 	}
 	
 	void* tmp = cdr(list);
@@ -888,7 +888,7 @@ void* eval_list(void* list, void* env) {
     case N_TO_STRING:
       {
 	if(!cdr(list)) {
-	  return ERROR2("ARGUEMENT-ERROR", "TO-STRING requires ONE argument!\n");
+	  return ERROR("ARGUEMENT-ERROR", "TO-STRING requires ONE argument!\n");
 	}
 
 	void* p = eval(car(cdr(list)), env);
@@ -908,7 +908,7 @@ void* eval_list(void* list, void* env) {
     case N_SET:
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  return ERROR2("ARGUEMENT-ERROR", "SET requires TWO arguments!\n");
+	  return ERROR("ARGUEMENT-ERROR", "SET requires TWO arguments!\n");
 	}
 
 	void* name = car(cdr(list));
@@ -950,7 +950,7 @@ void* eval_list(void* list, void* env) {
 	    break;
 
 	  default:
-	    ERROR2("UNKNOWN-ERROR", "Set found an issue with the environment!!!\n");
+	    ERROR("UNKNOWN-ERROR", "Set found an issue with the environment!!!\n");
 	    break;
 	  }
 	  
@@ -965,11 +965,11 @@ void* eval_list(void* list, void* env) {
 	void* code = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR2("ARGUEMENT-ERROR", "ERROR: no predicate to WHILE!\n");
+	  return ERROR("ARGUEMENT-ERROR", "ERROR: no predicate to WHILE!\n");
 	}
 
 	if(!code) {
-	  return ERROR2("ARGUEMENT-ERROR", "Nothing to execute in WHILE statement!\n");
+	  return ERROR("ARGUEMENT-ERROR", "Nothing to execute in WHILE statement!\n");
 	}
 
 	void* ret = NULL;
@@ -985,7 +985,7 @@ void* eval_list(void* list, void* env) {
     case N_ADD:
       {
 	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	  return ERROR2("ARGUEMENT-ERROR", "ADD requires at least two arguments!");
+	  return ERROR("ARGUEMENT-ERROR", "ADD requires at least two arguments!");
 	}
 	void* a = eval(car(cdr(list)), env);
 	
@@ -1033,7 +1033,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1073,7 +1073,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1112,7 +1112,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1121,7 +1121,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	    return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	    break;
 	  }
@@ -1146,7 +1146,7 @@ void* eval_list(void* list, void* env) {
     case N_SUB:
       {
 	if(!car(cdr(list))) {
-	  return ERROR2("TYPE-ERROR", "SUB requires at least one argument!");
+	  return ERROR("TYPE-ERROR", "SUB requires at least one argument!");
 	}
 
 	void* a = eval(car(cdr(list)), env);
@@ -1179,7 +1179,7 @@ void* eval_list(void* list, void* env) {
 	    break;
 	    	    
 	  default:
-	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
+	    return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
 	    break;
 	  }
 	}
@@ -1224,7 +1224,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
 	      break;
 	    }
 
@@ -1263,7 +1263,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1301,7 +1301,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	      break;
 	    }
@@ -1310,7 +1310,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	    return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	    break;
 	  }
@@ -1335,7 +1335,7 @@ void* eval_list(void* list, void* env) {
     case N_MULT:
       {
 	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	  return ERROR2("ARGUEMENT-ERROR", "ADD requires at least two arguments!");
+	  return ERROR("ARGUEMENT-ERROR", "ADD requires at least two arguments!");
 	}
 
 	void* a = eval(car(cdr(list)), env);
@@ -1381,7 +1381,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1421,7 +1421,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1459,7 +1459,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	      break;
 	    }
@@ -1468,7 +1468,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	    return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	    break;
 	  }
@@ -1493,7 +1493,7 @@ void* eval_list(void* list, void* env) {
     case N_DIV:
       {
 	if(!car(cdr(list))) {
-	  return ERROR2("ARGUEMENT-ERROR", "DIV requires at least one argument!");
+	  return ERROR("ARGUEMENT-ERROR", "DIV requires at least one argument!");
 	}
 
 	void* a = eval(car(cdr(list)), env);
@@ -1504,7 +1504,7 @@ void* eval_list(void* list, void* env) {
 	  case TYPE_INT:
 	    {
 	      if(mpz_sgn(to_int(a)->num) == 0) {
-		return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 	      }
 	      
 	      rational_type* ret = create_rational_type();
@@ -1517,7 +1517,7 @@ void* eval_list(void* list, void* env) {
 	  case TYPE_FLOAT:
 	    {
 	      if (mpf_sgn(to_float(a)->num) == 0) {
-		return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 	      }
 
 	      float_type* ret = create_float_type();
@@ -1529,7 +1529,7 @@ void* eval_list(void* list, void* env) {
 	  case TYPE_RATIONAL:
 	    {
 	      if (mpq_sgn(to_rational(a)->num) == 0) {
-		return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 	      }
 	      
 	      rational_type* ret = create_rational_type();
@@ -1539,7 +1539,7 @@ void* eval_list(void* list, void* env) {
 	    break;
 	    
 	  default:
-	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
+	    return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
 	    break;
 	  }
 	}
@@ -1560,7 +1560,7 @@ void* eval_list(void* list, void* env) {
 	      {
 				
 		if(mpz_sgn(to_int(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		rational_type* aq = create_rational_type();
@@ -1576,7 +1576,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_FLOAT:
 	      {
 		if (mpf_sgn(to_float(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		float_type* af = create_float_type();
@@ -1589,7 +1589,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_RATIONAL:
 	      {
 		if (mpq_sgn(to_rational(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		rational_type* ar = create_rational_type(); 
@@ -1601,7 +1601,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1615,7 +1615,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_INT:
 	      {
 		if(mpz_sgn(to_int(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		float_type* result = create_float_type();
@@ -1628,7 +1628,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_FLOAT:
 	      {
 		if (mpf_sgn(to_float(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		float_type* af = create_float_type(); 
@@ -1640,7 +1640,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_RATIONAL:
 	      {
 		if (mpq_sgn(to_rational(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		float_type* ar = create_float_type(); 
@@ -1653,7 +1653,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1666,7 +1666,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_INT:
 	      {
 		if(mpz_sgn(to_int(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		rational_type* result = create_rational_type();
@@ -1679,7 +1679,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_FLOAT:
 	      {
 		if (mpf_sgn(to_float(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		float_type* af = create_float_type();
@@ -1692,7 +1692,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_RATIONAL:
 	      {
 		if (mpq_sgn(to_rational(b)->num) == 0) {
-		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
+		  return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		rational_type* ret = create_rational_type(); 
@@ -1704,7 +1704,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	      return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1713,7 +1713,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
+	    return ERROR("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	    break;
 	  }
@@ -1732,7 +1732,7 @@ void* eval_list(void* list, void* env) {
 
 	void* pair = cassoc("*BREAK*", cdr(env));
 	if(!pair) {
-	  return ERROR("BREAK outside of LOOP!!!");
+	  return ERROR("LOGICAL-ERROR", "BREAK outside of LOOP!!!");
 	}
 	
 	if(cdr(list) && car(cdr(list))) {
@@ -1750,7 +1750,7 @@ void* eval_list(void* list, void* env) {
       {
 	void* start = cdr(list);
 	if(!start || !car(start)) {
-	  return ERROR("LOOP requires at least one argument!");
+	  return ERROR("ARGUMENT-ERROR", "LOOP requires at least one argument!");
 	}
 
 	// Fresh env cell, never mutates the caller's env -- same pattern as
@@ -1786,16 +1786,16 @@ void* eval_list(void* list, void* env) {
       {
 	void* rest = cdr(list);
 	if(!rest || !car(rest)) {
-	  return ERROR("WITH-RESTART requires a name!");
+	  return ERROR("ARGUMENT-ERROR", "WITH-RESTART requires a name!");
 	}
 	void* name = car(rest);
 	if(!is_type(name, TYPE_SYMBOL)) {
-	  return ERROR("WITH-RESTART: name must be a symbol!");
+	  return ERROR("TYPE-ERROR", "WITH-RESTART: name must be a symbol!");
 	}
 
 	rest = cdr(rest);
 	if(!rest || !car(rest)) {
-	  return ERROR("WITH-RESTART requires a recovery lambda!");
+	  return ERROR("ARGUMENT-ERROR", "WITH-RESTART requires a recovery lambda!");
 	}
 	void* recovery = eval(car(rest), env);
 	if(is_error(recovery)) return recovery;
@@ -1855,16 +1855,16 @@ void* eval_list(void* list, void* env) {
       {
 	void* rest = cdr(list);
 	if(!rest || !car(rest)) {
-	  return ERROR("INVOKE-RESTART requires a name!");
+	  return ERROR("ARGUMENT-ERROR", "INVOKE-RESTART requires a name!");
 	}
 	void* name = car(rest);
 	if(!is_type(name, TYPE_SYMBOL)) {
-	  return ERROR("INVOKE-RESTART: name must be a symbol!");
+	  return ERROR("TYPE-ERROR", "INVOKE-RESTART: name must be a symbol!");
 	}
 
 	void* pair = cassoc(to_string(name)->str, cdr(env));
 	if(!pair || !is_type(cdr(pair), TYPE_RESTART)) {
-	  return ERROR("INVOKE-RESTART: no such restart!");
+	  return ERROR("LOGICAL-ERROR", "INVOKE-RESTART: no such restart!");
 	}
 
 	restart_frame* frame = car(cdr(pair));
@@ -1924,7 +1924,7 @@ void* eval_list(void* list, void* env) {
 	// least the tag, so (ERROR 'TAG) is legal (cdr = NULL, no data)
 	// but a bare (ERROR) is not.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("ERROR requires at least 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "ERROR requires at least 1 argument!");
 
 	void* tag = eval(car(a1), env);
 	if(is_error(tag)) return tag;
@@ -1956,16 +1956,16 @@ void* eval_list(void* list, void* env) {
 	// (APPLY callee valueList) -- valueList's elements are bound as-is,
 	// never re-evaluated, since they're already values.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("APPLY requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "APPLY requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("APPLY requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "APPLY requires 2 arguments!");
 
 	void* callee = eval(car(a1), env);
 	if(is_error(callee)) return callee;
 
 	void* values = eval(car(a2), env);
 	if(is_error(values)) return values;
-	if(values && !is_cons(values)) return ERROR("APPLY requires a list!");
+	if(values && !is_cons(values)) return ERROR("TYPE-ERROR", "APPLY requires a list!");
 
 	return apply_callable(callee, values, ARGS_VALUES, env, env);
       }
@@ -1975,17 +1975,17 @@ void* eval_list(void* list, void* env) {
       {
 	// (MOD a b) -- integer modulo, sign follows the divisor (GMP mpz_mod).
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("MOD requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "MOD requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("MOD requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "MOD requires 2 arguments!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 	void* b = eval(car(a2), env);
 	if(is_error(b)) return b;
 
-	if(!is_int(a) || !is_int(b)) return ERROR("MOD requires two integers!");
-	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE BY ZERO!!!");
+	if(!is_int(a) || !is_int(b)) return ERROR("TYPE-ERROR", "MOD requires two integers!");
+	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("TYPE-ERROR", "DIVIDE BY ZERO!!!");
 
 	int_type* ret = create_int_type(0);
 	mpz_mod(ret->num, to_int(a)->num, to_int(b)->num);
@@ -1997,17 +1997,17 @@ void* eval_list(void* list, void* env) {
       {
 	// (QUOTIENT a b) -- truncating integer division.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("QUOTIENT requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "QUOTIENT requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("QUOTIENT requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "QUOTIENT requires 2 arguments!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 	void* b = eval(car(a2), env);
 	if(is_error(b)) return b;
 
-	if(!is_int(a) || !is_int(b)) return ERROR("QUOTIENT requires two integers!");
-	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE BY ZERO!!!");
+	if(!is_int(a) || !is_int(b)) return ERROR("TYPE-ERROR", "QUOTIENT requires two integers!");
+	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 
 	int_type* ret = create_int_type(0);
 	mpz_tdiv_q(ret->num, to_int(a)->num, to_int(b)->num);
@@ -2020,17 +2020,17 @@ void* eval_list(void* list, void* env) {
 	// (REMAINDER a b) -- truncating-division remainder, sign follows
 	// the dividend (distinct from MOD, whose sign follows the divisor).
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("REMAINDER requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "REMAINDER requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("REMAINDER requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "REMAINDER requires 2 arguments!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 	void* b = eval(car(a2), env);
 	if(is_error(b)) return b;
 
-	if(!is_int(a) || !is_int(b)) return ERROR("REMAINDER requires two integers!");
-	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE BY ZERO!!!");
+	if(!is_int(a) || !is_int(b)) return ERROR("TYPE-ERROR", "REMAINDER requires two integers!");
+	if(mpz_sgn(to_int(b)->num) == 0) return ERROR("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 
 	int_type* ret = create_int_type(0);
 	mpz_tdiv_r(ret->num, to_int(a)->num, to_int(b)->num);
@@ -2041,7 +2041,7 @@ void* eval_list(void* list, void* env) {
     case N_FLOOR:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("FLOOR requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "FLOOR requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2060,14 +2060,14 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("FLOOR requires a number!");
+	return ERROR("TYPE-ERROR", "FLOOR requires a number!");
       }
       break;
 
     case N_CEILING:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("CEILING requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "CEILING requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2086,14 +2086,14 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("CEILING requires a number!");
+	return ERROR("TYPE-ERROR", "CEILING requires a number!");
       }
       break;
 
     case N_TRUNCATE:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("TRUNCATE requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "TRUNCATE requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2112,7 +2112,7 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("TRUNCATE requires a number!");
+	return ERROR("TYPE-ERROR", "TRUNCATE requires a number!");
       }
       break;
 
@@ -2122,7 +2122,7 @@ void* eval_list(void* list, void* env) {
 	// floor and the fractional remainder, decide based on the remainder
 	// vs 1/2, breaking exact ties to the even neighbor.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("ROUND requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "ROUND requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2200,14 +2200,14 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("ROUND requires a number!");
+	return ERROR("TYPE-ERROR", "ROUND requires a number!");
       }
       break;
 
     case N_ABS:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("ABS requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "ABS requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2230,7 +2230,7 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("ABS requires a number!");
+	return ERROR("TYPE-ERROR", "ABS requires a number!");
       }
       break;
 
@@ -2242,13 +2242,13 @@ void* eval_list(void* list, void* env) {
 	// this keeps the type contract simple (SQRT always returns a float,
 	// except NULL is never returned). Rationals promote to float too.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("SQRT requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "SQRT requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 
 	if(is_int(a)) {
-	  if(mpz_sgn(to_int(a)->num) < 0) return ERROR("SQRT of a negative number!");
+	  if(mpz_sgn(to_int(a)->num) < 0) return ERROR("LOGICAL-ERROR", "SQRT of a negative number!");
 	  float_type* ret = create_float_type();
 	  mpf_t tmp;
 	  mpf_init(tmp);
@@ -2259,14 +2259,14 @@ void* eval_list(void* list, void* env) {
 	}
 
 	if(is_float(a)) {
-	  if(mpf_sgn(to_float(a)->num) < 0) return ERROR("SQRT of a negative number!");
+	  if(mpf_sgn(to_float(a)->num) < 0) return ERROR("LOGICAL-ERROR", "SQRT of a negative number!");
 	  float_type* ret = create_float_type();
 	  mpf_sqrt(ret->num, to_float(a)->num);
 	  return ret;
 	}
 
 	if(is_rational(a)) {
-	  if(mpq_sgn(to_rational(a)->num) < 0) return ERROR("SQRT of a negative number!");
+	  if(mpq_sgn(to_rational(a)->num) < 0) return ERROR("LOGICAL-ERROR", "SQRT of a negative number!");
 	  float_type* ret = create_float_type();
 	  mpf_t tmp;
 	  mpf_init(tmp);
@@ -2276,7 +2276,7 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("SQRT requires a number!");
+	return ERROR("TYPE-ERROR", "SQRT requires a number!");
       }
       break;
 
@@ -2287,9 +2287,9 @@ void* eval_list(void* list, void* env) {
 	// through <math.h> pow() for float, or repeated rational
 	// multiplication for rational (kept exact).
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("EXPT requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "EXPT requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("EXPT requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "EXPT requires 2 arguments!");
 
 	void* base = eval(car(a1), env);
 	if(is_error(base)) return base;
@@ -2297,7 +2297,7 @@ void* eval_list(void* list, void* env) {
 	if(is_error(exp)) return exp;
 
 	if(!is_int(exp) || mpz_sgn(to_int(exp)->num) < 0) {
-	  return ERROR("EXPT requires a non-negative integer exponent!");
+	  return ERROR("LOGICAL-ERROR", "EXPT requires a non-negative integer exponent!");
 	}
 	unsigned long e = mpz_get_ui(to_int(exp)->num);
 
@@ -2322,14 +2322,14 @@ void* eval_list(void* list, void* env) {
 	  return ret;
 	}
 
-	return ERROR("EXPT requires a number base!");
+	return ERROR("TYPE-ERROR", "EXPT requires a number base!");
       }
       break;
 
     case N_MIN:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("MIN requires at least 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "MIN requires at least 1 argument!");
 
 	void* best = eval(car(a1), env);
 	if(is_error(best)) return best;
@@ -2347,7 +2347,7 @@ void* eval_list(void* list, void* env) {
     case N_MAX:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("MAX requires at least 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "MAX requires at least 1 argument!");
 
 	void* best = eval(car(a1), env);
 	if(is_error(best)) return best;
@@ -2365,16 +2365,16 @@ void* eval_list(void* list, void* env) {
     case N_GCD:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("GCD requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "GCD requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("GCD requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "GCD requires 2 arguments!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 	void* b = eval(car(a2), env);
 	if(is_error(b)) return b;
 
-	if(!is_int(a) || !is_int(b)) return ERROR("GCD requires two integers!");
+	if(!is_int(a) || !is_int(b)) return ERROR("ARGUMENT-ERROR", "GCD requires two integers!");
 
 	int_type* ret = create_int_type(0);
 	mpz_gcd(ret->num, to_int(a)->num, to_int(b)->num);
@@ -2385,16 +2385,16 @@ void* eval_list(void* list, void* env) {
     case N_LCM:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("LCM requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "LCM requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("LCM requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "LCM requires 2 arguments!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 	void* b = eval(car(a2), env);
 	if(is_error(b)) return b;
 
-	if(!is_int(a) || !is_int(b)) return ERROR("LCM requires two integers!");
+	if(!is_int(a) || !is_int(b)) return ERROR("TYPE-ERROR", "LCM requires two integers!");
 
 	int_type* ret = create_int_type(0);
 	mpz_lcm(ret->num, to_int(a)->num, to_int(b)->num);
@@ -2405,7 +2405,7 @@ void* eval_list(void* list, void* env) {
     case N_EXACTP:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("EXACT? requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "EXACT? requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2417,7 +2417,7 @@ void* eval_list(void* list, void* env) {
     case N_INEXACTP:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("INEXACT? requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "INEXACT? requires 1 argument!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
@@ -2441,9 +2441,9 @@ void* eval_list(void* list, void* env) {
 	// through TYPE?, so TYPE? itself only ever needs to handle a plain
 	// symbol tag.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("TYPE? requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "TYPE? requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("TYPE? requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "TYPE? requires 2 arguments!");
 
 	// x is NOT short-circuited on is_error(x) here -- unlike every other
 	// primitive in this switch, TYPE? needs to inspect an error value,
@@ -2454,7 +2454,7 @@ void* eval_list(void* list, void* env) {
 
 	void* tag = eval(car(a2), env);
 	if(is_error(tag)) return tag;
-	if(!is_type(tag, TYPE_SYMBOL)) return ERROR("TYPE? requires a symbol tag!");
+	if(!is_type(tag, TYPE_SYMBOL)) return ERROR("TYPE-ERROR", "TYPE? requires a symbol tag!");
 
 	return (strcmp(return_type_c_string(x), to_string(tag)->str) == 0)
 	       ? create_true_type() : NULL;
@@ -2467,7 +2467,7 @@ void* eval_list(void* list, void* env) {
 	// Note: !car(a1) would wrongly reject a present-but-NULL argument as
 	// "missing" -- check !a1 alone (is there a second list cell at all).
 	void* a1 = cdr(list);
-	if(!a1) return ERROR("NULL? requires 1 argument!");
+	if(!a1) return ERROR("ARGUMENT-ERROR", "NULL? requires 1 argument!");
 
 	void* v = eval(car(a1), env);
 	if(is_error(v)) return v;
@@ -2483,7 +2483,7 @@ void* eval_list(void* list, void* env) {
 	// is itself a reserved keyword -- there's no way to quote it into
 	// the plain symbol "CONS" as data to compare against.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("CONS? requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "CONS? requires 1 argument!");
 
 	void* v = eval(car(a1), env);
 	if(is_error(v)) return v;
@@ -2499,7 +2499,7 @@ void* eval_list(void* list, void* env) {
 	// dedicated native for the same reason as CONS? -- LAMBDA/MAC are
 	// reserved keywords, not quotable as plain symbols.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("PROCEDURE? requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "PROCEDURE? requires 1 argument!");
 
 	void* v = eval(car(a1), env);
 	if(is_error(v)) return v;
@@ -2519,7 +2519,7 @@ void* eval_list(void* list, void* env) {
 	// Note: check !a1 alone, not !car(a1) -- NULL is a legitimate value
 	// to pass here (LEN NULL) should be 0, not "argument missing".
 	void* a1 = cdr(list);
-	if(!a1) return ERROR("LEN requires 1 argument!");
+	if(!a1) return ERROR("ARGUMENT-ERROR", "LEN requires 1 argument!");
 
 	void* x = eval(car(a1), env);
 	if(is_error(x)) return x;
@@ -2530,11 +2530,11 @@ void* eval_list(void* list, void* env) {
 
 	if(is_cons(x)) {
 	  int n = list_length(x);
-	  if(n < 0) return ERROR("LEN: not a proper list!");
+	  if(n < 0) return ERROR("TYPE-ERROR", "LEN: not a proper list!");
 	  return create_int_type(n);
 	}
 
-	return ERROR("LEN requires a list or a string!");
+	return ERROR("TYPE-ERROR", "LEN requires a list or a string!");
       }
       break;
 
@@ -2542,28 +2542,28 @@ void* eval_list(void* list, void* env) {
       {
 	// (SUBSTR s start end) -- end exclusive, Scheme substring-style.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("SUBSTR requires 3 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "SUBSTR requires 3 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("SUBSTR requires 3 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "SUBSTR requires 3 arguments!");
 	void* a3 = cdr(a2);
-	if(!a3 || !car(a3)) return ERROR("SUBSTR requires 3 arguments!");
+	if(!a3 || !car(a3)) return ERROR("ARGUMENT-ERROR", "SUBSTR requires 3 arguments!");
 
 	void* s = eval(car(a1), env);
 	if(is_error(s)) return s;
-	if(!is_str(s)) return ERROR("SUBSTR requires a string!");
+	if(!is_str(s)) return ERROR("TYPE-ERROR", "SUBSTR requires a string!");
 
 	void* startV = eval(car(a2), env);
 	if(is_error(startV)) return startV;
 	void* endV = eval(car(a3), env);
 	if(is_error(endV)) return endV;
-	if(!is_int(startV) || !is_int(endV)) return ERROR("SUBSTR requires integer bounds!");
+	if(!is_int(startV) || !is_int(endV)) return ERROR("TYPE-ERROR", "SUBSTR requires integer bounds!");
 
 	long start = mpz_get_si(to_int(startV)->num);
 	long end = mpz_get_si(to_int(endV)->num);
 	int size = to_string(s)->size;
 
 	if(start < 0 || end < start || end > size) {
-	  return ERROR("SUBSTR: index out of range!");
+	  return ERROR("LOGICAL-ERROR", "SUBSTR: index out of range!");
 	}
 
 	return create_string_type_and_copy(end - start, to_string(s)->str + start, TYPE_STRING);
@@ -2574,20 +2574,20 @@ void* eval_list(void* list, void* env) {
       {
 	// (STRREF s i) -- single character, bounds-checked.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("STRREF requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "STRREF requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("STRREF requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "STRREF requires 2 arguments!");
 
 	void* s = eval(car(a1), env);
 	if(is_error(s)) return s;
-	if(!is_str(s)) return ERROR("STRREF requires a string!");
+	if(!is_str(s)) return ERROR("TYPE-ERROR", "STRREF requires a string!");
 
 	void* iV = eval(car(a2), env);
 	if(is_error(iV)) return iV;
-	if(!is_int(iV)) return ERROR("STRREF requires an integer index!");
+	if(!is_int(iV)) return ERROR("TYPE-ERROR", "STRREF requires an integer index!");
 
 	long i = mpz_get_si(to_int(iV)->num);
-	if(i < 0 || i >= to_string(s)->size) return ERROR("STRREF: index out of range!");
+	if(i < 0 || i >= to_string(s)->size) return ERROR("LOGICAL-ERROR", "STRREF: index out of range!");
 
 	return create_char_type(to_string(s)->str[i]);
       }
@@ -2596,11 +2596,11 @@ void* eval_list(void* list, void* env) {
     case N_STRUPPER:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("STRUPPER requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "STRUPPER requires 1 argument!");
 
 	void* s = eval(car(a1), env);
 	if(is_error(s)) return s;
-	if(!is_str(s)) return ERROR("STRUPPER requires a string!");
+	if(!is_str(s)) return ERROR("ARGUMENT-ERROR", "STRUPPER requires a string!");
 
 	string_type* ret = create_string_type_and_copy(to_string(s)->size, to_string(s)->str, TYPE_STRING);
 	for(int i = 0; i < ret->size; i++) ret->str[i] = toupper((unsigned char)ret->str[i]);
@@ -2611,11 +2611,11 @@ void* eval_list(void* list, void* env) {
     case N_STRLOWER:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("STRLOWER requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "STRLOWER requires 1 argument!");
 
 	void* s = eval(car(a1), env);
 	if(is_error(s)) return s;
-	if(!is_str(s)) return ERROR("STRLOWER requires a string!");
+	if(!is_str(s)) return ERROR("TYPE-ERROR", "STRLOWER requires a string!");
 
 	string_type* ret = create_string_type_and_copy(to_string(s)->size, to_string(s)->str, TYPE_STRING);
 	for(int i = 0; i < ret->size; i++) ret->str[i] = tolower((unsigned char)ret->str[i]);
@@ -2626,16 +2626,16 @@ void* eval_list(void* list, void* env) {
     case N_STREQ:
       {
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("STREQ requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "STREQ requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("STREQ requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "STREQ requires 2 arguments!");
 
 	void* a = eval(car(a1), env);
 	if(is_error(a)) return a;
 	void* b = eval(car(a2), env);
 	if(is_error(b)) return b;
 
-	if(!is_str(a) || !is_str(b)) return ERROR("STREQ requires two strings!");
+	if(!is_str(a) || !is_str(b)) return ERROR("TYPE-ERROR", "STREQ requires two strings!");
 
 	return (string_compare(a, b) == 0) ? create_true_type() : NULL;
       }
@@ -2676,15 +2676,15 @@ void* eval_list(void* list, void* env) {
 	// (not eval) so a VALUES result arrives unwrapped rather than
 	// already collapsed to its first element.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("NTHVALUE requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "NTHVALUE requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("NTHVALUE requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "NTHVALUE requires 2 arguments!");
 
 	void* nV = eval(car(a1), env);
 	if(is_error(nV)) return nV;
-	if(!is_int(nV)) return ERROR("NTHVALUE requires an integer index!");
+	if(!is_int(nV)) return ERROR("TYPE-ERROR", "NTHVALUE requires an integer index!");
 	long n = mpz_get_si(to_int(nV)->num);
-	if(n < 0) return ERROR("NTHVALUE: index out of range!");
+	if(n < 0) return ERROR("LOGICAL-ERROR", "NTHVALUE index out of range!");
 
 	void* result = eval_raw(car(a2), env);
 	if(is_error(result)) return result;
@@ -2692,12 +2692,12 @@ void* eval_list(void* list, void* env) {
 	if(result && get_type(result) == TYPE_VALUES) {
 	  void* i = car(result);
 	  for(long k = 0; k < n && i; k++) i = cdr(i);
-	  if(!i) return ERROR("NTHVALUE: index out of range!");
+	  if(!i) return ERROR("LOGICAL-ERROR", "NTHVALUE index out of range!");
 	  return car(i);
 	}
 
 	// Ordinary single value: only index 0 is in range.
-	if(n != 0) return ERROR("NTHVALUE: index out of range!");
+	if(n != 0) return ERROR("LOGICAL-ERROR", "NTHVALUE index out of range!");
 	return result;
       }
       break;
@@ -2708,7 +2708,7 @@ void* eval_list(void* list, void* env) {
 	// as NTHVALUE. Returns the wrapped values as a plain list, or a
 	// one-element list if expr was an ordinary single value.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("MULTIPLEVALUELIST requires 1 argument!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "MULTIPLEVALUELIST requires 1 argument!");
 
 	void* result = eval_raw(car(a1), env);
 	if(is_error(result)) return result;
@@ -2743,7 +2743,7 @@ void* eval_list(void* list, void* env) {
 	void* args = cdr(list);
 
 	if(args && cdr(args) && cdr(cdr(args))) {
-	  return ERROR("MAPMAKE: too many arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPMAKE: too many arguments!");
 	}
 
 	void* pairs = NULL;
@@ -2762,12 +2762,12 @@ void* eval_list(void* list, void* env) {
 	if(comparator) {
 	  ValueType t = get_type(comparator);
 	  if(t != TYPE_NATIVE && t != TYPE_LAMBDA && t != TYPE_MACRO) {
-	    return ERROR("MAPMAKE: comparator must be a function!");
+	    return ERROR("TYPE-ERROR", "MAPMAKE: comparator must be a function!");
 	  }
 	}
 
 	if(pairs && !is_cons(pairs)) {
-	  return ERROR("MAPMAKE: expected a list of (key . value) pairs!");
+	  return ERROR("TYPE-ERROR", "MAPMAKE: expected a list of (key . value) pairs!");
 	}
 
 	for(void* i=pairs; i; i=cdr(i)) {
@@ -2776,7 +2776,7 @@ void* eval_list(void* list, void* env) {
 	  // check must not reject that). We only need "is this a cons at
 	  // all," not "is the cdr specifically non-cons."
 	  if(!is_cons(car(i))) {
-	    return ERROR("MAPMAKE: expected a (key . value) pair!");
+	    return ERROR("TYPE-ERROR", "MAPMAKE: expected a (key . value) pair!");
 	  }
 	}
 
@@ -2795,17 +2795,17 @@ void* eval_list(void* list, void* env) {
 
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  return ERROR("ERROR: MAPADD requires 3 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPADD requires 3 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  return ERROR("ERROR: MAPADD requires 3 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPADD requires 3 arguments!");
 	}
 
 	void* tmp3 = cdr(tmp2);
 	if(!tmp3) {
-	  return ERROR("ERROR: MAPADD requires 3 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPADD requires 3 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -2826,12 +2826,12 @@ void* eval_list(void* list, void* env) {
 	// MULTIPLEVALUELIST.
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  return ERROR("ERROR: MAPGET requires 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPGET requires 2 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  return ERROR("ERROR: MAPGET requires 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPGET requires 2 arguments!");
 	}
 
 	void* a = eval(car(tmp1), env);
@@ -2852,17 +2852,17 @@ void* eval_list(void* list, void* env) {
       {
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  return ERROR("ERROR: MAPADD requires 3 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPADD requires 3 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  return ERROR("ERROR: MAPADD requires 3 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPAD requires 3 arguments!");
 	}
 
 	void* tmp3 = cdr(tmp2);
 	if(!tmp3) {
-	  return ERROR("ERROR: MAPADD requires 3 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPADD requires 3 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -2877,12 +2877,12 @@ void* eval_list(void* list, void* env) {
       {
 	void* tmp1 = cdr(list);
 	if(!tmp1) {
-	  return ERROR("ERROR: MAPDEL requires 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPDEL requires 2 arguments!");
 	}
 
 	void* tmp2 = cdr(tmp1);
 	if(!tmp2) {
-	  return ERROR("ERROR: MAPDEL requires 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAPDEL requires 2 arguments!");
 	}
 	
 	void* a = eval(car(tmp1), env);
@@ -2896,7 +2896,7 @@ void* eval_list(void* list, void* env) {
       {
 	if(!cdr(list) || !car(cdr(list)) ||
 	   !cdr(cdr(list))) {
-	  return ERROR("MAP requires at least 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "MAP requires at least 2 arguments!");
 	}
 
 	void* func = eval(car(cdr(list)), env);
@@ -2913,7 +2913,7 @@ void* eval_list(void* list, void* env) {
 
 	  void* e = eval(car(i), env);
 	  if(is_error(e)) return e;
-	  if(!is_cons(e)) return ERROR("Map requires lists... as of now...");
+	  if(!is_cons(e)) return ERROR("TYPE-ERROR", "Map requires lists... as of now...");
 
 	  if(!clists) {
 	    clists = cons(e, NULL);
@@ -2975,18 +2975,18 @@ void* eval_list(void* list, void* env) {
       {
 	// (REDUCE func list initial)
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("REDUCE requires 3 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "REDUCE requires 3 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("REDUCE requires 3 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "REDUCE requires 3 arguments!");
 	void* a3 = cdr(a2);
-	if(!a3 || !car(a3)) return ERROR("REDUCE requires 3 arguments!");
+	if(!a3 || !car(a3)) return ERROR("ARGUMENT-ERROR", "REDUCE requires 3 arguments!");
 
 	void* func = eval(car(a1), env);
 	if(is_error(func)) return func;
 
 	void* target = eval(car(a2), env);
 	if(is_error(target)) return target;
-	if(!is_cons(target)) return ERROR("REDUCE requires a list!");
+	if(!is_cons(target)) return ERROR("TYPE-ERROR", "REDUCE requires a list!");
 
 	void* acc = eval(car(a3), env);
 	if(is_error(acc)) return acc;
@@ -3004,16 +3004,16 @@ void* eval_list(void* list, void* env) {
       {
 	// (FILTER pred list)
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("FILTER requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ARGUMENT-ERROR", "FILTER requires 2 arguments!");
 	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("FILTER requires 2 arguments!");
+	if(!a2 || !car(a2)) return ERROR("ARGUMENT-ERROR", "FILTER requires 2 arguments!");
 
 	void* pred = eval(car(a1), env);
 	if(is_error(pred)) return pred;
 
 	void* target = eval(car(a2), env);
 	if(is_error(target)) return target;
-	if(!is_cons(target)) return ERROR("FILTER requires a list!");
+	if(!is_cons(target)) return ERROR("TYPE-ERROR", "FILTER requires a list!");
 
 	void* ret = NULL;
 	void* last = NULL;
@@ -3041,11 +3041,11 @@ void* eval_list(void* list, void* env) {
     case N_LET:
       {
 	if(!cdr(list) || !car(cdr(list))) {
-	  return ERROR("LET requires 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "LET requires 2 arguments!");
 	}
 
 	if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	  return ERROR("LET requires 2 arguments!");
+	  return ERROR("ARGUMENT-ERROR", "LET requires 2 arguments!");
 	}
 	
 	void* vars = car(cdr(list));
@@ -3141,11 +3141,11 @@ void* eval_list(void* list, void* env) {
       // but I create a (TYPE_LAMBDA closure args code)
       // let's just try storing the env itself. 
       if(!cdr(list) || !car(cdr(list))) {
-	return ERROR("LAMBDA requires 2 arguments!");
+	return ERROR("ARGUMENT-ERROR", "LAMBDA requires 2 arguments!");
       }
       
       if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	return ERROR("LAMBDA requires 2 arguments!");
+	return ERROR("ARGUMENT-ERROR", "LAMBDA requires 2 arguments!");
       }
 
       void* e = butlast(car(env));
@@ -3170,18 +3170,18 @@ void* eval_list(void* list, void* env) {
       // substitution (no gensym); symbol capture is possible and is an
       // accepted limitation.
       if(!cdr(list) || !car(cdr(list))) {
-	return ERROR("MAC requires at least 2 arguments!");
+	return ERROR("ARGUMENT-ERROR", "MAC requires at least 2 arguments!");
       }
 
       if(is_type(car(cdr(list)), TYPE_SYMBOL)) {
 	void* name = car(cdr(list));
 
 	if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	  return ERROR("MAC requires a parameter list after the name!");
+	  return ERROR("ARGUMENT-ERROR", "MAC requires a parameter list after the name!");
 	}
 
 	if(!cdr(cdr(cdr(list)))) {
-	  return ERROR("MAC requires a body after the parameter list!");
+	  return ERROR("ARGUMENT-ERROR", "MAC requires a body after the parameter list!");
 	}
 
 	void* e2 = butlast(car(env));
@@ -3193,7 +3193,7 @@ void* eval_list(void* list, void* env) {
       }
 
       if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	return ERROR("MAC requires a body!");
+	return ERROR("ARGUMENT-ERROR", "MAC requires a body!");
       }
 
       {
@@ -3254,7 +3254,7 @@ void* eval_list(void* list, void* env) {
 
 	  
 	  
-	  return ERROR("CAT only works with strings and symbols types!");
+	  return ERROR("TYPE-ERROR", "CAT only works with strings and symbols types!");
 	}
       }
 
@@ -3317,7 +3317,7 @@ void* eval_list(void* list, void* env) {
       }
     default:
       
-      return ERROR("Unknown native int function!!!\n");
+      return ERROR("UNKNOWN-ERROR", "Unknown native int function!!!\n");
     }
 
   case TYPE_LAMBDA:
@@ -3327,7 +3327,7 @@ void* eval_list(void* list, void* env) {
   case TYPE_CNR:
     {
       if(!cdr(list)) {
-	return ERROR("EVAL requires ONE argument!\n");
+	return ERROR("ARGUMENT-ERROR", "EVAL requires ONE argument!\n");
       }
       string_type* str = to_string(car(o));
       char* cstr = str->str;
@@ -3339,18 +3339,18 @@ void* eval_list(void* list, void* env) {
 	case 'a':
 	case 'A':
 
-	  if(!ret) return ERROR("CAR on NULL!");
+	  if(!ret) return ERROR("TYPE-ERROR", "CAR on NULL!");
 	  ret = car(ret);
 	  break;
 
 	case 'd':
 	case 'D':
-	  if(!ret) return ERROR("CDR on NULL!");
+	  if(!ret) return ERROR("TYPE-ERROR", "CDR on NULL!");
 	  ret = cdr(ret);
 	  break;
 
 	default:
-	  return ERROR("Unknown character in CN+R!");
+	  return ERROR("UNKNOWN-ERROR", "Unknown character in CN+R!");
 	  break;
 	}
 
@@ -3379,7 +3379,7 @@ void* eval_list(void* list, void* env) {
 	  x++;
 	}
 
-	if(n > (x - 1)) return ERROR("Not enough values for nprog value!!!");
+	if(n > (x - 1)) return ERROR("ARGUMENT-ERROR", "Not enough values for nprog value!!!");
 
 	return ret;
       }

@@ -1,2 +1,2 @@
-<ERROR: (ERROR "SQRT of a negative number!")>
-<ERROR: (ERROR "SQRT of a negative number!")>
+<ERROR: (LOGICAL-ERROR "SQRT of a negative number!")>
+<ERROR: (LOGICAL-ERROR "SQRT of a negative number!")>

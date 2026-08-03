@@ -1,2 +1,2 @@
-<ERROR: (ERROR "GCD requires two integers!")>
-<ERROR: (ERROR "GCD requires two integers!")>
+<ERROR: (ARGUMENT-ERROR "GCD requires two integers!")>
+<ERROR: (ARGUMENT-ERROR "GCD requires two integers!")>

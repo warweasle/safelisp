@@ -1,2 +1,2 @@
-<ERROR: (ERROR "CONS only works on CONS TYPE!")>
-<ERROR: (ERROR "CONS only works on CONS TYPE!")>
+<ERROR: (TYPE-ERROR "CAR only works on CONS TYPE!")>
+<ERROR: (TYPE-ERROR "CAR only works on CONS TYPE!")>

@@ -1,2 +1,2 @@
-<ERROR: (ERROR "LEN requires a list or a string!")>
-<ERROR: (ERROR "LEN requires a list or a string!")>
+<ERROR: (TYPE-ERROR "LEN requires a list or a string!")>
+<ERROR: (TYPE-ERROR "LEN requires a list or a string!")>

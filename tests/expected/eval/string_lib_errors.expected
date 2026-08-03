@@ -1,2 +1,2 @@
-<ERROR: (ERROR "SUBSTR: index out of range!")>
-<ERROR: (ERROR "SUBSTR: index out of range!")>
+<ERROR: (LOGICAL-ERROR "SUBSTR: index out of range!")>
+<ERROR: (LOGICAL-ERROR "SUBSTR: index out of range!")>

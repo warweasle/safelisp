@@ -28,11 +28,11 @@ extern "C" {
 #define EVENT_FLAG (1<<31)
 #define RED_BLACK_FLAG (1<<30)
 
-#define ERROR(msg)		  \
-  error(create_symbol("ERROR"),					\
-	cons(create_string_type_from_string((msg), TYPE_STRING), NULL))
+/* #define ERROR(msg)		  \ */
+/*   error(create_symbol("ERROR"),					\ */
+/* 	cons(create_string_type_from_string((msg), TYPE_STRING), NULL)) */
 
-#define ERROR2(errortype, msg)					\
+#define ERROR(errortype, msg)					\
   error(create_symbol(errortype),					\
 	cons(create_string_type_from_string((msg), TYPE_STRING), NULL))
 

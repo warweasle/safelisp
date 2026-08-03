@@ -1,2 +1,2 @@
-<ERROR: (ERROR "MOD requires two integers!")>
-<ERROR: (ERROR "MOD requires two integers!")>
+<ERROR: (TYPE-ERROR "MOD requires two integers!")>
+<ERROR: (TYPE-ERROR "MOD requires two integers!")>

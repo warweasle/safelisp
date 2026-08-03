@@ -212,7 +212,7 @@ The standard prelude builds convenient definition forms on top of `MAC`. These a
 (FUN FUNCTION-NAME (ARGS)
   CODE)
 
-(DEFMAC MACRO-NAME (ARGS)
+(MAC MACRO-NAME (ARGS)
   CODE)
 
 (FLET ((F1 (ARGS) CODE)

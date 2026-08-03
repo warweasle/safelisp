@@ -1,9 +1,6 @@
 (... (SET FUN (MAC (NAME ARGS . BODY)
                 (LIST 'SET NAME (CONS 'LAMBDA (CONS ARGS BODY)))))
 
-     (SET DEFMAC (MAC (NAME ARGS . BODY)
-                (LIST 'SET NAME (CONS 'MAC (CONS ARGS BODY)))))
-
      (SET FLET (MAC (BINDINGS . BODY)
                  (CONS 'LET
                        (CONS (MAP (LAMBDA (B) (LIST (CAR B) (CONS 'LAMBDA (CDR B)))) BINDINGS)

@@ -3076,18 +3076,46 @@ void* eval_list(void* list, void* env) {
 
     case N_MACRO:
 
-      // Same shape as LAMBDA -- (TYPE_MACRO closure args code). At call
-      // time, a macro's params bind to the caller's RAW unevaluated forms
-      // (never values), the body runs to produce an expansion form, and
-      // that expansion is then eval'd in the CALLER's environment -- this
-      // is simple, unhygienic, textual-expansion-style substitution (no
-      // gensym); symbol capture is possible and is an accepted limitation.
+      // Two call shapes, told apart by the first argument's shape (never
+      // evaluated -- macro params/names are always raw):
+      //   (MAC (ARGS) BODY...)      -- anonymous: produces a macro value.
+      //     Same shape as LAMBDA -- (TYPE_MACRO closure args code). A bare
+      //     parameter list is always NULL or a cons (even a dotted one,
+      //     (A . REST)), never a plain symbol, so this is unambiguous.
+      //   (MAC NAME (ARGS) BODY...) -- named: defines NAME globally,
+      //     mirroring how FUN wraps LAMBDA via SET, without needing a
+      //     separate prelude-level definer macro.
+      // At call time, a macro's params bind to the caller's RAW
+      // unevaluated forms (never values), the body runs to produce an
+      // expansion form, and that expansion is then eval'd in the CALLER's
+      // environment -- this is simple, unhygienic, textual-expansion-style
+      // substitution (no gensym); symbol capture is possible and is an
+      // accepted limitation.
       if(!cdr(list) || !car(cdr(list))) {
-	return ERROR("MAC requires 2 arguments!");
+	return ERROR("MAC requires at least 2 arguments!");
+      }
+
+      if(is_type(car(cdr(list)), TYPE_SYMBOL)) {
+	void* name = car(cdr(list));
+
+	if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
+	  return ERROR("MAC requires a parameter list after the name!");
+	}
+
+	if(!cdr(cdr(cdr(list)))) {
+	  return ERROR("MAC requires a body after the parameter list!");
+	}
+
+	void* e2 = butlast(car(env));
+	void* macro = create_macro(e2, cons(car(cdr(cdr(list))), cdr(cdr(cdr(list)))));
+
+	return eval(cons(create_native_int_type(N_SET),
+			 cons(name, cons(create_quotetype(TYPE_QUOTE, macro), NULL))),
+		    env);
       }
 
       if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	return ERROR("MAC requires 2 arguments!");
+	return ERROR("MAC requires a body!");
       }
 
       {

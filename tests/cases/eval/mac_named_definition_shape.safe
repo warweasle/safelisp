@@ -1,0 +1,2 @@
+(... (MAC SQUARE (X) (LIST '* X X))
+     (PRINT (SQUARE 6)))

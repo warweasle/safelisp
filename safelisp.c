@@ -109,6 +109,15 @@ cc make_cnr(void* cnr) {
   return ret;
 }
 
+nprog_type* create_nprog_type(int i) {
+  nprog_type* ret = (nprog_type*) GC_malloc(sizeof(nprog_type));
+
+  ret->type = TYPE_NPROG;
+  ret->n = i;
+
+  return ret;
+}
+
 // comparator is NULL (the default -- plain compare()) or a Lisp callable
 // (TYPE_NATIVE/TYPE_LAMBDA/TYPE_MACRO) stashed in cdr(ret) -- the only
 // place a tree's comparator is ever set. Every other map operation

@@ -1133,7 +1133,7 @@ void* eval_list(void* list, void* env) {
 	    
 	  case TYPE_RATIONAL:
 	    {
-	      rational_type* ret = create_rational_type(0);
+	      rational_type* ret = create_rational_type();
 	      mpq_neg(ret->num, to_rational(a)->num);
 	      return ret;
 	    }
@@ -1468,7 +1468,7 @@ void* eval_list(void* list, void* env) {
 		return ERROR("DIVIDE BY ZERO!!!");
 	      }
 	      
-	      rational_type* ret = create_rational_type(0);
+	      rational_type* ret = create_rational_type();
 	      mpq_set_z(ret->num, to_int(a)->num);
 	      mpq_inv(ret->num, ret->num);
 	      mpq_canonicalize(ret->num);
@@ -1493,7 +1493,7 @@ void* eval_list(void* list, void* env) {
 		return ERROR("DIVIDE BY ZERO!!!");
 	      }
 	      
-	      rational_type* ret = create_rational_type(0);
+	      rational_type* ret = create_rational_type();
 	      mpq_inv(ret->num, to_rational(a)->num);
 	      return ret;
 	    }
@@ -3019,7 +3019,7 @@ void* eval_list(void* list, void* env) {
 	return ret;
       }
       break;
-      
+  
     case N_LAMBDA:
 
       // Lambda is set up as (lambda (args) code) 
@@ -3205,6 +3205,30 @@ void* eval_list(void* list, void* env) {
       return ret;
     }
     break;
+
+    case TYPE_NPROG:
+      {
+	void* ret = NULL;
+	int n = ((nprog_type*) car(list))->n;
+
+	void* code = cdr(list);
+	// loop over the code...
+	int x = 1;
+	for(void* i=code; i; i=cdr(i)) {
+
+	  void* tmp = eval(car(i), env);;
+
+	  if(is_error(tmp)) return tmp;
+
+	  if(x == n) ret = tmp;
+	  x++;
+	}
+
+	if(n > (x - 1)) return ERROR("Not enough values for nprog value!!!");
+
+	return ret;
+      }
+      break;
 
   case TYPE_NATIVE:
     return apply_callable(o, cdr(list), ARGS_RAW_EVAL, env, env);

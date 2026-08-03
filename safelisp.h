@@ -50,6 +50,7 @@ extern "C" {
     TYPE_CONS = 1,
     TYPE_TRUE,
     TYPE_SYMBOL,
+    TYPE_NPROG,
     TYPE_NATIVE,
     TYPE_NATIVE_INT,
     TYPE_CHAR,
@@ -234,6 +235,11 @@ extern "C" {
     void* p;
   } pointer_type;
 
+  typedef struct {
+    ValueType type;
+    int n;
+  } nprog_type;
+  
   typedef void *(*native_func)(void *args, void *env);
   
   // Init and other...
@@ -287,7 +293,10 @@ extern "C" {
   int_type* create_int_type(double i);
   rational_type* create_rational_type();
   float_type* create_float_type();
+  
 
+  nprog_type* create_nprog_type(int i);
+  
   pointer_type* create_pointer_type(void* p, ValueType Type);
   cc create_lambda(void* args, void* code);
   cc create_macro(void* args, void* code);

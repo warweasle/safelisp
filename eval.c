@@ -593,7 +593,8 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* predicate = eval(car(pred), env);
-	
+	if(is_error(predicate)) return predicate;
+
 	if(is_true(predicate)) {
 	  void* ret = NULL;
 	  // loop over the code...
@@ -628,7 +629,8 @@ void* eval_list(void* list, void* env) {
 	}
 	
 	void* predicate = eval(car(pred), env);
-	
+	if(is_error(predicate)) return predicate;
+
 	if(!is_true(predicate)) {
 	  void* ret = NULL;
 	  // loop over the code...
@@ -1825,7 +1827,22 @@ void* eval_list(void* list, void* env) {
 
 	  void* tmp = eval(car(i), newenv);
 
-	  if(is_error(tmp)) return tmp;
+	  if(is_error(tmp)) {
+	    // An ordinary error from the body now calls the SAME recovery
+	    // lambda INVOKE-RESTART would jump to -- but since there's no
+	    // longjmp here (the body simply returned an error value, it
+	    // never called INVOKE-RESTART), this is a plain call, not a
+	    // setjmp/longjmp round trip. The error's underlying cons_cell
+	    // (car=tag, cdr=message, per error()) is repurposed into a
+	    // fresh plain list -- same car/cdr, TYPE_CONS instead of
+	    // TYPE_ERROR -- so the recovery lambda can CAR/CDR into it
+	    // normally instead of hitting the TYPE_ERROR wall CAR/CDR
+	    // enforce elsewhere. A fresh cons cell, not a mutated one, so
+	    // nothing else holding the original error value is affected.
+	    void* asList = cons(car(tmp), cdr(tmp));
+	    void* args = cons(asList, NULL);
+	    return apply_callable(recovery, args, ARGS_VALUES, env, env);
+	  }
 
 	  ret = tmp;
 	}
@@ -1887,6 +1904,32 @@ void* eval_list(void* list, void* env) {
 	}
 
 	return ret;
+      }
+      break;
+
+    case N_ERROR:
+      {
+	// (ERROR tag message) -- builds a TYPE_ERROR value directly from
+	// Lisp code, mirroring the internal ERROR(msg) C macro's shape
+	// (error(car, cdr)) but taking the tag as an explicit argument
+	// instead of always hardcoding the symbol ERROR. tag is typically
+	// a symbol (matching every internal use, e.g. 'ERROR itself), but
+	// isn't restricted to one -- car is otherwise uninspected today
+	// (the printer only ever displays cdr, per stringify_error), so
+	// any evaluated value is accepted as the tag.
+	void* a1 = cdr(list);
+	if(!a1 || !car(a1)) return ERROR("ERROR requires 2 arguments!");
+	void* a2 = cdr(a1);
+	if(!a2 || !car(a2)) return ERROR("ERROR requires 2 arguments!");
+
+	void* tag = eval(car(a1), env);
+	if(is_error(tag)) return tag;
+	void* message = eval(car(a2), env);
+	if(is_error(message)) return message;
+
+	if(!is_str(message)) return ERROR("ERROR requires a string message!");
+
+	return error(tag, message);
       }
       break;
 

@@ -161,7 +161,8 @@ extern "C" {
 	N_VALUES,
 	N_NTHVALUE,
 	N_MULTIPLEVALUELIST,
-	N_AVAILABLERESTARTS
+	N_AVAILABLERESTARTS,
+	N_ERROR
   } nativeType;
   
 #define get_type(ptr) ((ptr) ? (*(ValueType*)(ptr) & TYPE_BIT_MASK) : TYPE_NULL)

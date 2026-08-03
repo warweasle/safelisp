@@ -518,6 +518,11 @@ return ATOM;}
     return ATOM;
 }
 
+[eE][rR][rR][oO][rR] {
+    yylval->p = create_native_int_type(N_ERROR);
+    return ATOM;
+}
+
 \.\.\. {
     yylval->p = create_native_int_type(N_PROGN);
     return ATOM;

@@ -1,0 +1,1 @@
+(PRINT (!?? (STRREF "x" 99) (PRINT "should not run")))

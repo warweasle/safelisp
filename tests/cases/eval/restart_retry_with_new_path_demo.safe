@@ -5,6 +5,5 @@
 
      (PRINT
        (WITHRESTART USE-NEW-PATH
-         (LAMBDA (NEWPATH) (OPEN-PATH NEWPATH))
-         (?? (TYPE? (OPEN-PATH "missing.txt") 'ERROR)
-             (INVOKERESTART USE-NEW-PATH "fallback.txt")))))
+         (LAMBDA (E) (OPEN-PATH "fallback.txt"))
+         (OPEN-PATH "missing.txt"))))

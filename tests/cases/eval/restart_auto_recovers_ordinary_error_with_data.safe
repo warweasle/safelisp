@@ -1,0 +1,3 @@
+(PRINT (WITHRESTART R
+  (LAMBDA (E) (LIST 'RECOVERED (CAR E) (CDR E)))
+  (ERROR 'FILE-NOT-FOUND "missing.txt")))

@@ -226,7 +226,7 @@ static void stringify_values(resizable_string_type* buf, void* o, int base) {
   putch_resizable_array(buf, '>');
 }
 
-// A LAMBDA/MACRO's stored code is a flat list of body forms --
+// A LAMBDA/MAC's stored code is a flat list of body forms --
 // (LAMBDA (args) form1 form2 ...) -- spliced directly into the call, not a
 // single nested-list argument. Printing it through stringify_dispatch would
 // wrap it in its own extra parens (since a cons prints as "(...)"), so walk
@@ -246,7 +246,7 @@ static void stringify_lambda(resizable_string_type* buf, void* o, int base) {
 }
 
 static void stringify_macro(resizable_string_type* buf, void* o, int base) {
-  putstr_resizable_array(buf, "(MACRO ");
+  putstr_resizable_array(buf, "(MAC ");
   stringify_dispatch(buf, car(cdr(o)), base);
   stringify_body_forms(buf, cdr(cdr(o)), base);
   putch_resizable_array(buf, ')');

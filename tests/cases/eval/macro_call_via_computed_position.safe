@@ -1,1 +1,1 @@
-(PRINT ((MACRO (X) (LIST '+ X X)) 21))
+(PRINT ((MAC (X) (LIST '+ X X)) 21))

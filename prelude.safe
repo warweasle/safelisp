@@ -1,17 +1,17 @@
-(... (SET FUN (MACRO (NAME ARGS . BODY)
+(... (SET FUN (MAC (NAME ARGS . BODY)
                 (LIST 'SET NAME (CONS 'LAMBDA (CONS ARGS BODY)))))
 
-     (SET MAC (MACRO (NAME ARGS . BODY)
-                (LIST 'SET NAME (CONS 'MACRO (CONS ARGS BODY)))))
+     (SET DEFMAC (MAC (NAME ARGS . BODY)
+                (LIST 'SET NAME (CONS 'MAC (CONS ARGS BODY)))))
 
-     (SET FLET (MACRO (BINDINGS . BODY)
+     (SET FLET (MAC (BINDINGS . BODY)
                  (CONS 'LET
                        (CONS (MAP (LAMBDA (B) (LIST (CAR B) (CONS 'LAMBDA (CDR B)))) BINDINGS)
                              BODY))))
 
-     (SET MLET (MACRO (BINDINGS . BODY)
+     (SET MLET (MAC (BINDINGS . BODY)
                  (CONS 'LET
-                       (CONS (MAP (LAMBDA (B) (LIST (CAR B) (CONS 'MACRO (CDR B)))) BINDINGS)
+                       (CONS (MAP (LAMBDA (B) (LIST (CAR B) (CONS 'MAC (CDR B)))) BINDINGS)
                              BODY))))
 
      (FUN SYMBOL? (X) (TYPE? X 'SYMBOL))

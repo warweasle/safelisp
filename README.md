@@ -165,8 +165,6 @@ SafeLisp has one namespace for procedures and values.
 (SET LOCATION 'VALUE)
 ```
 
-`SETQ`, a non-evaluating variant, is not yet implemented.
-
 ---
 
 ## Procedures
@@ -214,7 +212,7 @@ The standard prelude builds convenient definition forms on top of `MAC`. These a
 (FUN FUNCTION-NAME (ARGS)
   CODE)
 
-(MAC MACRO-NAME (ARGS)
+(DEFMAC MACRO-NAME (ARGS)
   CODE)
 
 (FLET ((F1 (ARGS) CODE)
@@ -632,7 +630,6 @@ The language is intentionally compact and designed to feel approachable to C pro
 
 ## Planned Work
 
-- Implement SETQ (non-evaluating SET)
 - Add string escape sequences
 - Add character types
 - Complete native C data types

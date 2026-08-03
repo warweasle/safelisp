@@ -1,2 +1,2 @@
-(... (MAC TWICE (X) (LIST '+ X X))
+(... (DEFMAC TWICE (X) (LIST '+ X X))
      (PRINT (TWICE 21)))

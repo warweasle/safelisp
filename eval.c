@@ -2372,7 +2372,7 @@ void* eval_list(void* list, void* env) {
 	// individual ?-named type predicates in prelude.safe.
 	//
 	// A few type-name spellings collide with reserved keywords (CONS,
-	// TRUE, LAMBDA, MACRO): quoting one of those words doesn't produce
+	// TRUE, LAMBDA, MAC): quoting one of those words doesn't produce
 	// the plain symbol "CONS" etc, it produces the keyword's own native
 	// value (the lexer turns the bare word into that keyword's token
 	// before quoting ever sees it). Those specific predicates (CONS?,
@@ -2429,9 +2429,9 @@ void* eval_list(void* list, void* env) {
 
     case N_PROCEDUREP:
       {
-	// (PROCEDURE? x) -- TRUE iff x is callable: a LAMBDA, a MACRO, or a
+	// (PROCEDURE? x) -- TRUE iff x is callable: a LAMBDA, a MAC, or a
 	// bare native operator (TYPE_NATIVE_INT, e.g. + or CAR). Its own
-	// dedicated native for the same reason as CONS? -- LAMBDA/MACRO are
+	// dedicated native for the same reason as CONS? -- LAMBDA/MAC are
 	// reserved keywords, not quotable as plain symbols.
 	void* a1 = cdr(list);
 	if(!a1 || !car(a1)) return ERROR("PROCEDURE? requires 1 argument!");
@@ -3083,11 +3083,11 @@ void* eval_list(void* list, void* env) {
       // is simple, unhygienic, textual-expansion-style substitution (no
       // gensym); symbol capture is possible and is an accepted limitation.
       if(!cdr(list) || !car(cdr(list))) {
-	return ERROR("MACRO requires 2 arguments!");
+	return ERROR("MAC requires 2 arguments!");
       }
 
       if(!cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	return ERROR("MACRO requires 2 arguments!");
+	return ERROR("MAC requires 2 arguments!");
       }
 
       {

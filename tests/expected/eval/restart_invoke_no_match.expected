@@ -1,2 +1,2 @@
-<ERROR: "INVOKE-RESTART: no such restart!">
-<ERROR: "INVOKE-RESTART: no such restart!">
+<ERROR: (ERROR "INVOKE-RESTART: no such restart!")>
+<ERROR: (ERROR "INVOKE-RESTART: no such restart!")>

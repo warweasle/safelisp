@@ -1,2 +1,2 @@
-<ERROR: "STRREF: index out of range!">
-<ERROR: "STRREF: index out of range!">
+<ERROR: (ERROR "STRREF: index out of range!")>
+<ERROR: (ERROR "STRREF: index out of range!")>

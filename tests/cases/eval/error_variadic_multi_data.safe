@@ -1,0 +1,1 @@
+(PRINT (WITHRESTART R (LAMBDA (E) (CDR E)) (ERROR 'TAG "a" "b" "c")))

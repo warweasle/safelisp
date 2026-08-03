@@ -1909,27 +1909,45 @@ void* eval_list(void* list, void* env) {
 
     case N_ERROR:
       {
-	// (ERROR tag message) -- builds a TYPE_ERROR value directly from
+	// (ERROR tag data...) -- builds a TYPE_ERROR value directly from
 	// Lisp code, mirroring the internal ERROR(msg) C macro's shape
-	// (error(car, cdr)) but taking the tag as an explicit argument
-	// instead of always hardcoding the symbol ERROR. tag is typically
-	// a symbol (matching every internal use, e.g. 'ERROR itself), but
-	// isn't restricted to one -- car is otherwise uninspected today
-	// (the printer only ever displays cdr, per stringify_error), so
-	// any evaluated value is accepted as the tag.
+	// (error(car, cdr)) but taking the tag as an explicit first
+	// argument instead of always hardcoding the symbol ERROR. tag is
+	// typically a symbol (matching every internal use, e.g. 'ERROR
+	// itself), but isn't restricted to one -- car is otherwise
+	// uninspected today (the printer only ever displays cdr, per
+	// stringify_error), so any evaluated value is accepted as the tag.
+	//
+	// Works like LIST for everything after tag -- evaluates each
+	// remaining argument into a list (same loop shape as N_LIST) --
+	// except LIST accepts zero or more args and ERROR requires at
+	// least the tag, so (ERROR 'TAG) is legal (cdr = NULL, no data)
+	// but a bare (ERROR) is not.
 	void* a1 = cdr(list);
-	if(!a1 || !car(a1)) return ERROR("ERROR requires 2 arguments!");
-	void* a2 = cdr(a1);
-	if(!a2 || !car(a2)) return ERROR("ERROR requires 2 arguments!");
+	if(!a1 || !car(a1)) return ERROR("ERROR requires at least 1 argument!");
 
 	void* tag = eval(car(a1), env);
 	if(is_error(tag)) return tag;
-	void* message = eval(car(a2), env);
-	if(is_error(message)) return message;
 
-	if(!is_str(message)) return ERROR("ERROR requires a string message!");
+	cc data = NULL;
+	cc next = NULL;
 
-	return error(tag, message);
+	for(cc i=cdr(a1); i; i=cdr(i)) {
+	  void* tmp = eval(car(i), env);
+	  if(is_error(tmp)) return tmp;
+
+	  if(data) {
+	    cc c = cons(tmp, NULL);
+	    next->cdr = c;
+	    next = c;
+	  }
+	  else {
+	    data = cons(tmp, NULL);
+	    next = data;
+	  }
+	}
+
+	return error(tag, data);
       }
       break;
 

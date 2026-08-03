@@ -213,7 +213,7 @@ static void stringify_cnr(resizable_string_type* buf, void* o) {
 
 static void stringify_error(resizable_string_type* buf, void* o, int base) {
   putstr_resizable_array(buf, "<ERROR: ");
-  stringify_dispatch(buf, to_cons(o)->cdr, base);
+  stringify_dispatch(buf, cons(to_cons(o)->car, to_cons(o)->cdr), base);
   putch_resizable_array(buf, '>');
 }
 

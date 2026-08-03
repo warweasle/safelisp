@@ -1,2 +1,2 @@
-<ERROR: "EXPT requires a non-negative integer exponent!">
-<ERROR: "EXPT requires a non-negative integer exponent!">
+<ERROR: (ERROR "EXPT requires a non-negative integer exponent!")>
+<ERROR: (ERROR "EXPT requires a non-negative integer exponent!")>

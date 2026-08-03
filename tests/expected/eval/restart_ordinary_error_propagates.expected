@@ -1,2 +1,2 @@
-(ERROR . "CONS only works on CONS TYPE!")
-(ERROR . "CONS only works on CONS TYPE!")
+(ERROR "CONS only works on CONS TYPE!")
+(ERROR "CONS only works on CONS TYPE!")

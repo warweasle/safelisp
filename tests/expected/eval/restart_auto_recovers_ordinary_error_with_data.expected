@@ -1,2 +1,2 @@
-(RECOVERED FILE-NOT-FOUND "missing.txt")
-(RECOVERED FILE-NOT-FOUND "missing.txt")
+(RECOVERED FILE-NOT-FOUND ("missing.txt"))
+(RECOVERED FILE-NOT-FOUND ("missing.txt"))

@@ -540,16 +540,18 @@ Available restart names can be inspected with:
 Build an error value directly with `ERROR`:
 
 ```lisp
-(ERROR TAG MESSAGE)
+(ERROR TAG DATA...)
 ```
 
-If the code inside `WITHRESTART` produces an ordinary error (whether from `ERROR` or from any other failing operation), `WITHRESTART` automatically calls its recovery procedure with that error, converted to a plain list so it can be inspected with `CAR`/`CDR` (`CAR` is the tag, `CDR` is the message) -- the same recovery procedure `INVOKERESTART` would have called explicitly:
+`TAG` is required; any number of `DATA` values may follow (like `LIST`, but at least one argument -- the tag -- is required). Every error, whether built this way or raised internally, has the same shape: a tag and a list of data.
+
+If the code inside `WITHRESTART` produces an ordinary error (whether from `ERROR` or from any other failing operation), `WITHRESTART` automatically calls its recovery procedure with that error, converted to a plain list so it can be inspected with `CAR`/`CDR` (`CAR` is the tag, `CDR` is the data list) -- the same recovery procedure `INVOKERESTART` would have called explicitly:
 
 ```lisp
 (WITHRESTART USE-FALLBACK
   (LAMBDA (E) (LIST 'RECOVERED (CAR E) (CDR E)))
   (ERROR 'FILE-NOT-FOUND "missing.txt"))
-=> (RECOVERED FILE-NOT-FOUND "missing.txt")
+=> (RECOVERED FILE-NOT-FOUND ("missing.txt"))
 ```
 
 This is not yet a full Common Lisp-style condition system.

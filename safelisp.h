@@ -30,7 +30,12 @@ extern "C" {
 
 #define ERROR(msg)		  \
   error(create_symbol("ERROR"),					\
-	create_string_type_from_string((msg), TYPE_STRING))
+	cons(create_string_type_from_string((msg), TYPE_STRING), NULL))
+
+#define ERROR2(errortype, msg)					\
+  error(create_symbol(errortype),					\
+	cons(create_string_type_from_string((msg), TYPE_STRING), NULL))
+
   
   // Set the event flag
   void set_event_flag(void* value);

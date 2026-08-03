@@ -1,2 +1,2 @@
-<ERROR: "MAPMAKE: expected a list of (key . value) pairs!">
-<ERROR: "MAPMAKE: expected a list of (key . value) pairs!">
+<ERROR: (ERROR "MAPMAKE: expected a list of (key . value) pairs!")>
+<ERROR: (ERROR "MAPMAKE: expected a list of (key . value) pairs!")>

@@ -1,0 +1,2 @@
+(... (FUN FUNC X (LEN X))
+     (PRINT (FUNC 1 2 3 4)))

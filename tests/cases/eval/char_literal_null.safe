@@ -1,0 +1,1 @@
+(PRINT (LEN (CAT "A" #\Null "B")))

@@ -55,9 +55,18 @@ yylval->p = create_resizable_string_type(1024, TYPE_RESIZABLE_STRING);
 yylval->p = create_string_type_from_resizable_string(yylval->p);
 return ATOM;
 }
+
+<STRING>\\\"  {yylval->p = putch_resizable_array(yylval->p, '"');}
+<STRING>\\\\  {yylval->p = putch_resizable_array(yylval->p, '\\');}
+<STRING>\\n   {yylval->p = putch_resizable_array(yylval->p, '\n');}
+<STRING>\\t   {yylval->p = putch_resizable_array(yylval->p, '\t');}
+<STRING>\\r   {yylval->p = putch_resizable_array(yylval->p, '\r');}
+<STRING>\\.   {BEGIN(INITIAL); yylval->p = ERROR("Unknown escape sequence in string!"); return ATOM;}
+
 <STRING>.|\n               { //printf("Just got a string char!!!: %c in string: %s\n", yytext[0], yytext);
                           yylval->p = putch_resizable_array(yylval->p, yytext[0]);
                           }
+
 <STRING><<EOF>>  {yylval->p = ERROR("Unterminated string!!! (EOF)");
 return ATOM;}
 

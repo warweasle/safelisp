@@ -40,6 +40,13 @@ float_number_types ("f"|"d"|"ld")
 <COMMENT><<EOF>>         { /* Handle EOF during comment for error reporting, possibly flag error */ }
 
 
+#\\[Ss][Pp][Aa][Cc][Ee]    { yylval->p = create_char_type(' ');  return ATOM; }
+#\\[Nn][Ee][Ww][Ll][Ii][Nn][Ee]  { yylval->p = create_char_type('\n'); return ATOM; }
+#\\[Tt][Aa][Bb]      { yylval->p = create_char_type('\t'); return ATOM; }
+#\\[Rr][Ee][Tt][Uu][Rr][Nn]   { yylval->p = create_char_type('\r'); return ATOM; }
+#\\[Nn][Uu][Ll][Ll]     { yylval->p = create_char_type('\0'); return ATOM; }
+#\\.        { yylval->p = create_char_type(yytext[2]); return ATOM; }
+
 "\""                    { BEGIN(STRING); 
 yylval->p = create_resizable_string_type(1024, TYPE_RESIZABLE_STRING);
 }

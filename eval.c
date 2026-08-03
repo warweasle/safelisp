@@ -660,9 +660,13 @@ void* eval_list(void* list, void* env) {
 	for(void* i=car(cdr(list)); i; i = cdr(i)) {
 	  
 	  cc pair = car(i);
+
+	  void* pred = eval(car(pair), env);
+	    if(is_error(pred)) return pred;
 	  
-	  if(is_true(eval(car(pair), env))) {
-	    return eval(car(cdr(pair)), env);
+	  if(is_true(pred)) {
+	    void* result = eval(car(cdr(pair)), env);
+	    if(is_error(result)) return result;
 	  }
 	}
 	return NULL;
@@ -691,6 +695,8 @@ void* eval_list(void* list, void* env) {
       }
 
       void* result = eval(car(cdr(list)), env);
+      if(is_error(result)) return result;
+
       if(is_true(result)) return NULL;
       else return create_true_type();
       break;
@@ -702,6 +708,7 @@ void* eval_list(void* list, void* env) {
 	for(void* i=cdr(list); i; i = cdr(i)) {
 	  result = eval(car(i), env);
 
+	  if(is_error(result)) return result;
 	  if(!is_true(result)) return NULL;
 	}
 
@@ -715,7 +722,9 @@ void* eval_list(void* list, void* env) {
 	void* result = create_true_type();
 	for(void* i=cdr(list); i; i = cdr(i)) {
 	  result = eval(car(i), env);
-
+	  
+	  if(is_error(result)) return result;
+	  
 	  if(is_true(result)) return result;
 	}
 

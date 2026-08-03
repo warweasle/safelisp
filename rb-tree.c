@@ -117,7 +117,7 @@ void* mapadd(void* map, void* object, void* value, void* env) {
   /* // Add instead... */
   /* else { */
   cc_rb_insert(map, (void*) cons(object, value), rbObjectPairCompare, make_cmp_context(map, env));
-    //}
+  //}
   return value;
 }
 

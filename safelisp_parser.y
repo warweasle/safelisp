@@ -23,6 +23,7 @@
 
 %union {
   void* p;
+  void* rb_tree;
 }
 
 %token LPAREN RPAREN QUOTE BACKTICK COMMA SPLICE DOT

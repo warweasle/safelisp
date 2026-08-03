@@ -62,7 +62,7 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	newenv = cons(car(env), cdr(env));
       }
 
-      if(!lambdaArgs && vals) return ERROR("Sent args to a function and accepts none!");
+      if(!lambdaArgs && vals) return ERROR2("ARGUMENT-ERROR", "Sent args to a function and accepts none!");
 
       void* nextFrame = NULL;
 
@@ -71,7 +71,7 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	for(; is_cons(i); i=cdr(i)) {
 
 	  if(!vals) {
-	    return ERROR("NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
+	    return ERROR2("ARGUEMENT-ERROR", "NOT ENOUGH ARGUMENTS FOR THE FUNCTION!!!");
 	  }
 
 	  void* val = (argMode == ARGS_RAW_EVAL) ? eval(car(vals), callEnv) : car(vals);
@@ -92,14 +92,14 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
 	  nextFrame = cons(cons(i, rest), nextFrame);
 	}
 	else if(vals) {
-	  return ERROR("TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
+	  return ERROR2("ARGUEMENT-ERROR", "TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
 	}
 
 	// set the new env with the lambda list...
 	car(newenv) = cons(nextFrame, car(newenv));
       }
       else if(vals) {
-	return ERROR("TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
+	return ERROR2("ARGUEMENT-ERROR", "TOO MANY ARGUMENTS FOR THE FUNCTION!!!");
       }
 
       // run the code with the new env
@@ -207,7 +207,7 @@ static void* apply_callable(void* callee, void* args, ArgMode argMode, void* cal
     }
 
   default:
-    return ERROR("Cannot apply: not a function!");
+    return ERROR2("WRONG-TYPE-ERROR", "Cannot apply: not a function!");
   }
 }
 
@@ -237,7 +237,7 @@ void* quasiquote(void* list, void* env, int depth) {
       if(is_error(head)) return head;
 
       if(head != NULL && !is_cons(head)) {
-	return ERROR("SPLICE: value is not a list!");
+	return ERROR2("WRONG-TYPE-ERROR", "SPLICE: value is not a list!");
       }
 
       void* rest = quasiquote(cdr(list), env, depth);
@@ -279,7 +279,7 @@ void* quasiquote(void* list, void* env, int depth) {
     // remains quoted data (its own marker) until a matching outer
     // quasiquote actually evaluates down to it.
     if(depth == 0) {
-      return ERROR("BACKTICK: BACKTICK MUST BE IN A LIST!!!");
+      return ERROR2("PARSE-ERROR", "BACKTICK: BACKTICK MUST BE IN A LIST!!!");
     }
     else {
       return create_quotetype(TYPE_BACKTICK,
@@ -294,7 +294,7 @@ void* quasiquote(void* list, void* env, int depth) {
     // depth == 0. At depth > 1 it re-wraps for an enclosing quasiquote,
     // same as TYPE_COMMA.
     if(depth <= 1) {
-      return ERROR("SPLICE: SPLICE MUST BE IN A LIST!!!");
+      return ERROR2("PARSE-ERROR", "SPLICE: SPLICE MUST BE IN A LIST!!!");
     }
     else {
       return create_quotetype(TYPE_SPLICE,
@@ -333,7 +333,7 @@ static void* eval_raw(void* list, void* env) {
   case TYPE_QUOTE:
     
     if(!car(list)) {
-      return ERROR("Error: quote requires something after it!\n");
+      return ERROR2("PARSE-ERROR", "Error: quote requires something after it!\n");
     }
     
     return car(list);
@@ -341,18 +341,18 @@ static void* eval_raw(void* list, void* env) {
 
   case TYPE_BACKTICK:
     if(!car(list)) {
-      return ERROR("Error: quasiquote requires something after it!\n");
+      return ERROR2("PARSE-ERROR", "Error: quasiquote requires something after it!\n");
     }
 
     return quasiquote(car(list), env, 1);
     break;
     
   case TYPE_SPLICE:
-    return ERROR("Error: Splice must be used inside a QUASIQUOTE!");
+    return ERROR2("PARSE-ERROR", "Error: Splice must be used inside a QUASIQUOTE!");
     break;
     
   case TYPE_COMMA:
-    return ERROR("Error: Comma must be used inside a QUASIQUOTE!");
+    return ERROR2("PARSE-ERROR", "Error: Comma must be used inside a QUASIQUOTE!");
     break;
     
   case TYPE_SYMBOL:
@@ -762,10 +762,10 @@ void* eval_list(void* list, void* env) {
     case N_EQL:
       {
 	if(!cdr(list)) {
-	  return ERROR("ERROR: EQL requires 2 arguements!");
-	}
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
+	} 
 	if(!cdr(cdr(list))) {
-	  return ERROR("ERROR: EQL requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	}
 
 	void* tmp = cdr(list);
@@ -778,10 +778,10 @@ void* eval_list(void* list, void* env) {
       case N_NEQL:
       {
 	if(!cdr(list)) {
-	  return ERROR("ERROR: EQL requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR("ERROR: EQL requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: EQL requires 2 arguements!");
 	}
 
 	void* tmp = cdr(list);
@@ -800,10 +800,10 @@ void* eval_list(void* list, void* env) {
     case N_LT:
       {
       	if(!cdr(list)) {
-	  return ERROR("ERROR: < requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: < requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR("ERROR: < requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: < requires 2 arguements!");
 	}
 	
 	void* tmp = cdr(list);
@@ -822,7 +822,7 @@ void* eval_list(void* list, void* env) {
     case N_GT:
       {
 	if(!cdr(list)) {
-	  return ERROR("ERROR: > requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: > requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
 	  return ERROR("ERROR: > requires 2 arguements!");
@@ -844,10 +844,10 @@ void* eval_list(void* list, void* env) {
     case N_LTE:
       {
 	if(!cdr(list)) {
-	  return ERROR("ERROR: <= requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: <= requires 2 arguements!");
 	}
 	if(!cdr(cdr(list))) {
-	  return ERROR("ERROR: <= requires 2 arguements!");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: <= requires 2 arguements!");
 	}
 	
 	void* tmp = cdr(list);
@@ -888,7 +888,7 @@ void* eval_list(void* list, void* env) {
     case N_TO_STRING:
       {
 	if(!cdr(list)) {
-	  return ERROR("TO-STRING requires ONE argument!\n");
+	  return ERROR2("ARGUEMENT-ERROR", "TO-STRING requires ONE argument!\n");
 	}
 
 	void* p = eval(car(cdr(list)), env);
@@ -908,7 +908,7 @@ void* eval_list(void* list, void* env) {
     case N_SET:
       {
 	if(!cdr(list) || !cdr(cdr(list))) {
-	  return ERROR("ERROR: SET requires TWO arguments!\n");
+	  return ERROR2("ARGUEMENT-ERROR", "SET requires TWO arguments!\n");
 	}
 
 	void* name = car(cdr(list));
@@ -950,7 +950,7 @@ void* eval_list(void* list, void* env) {
 	    break;
 
 	  default:
-	    ERROR("Set found an issue with the environment!!!\n");
+	    ERROR2("UNKNOWN-ERROR", "Set found an issue with the environment!!!\n");
 	    break;
 	  }
 	  
@@ -965,11 +965,11 @@ void* eval_list(void* list, void* env) {
 	void* code = cdr(cdr(list));
 	
 	if(!pred) {
-	  return ERROR("ERROR: nothing to WHILE!\n");
+	  return ERROR2("ARGUEMENT-ERROR", "ERROR: no predicate to WHILE!\n");
 	}
 
 	if(!code) {
-	  return ERROR("Nothing to execute in WHILE statement!\n");
+	  return ERROR2("ARGUEMENT-ERROR", "Nothing to execute in WHILE statement!\n");
 	}
 
 	void* ret = NULL;
@@ -985,7 +985,7 @@ void* eval_list(void* list, void* env) {
     case N_ADD:
       {
 	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	  return ERROR("ADD requires at least two arguments!");
+	  return ERROR2("ARGUEMENT-ERROR", "ADD requires at least two arguments!");
 	}
 	void* a = eval(car(cdr(list)), env);
 	
@@ -1033,7 +1033,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1073,7 +1073,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1112,7 +1112,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1121,7 +1121,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR("Only integers, floats and rationals can be added!");
+	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	    break;
 	  }
@@ -1146,7 +1146,7 @@ void* eval_list(void* list, void* env) {
     case N_SUB:
       {
 	if(!car(cdr(list))) {
-	  return ERROR("SUB requires at least one argument!");
+	  return ERROR2("TYPE-ERROR", "SUB requires at least one argument!");
 	}
 
 	void* a = eval(car(cdr(list)), env);
@@ -1179,7 +1179,7 @@ void* eval_list(void* list, void* env) {
 	    break;
 	    	    
 	  default:
-	    return ERROR("Only integers, floats and rationals can be added!");	      
+	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
 	    break;
 	  }
 	}
@@ -1224,7 +1224,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");	      
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
 	      break;
 	    }
 
@@ -1263,7 +1263,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1301,7 +1301,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	      break;
 	    }
@@ -1310,7 +1310,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR("Only integers, floats and rationals can be added!");
+	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	    break;
 	  }
@@ -1335,7 +1335,7 @@ void* eval_list(void* list, void* env) {
     case N_MULT:
       {
 	if(!car(cdr(list)) || !cdr(cdr(list)) || !car(cdr(cdr(list)))) {
-	  return ERROR("ADD requires at least two arguments!");
+	  return ERROR2("ARGUEMENT-ERROR", "ADD requires at least two arguments!");
 	}
 
 	void* a = eval(car(cdr(list)), env);
@@ -1421,7 +1421,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1459,7 +1459,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	      break;
 	    }
@@ -1468,7 +1468,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR("Only integers, floats and rationals can be added!");
+	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 
 	    break;
 	  }
@@ -1493,7 +1493,7 @@ void* eval_list(void* list, void* env) {
     case N_DIV:
       {
 	if(!car(cdr(list))) {
-	  return ERROR("DIV requires at least one argument!");
+	  return ERROR2("ARGUEMENT-ERROR", "DIV requires at least one argument!");
 	}
 
 	void* a = eval(car(cdr(list)), env);
@@ -1504,7 +1504,7 @@ void* eval_list(void* list, void* env) {
 	  case TYPE_INT:
 	    {
 	      if(mpz_sgn(to_int(a)->num) == 0) {
-		return ERROR("DIVIDE BY ZERO!!!");
+		return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 	      }
 	      
 	      rational_type* ret = create_rational_type();
@@ -1517,7 +1517,7 @@ void* eval_list(void* list, void* env) {
 	  case TYPE_FLOAT:
 	    {
 	      if (mpf_sgn(to_float(a)->num) == 0) {
-		return ERROR("DIVIDE BY ZERO!!!");
+		return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 	      }
 
 	      float_type* ret = create_float_type();
@@ -1529,7 +1529,7 @@ void* eval_list(void* list, void* env) {
 	  case TYPE_RATIONAL:
 	    {
 	      if (mpq_sgn(to_rational(a)->num) == 0) {
-		return ERROR("DIVIDE BY ZERO!!!");
+		return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 	      }
 	      
 	      rational_type* ret = create_rational_type();
@@ -1539,7 +1539,7 @@ void* eval_list(void* list, void* env) {
 	    break;
 	    
 	  default:
-	    return ERROR("Only integers, floats and rationals can be added!");	      
+	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");	      
 	    break;
 	  }
 	}
@@ -1560,7 +1560,7 @@ void* eval_list(void* list, void* env) {
 	      {
 				
 		if(mpz_sgn(to_int(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		rational_type* aq = create_rational_type();
@@ -1576,7 +1576,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_FLOAT:
 	      {
 		if (mpf_sgn(to_float(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		float_type* af = create_float_type();
@@ -1589,7 +1589,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_RATIONAL:
 	      {
 		if (mpq_sgn(to_rational(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		rational_type* ar = create_rational_type(); 
@@ -1601,7 +1601,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1615,7 +1615,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_INT:
 	      {
 		if(mpz_sgn(to_int(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		float_type* result = create_float_type();
@@ -1628,7 +1628,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_FLOAT:
 	      {
 		if (mpf_sgn(to_float(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		float_type* af = create_float_type(); 
@@ -1640,7 +1640,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_RATIONAL:
 	      {
 		if (mpq_sgn(to_rational(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		float_type* ar = create_float_type(); 
@@ -1653,7 +1653,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1666,7 +1666,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_INT:
 	      {
 		if(mpz_sgn(to_int(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 				
 		rational_type* result = create_rational_type();
@@ -1679,7 +1679,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_FLOAT:
 	      {
 		if (mpf_sgn(to_float(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		float_type* af = create_float_type();
@@ -1692,7 +1692,7 @@ void* eval_list(void* list, void* env) {
 	    case TYPE_RATIONAL:
 	      {
 		if (mpq_sgn(to_rational(b)->num) == 0) {
-		  return ERROR("DIVIDE BY ZERO!!!");
+		  return ERROR2("DIVIDE-BY-ZERO-ERROR", "DIVIDE BY ZERO!!!");
 		}
 		
 		rational_type* ret = create_rational_type(); 
@@ -1704,7 +1704,7 @@ void* eval_list(void* list, void* env) {
 
 	    default:
 
-	      return ERROR("Only integers, floats and rationals can be added!");
+	      return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	      break;
 	    }
@@ -1713,7 +1713,7 @@ void* eval_list(void* list, void* env) {
 
 	  default:
 
-	    return ERROR("Only integers, floats and rationals can be added!");
+	    return ERROR2("TYPE-ERROR", "Only integers, floats and rationals can be added!");
 		      
 	    break;
 	  }

@@ -17,7 +17,7 @@ static void* load_prelude(const char* path, void* env) {
   void* inputBinding = cassoc("*INPUT*", cdr(env));
   if(!inputBinding || !cdr(inputBinding)) {
     fclose(prelude);
-    return ERROR("Could not find *INPUT* var!");
+    return ERROR2("INPUT-BINDING-ERROR", "Could not find *INPUT* var!");
   }
 
   void* savedInput = cdr(inputBinding);

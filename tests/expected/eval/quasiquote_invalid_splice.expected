@@ -1,2 +1,2 @@
-<ERROR: (ERROR "SPLICE: value is not a list!")>
-<ERROR: (ERROR "SPLICE: value is not a list!")>
+<ERROR: (WRONG-TYPE-ERROR "SPLICE: value is not a list!")>
+<ERROR: (WRONG-TYPE-ERROR "SPLICE: value is not a list!")>

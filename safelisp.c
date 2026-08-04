@@ -757,8 +757,12 @@ void* tread(void* env) {
   
   yyscan_t scanner;
 
-  // Initialize a scanner instance for Flex
-  yylex_init(&scanner);
+  // Initialize a scanner instance for Flex, with a fresh rb-tree as the
+  // scanner's "extra data" slot -- readable/writable from both the lexer
+  // (.l, via yyget_extra(yyscanner)/yyset_extra(v, yyscanner)) and the
+  // grammar (.y, via yyget_extra(scanner)) for the duration of this one
+  // parse. Intended as the #N=/#N# label table.
+  yylex_init_extra(make_rb_tree(NULL), &scanner);
   // Set the input file for the lexer
   yyset_in(input, scanner);
   int parseResult = yyparse(scanner, &ret);

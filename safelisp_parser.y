@@ -23,11 +23,13 @@
 
 %union {
   void* p;
-  void* rb_tree;
+  int i;
 }
 
 %token LPAREN RPAREN QUOTE BACKTICK COMMA SPLICE DOT
-%token <p> ATOM 
+%token <p> ATOM
+%token <i> REFERENCE
+%token <i> DEREFERENCE
 %type <p> start
 %type <p> sexpr 
 %type <p> list
@@ -54,7 +56,14 @@ sexpr: ATOM      {$$ = $1;}
 | COMMA sexpr    {
      $$ = create_quotetype(TYPE_COMMA, $2);
    }
-; 
+| REFERENCE sexpr {
+  mapadd(yyget_extra(scanner), create_int_type($1), $2, NULL);
+  $$ = $2;
+   }
+| DEREFERENCE    {
+  $$ = mapget(yyget_extra(scanner), create_int_type($1), NULL);
+   }
+;
 
 list: LPAREN members RPAREN {$$ = $2;}
 | LPAREN RPAREN         {

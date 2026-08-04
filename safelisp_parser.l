@@ -32,6 +32,14 @@ float_number_types ("f"|"d"|"ld")
 ","         { return COMMA; } 
 "\."        { return DOT; }
 
+#[1-9]+[0-9]*= {
+                yylval->i = atoi(yytext+1);
+                return REFERENCE; }
+
+#[1-9]+[0-9]*# { yylval->i = atoi(yytext+1);
+                 return DEREFERENCE; }
+
+
 "//"[^\n]*      { /* Ignore single-line comment */ }
 "/*"            { BEGIN(COMMENT); }
 <COMMENT>"*/"   { BEGIN(INITIAL); }
@@ -39,28 +47,6 @@ float_number_types ("f"|"d"|"ld")
 <COMMENT>\n     {}
 <COMMENT><<EOF>>         { /* Handle EOF during comment for error reporting, possibly flag error */ }
 
-
-#[1-9]+[0-9]*= {
-                  if(!is_rb_tree(yylval->rb_tree)) {
-                      yylval->rb_tree = make_rb_tree(NULL);
-                                       }
-                  int i = atoi(yytext+1);
-                      int ret = yylex(yylval, yylloc, yyscanner);
-                  if(!ret) { yylval->p = ERROR("PARSE-ERROR", "Could not get the next token!");
-                    return 0;
-                  }
-                  mapadd(yylval->rb_tree, create_int_type(i), yylval->p, NULL);
-                  
-                  return ATOM; 
-               }
-
-#[1-9]+[0-9]*# {
-         int i = atoi(yytext+1);
-         if(i) {
-         yylval->p = mapget_pair(yylval->rb_tree, create_int_type(i), NULL);
-         return ATOM;
-}
-}
 
 #\\[Ss][Pp][Aa][Cc][Ee]    { yylval->p = create_char_type(' ');  return ATOM; }
 #\\[Nn][Ee][Ww][Ll][Ii][Nn][Ee]  { yylval->p = create_char_type('\n'); return ATOM; }

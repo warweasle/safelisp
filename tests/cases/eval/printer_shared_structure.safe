@@ -1,0 +1,2 @@
+(... (SET X (LIST 1 2))
+     (PRINT (LIST X X)))

@@ -7,6 +7,92 @@
 
 static void stringify_dispatch(resizable_string_type* buf, void* o, int base);
 
+// --- Preprinter: find pointers reachable more than once, before printing ---
+//
+// Anything reachable a second time by pointer identity (not value-equality)
+// -- shared structure, or a genuine cycle -- needs a #N=/#N# label so PRINT
+// can show the sharing instead of printing it twice in full, or looping
+// forever. This walks the structure ONCE, tracking which pointers have
+// already been visited, and marks a second-or-later visit as a duplicate.
+// It never prints anything itself; stringify_dispatch reads these marks.
+//
+// Not recursing past a pointer already visited is what makes this safe on
+// a real cycle: the cycle's re-entry point gets marked on its second visit
+// and the walk stops there instead of going around again.
+typedef struct dup_entry {
+  void* ptr;
+  int duplicate; // 0 = only ever visited once so far; 1 = seen again
+  int label;     // 0 until the print pass assigns one
+  int printed;   // 0 until the print pass has emitted this pointer once
+  struct dup_entry* next;
+} dup_entry;
+
+static dup_entry* g_dup_list = NULL;
+static int g_next_label = 1;
+
+static dup_entry* find_dup_entry(void* ptr) {
+  for(dup_entry* e = g_dup_list; e; e = e->next) {
+    if(e->ptr == ptr) return e;
+  }
+  return NULL;
+}
+
+// Returns 1 on this pointer's first visit (caller should recurse into it),
+// 0 if it's been seen before (caller should NOT recurse again).
+static int mark_visited(void* ptr) {
+  dup_entry* e = find_dup_entry(ptr);
+  if(!e) {
+    e = (dup_entry*) GC_malloc(sizeof(dup_entry));
+    e->ptr = ptr;
+    e->duplicate = 0;
+    e->label = 0;
+    e->printed = 0;
+    e->next = g_dup_list;
+    g_dup_list = e;
+    return 1;
+  }
+  e->duplicate = 1;
+  return 0;
+}
+
+// Only recurses into types with real sub-structure worth checking for
+// sharing; everything else (numbers, strings, symbols, ...) is tracked for
+// its own identity but has nothing further to walk. RB_TREE is out of
+// scope here -- its own printer already avoids the parent-pointer cycle
+// structurally; sharing INSIDE a tree's keys/values isn't detected yet.
+static void find_duplicates(void* o) {
+  if(!o) return;
+
+  switch(get_type(o)) {
+  case TYPE_CONS:
+    // Walk the cdr chain with a loop, not recursion, matching
+    // stringify_cons's own style -- a long (non-cyclic) list must not
+    // blow the C stack just to be checked for sharing. Each node's car
+    // still recurses (ordinary sub-structure, not a chain).
+    for(; o && is_cons(o); o = to_cons(o)->cdr) {
+      if(!mark_visited(o)) return; // already visited -- stop, don't loop forever on a cycle
+      find_duplicates(to_cons(o)->car);
+    }
+    find_duplicates(o); // final non-cons cdr (dotted tail), if any
+    break;
+  case TYPE_QUOTE:
+  case TYPE_BACKTICK:
+  case TYPE_COMMA:
+  case TYPE_SPLICE:
+  case TYPE_ERROR:
+  case TYPE_VALUES:
+  case TYPE_LAMBDA:
+  case TYPE_MACRO:
+    if(!mark_visited(o)) return;
+    find_duplicates(to_cons(o)->car);
+    find_duplicates(to_cons(o)->cdr);
+    break;
+  default:
+    mark_visited(o);
+    break;
+  }
+}
+
 static void stringify_null(resizable_string_type* buf) {
   putstr_resizable_array(buf, "NULL");
 }
@@ -136,10 +222,40 @@ static void stringify_cons(resizable_string_type* buf, void* o, int base) {
   char first = 1;
   for(; o != NULL && is_cons(o); o = cdr(o)) {
 
-    void* tmp = car(o);
-    if(first) { first = 0; }
-    else { putch_resizable_array(buf, ' '); }
+    // This loop walks the cdr chain directly (not through
+    // stringify_dispatch) so a long list doesn't recurse once per
+    // element -- but that means the #N=/#N# duplicate check, which
+    // otherwise only runs inside stringify_dispatch, has to be repeated
+    // here too. Without this, a spine node visited a second time (a
+    // real cycle, e.g. a cons whose own cdr points back to itself) is
+    // never caught: is_cons(o) stays true forever and the loop spins.
+    // Only check from the SECOND element on -- the first o was already
+    // checked and labeled (if needed) by whichever stringify_dispatch
+    // call reached this cons in the first place.
+    if(!first) {
+      dup_entry* e = find_dup_entry(o);
+      if(e && e->duplicate) {
+	if(e->printed) {
+	  char tmp[16];
+	  snprintf(tmp, sizeof(tmp), " #%d#", e->label);
+	  putstr_resizable_array(buf, tmp);
+	  break;
+	}
+	if(!e->label) e->label = g_next_label++;
+	e->printed = 1;
+	char tmp[16];
+	snprintf(tmp, sizeof(tmp), " #%d=", e->label);
+	putstr_resizable_array(buf, tmp);
+      }
+      else {
+	putch_resizable_array(buf, ' ');
+      }
+    }
+    else {
+      first = 0;
+    }
 
+    void* tmp = car(o);
     stringify_dispatch(buf, tmp, base);
 
     if(to_cons(o)->cdr && !is_cons(to_cons(o)->cdr)) {
@@ -262,11 +378,54 @@ static void stringify_unknown(resizable_string_type* buf, void* o) {
   putstr_resizable_array(buf, tmp);
 }
 
+// Only cons-shaped types get a #N=/#N# label -- matching find_duplicates'
+// own scope. Atoms (numbers, strings, symbols, ...) print the same every
+// time regardless of pointer identity, so labeling them would just add
+// noise without changing what the output means.
+static int is_labelable_type(ValueType t) {
+  switch(t) {
+  case TYPE_CONS: case TYPE_QUOTE: case TYPE_BACKTICK: case TYPE_COMMA:
+  case TYPE_SPLICE: case TYPE_ERROR: case TYPE_VALUES: case TYPE_LAMBDA:
+  case TYPE_MACRO:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
 static void stringify_dispatch(resizable_string_type* buf, void* o, int base) {
 
   if(o == NULL) { stringify_null(buf); return; }
 
-  switch(get_type(o)) {
+  ValueType type = get_type(o);
+
+  if(is_labelable_type(type)) {
+    dup_entry* e = find_dup_entry(o);
+
+    if(e && e->duplicate) {
+      if(e->printed) {
+	// Already fully printed once -- a repeat visit (shared structure,
+	// or this IS the cycle's re-entry point) becomes a #N# reference
+	// instead of recursing again. This is what stops a real cycle
+	// from printing forever.
+	char tmp[16];
+	snprintf(tmp, sizeof(tmp), "#%d#", e->label);
+	putstr_resizable_array(buf, tmp);
+	return;
+      }
+
+      // First time this shared pointer is actually printed -- claim a
+      // label and emit the #N= prefix before printing it normally below.
+      if(!e->label) e->label = g_next_label++;
+      e->printed = 1;
+
+      char tmp[16];
+      snprintf(tmp, sizeof(tmp), "#%d=", e->label);
+      putstr_resizable_array(buf, tmp);
+    }
+  }
+
+  switch(type) {
 
   case TYPE_TRUE:      stringify_true(buf); break;
   case TYPE_CONS:      stringify_cons(buf, o, base); break;
@@ -308,6 +467,14 @@ static void stringify_dispatch(resizable_string_type* buf, void* o, int base) {
 // implementation per type.
 resizable_string_type* stringify(resizable_string_type* buf, void* o, int base) {
   if(!buf) buf = create_resizable_string_type(64, TYPE_RESIZABLE_STRING);
+
+  // Fresh preprinter pass per top-level call -- label numbers and the
+  // duplicate-tracking list are scoped to this one print, not shared
+  // across separate PRINT/TO-STRING calls.
+  g_dup_list = NULL;
+  g_next_label = 1;
+  find_duplicates(o);
+
   stringify_dispatch(buf, o, base);
   return buf;
 }

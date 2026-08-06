@@ -28,8 +28,7 @@
 
 %token LPAREN RPAREN QUOTE BACKTICK COMMA SPLICE DOT
 %token <p> ATOM
-%token <i> REFERENCE
-%token <i> DEREFERENCE
+%token <p> REFERENCE
 %type <p> start
 %type <p> sexpr 
 %type <p> list
@@ -57,11 +56,12 @@ sexpr: ATOM      {$$ = $1;}
      $$ = create_quotetype(TYPE_COMMA, $2);
    }
 | REFERENCE sexpr {
-  mapadd(yyget_extra(scanner), create_int_type($1), $2, NULL);
+
+  mapadd(yyget_extra(scanner), $1, $2, NULL);
+
+  
+  
   $$ = $2;
-   }
-| DEREFERENCE    {
-  $$ = mapget(yyget_extra(scanner), create_int_type($1), NULL);
    }
 ;
 

@@ -33,11 +33,22 @@ float_number_types ("f"|"d"|"ld")
 "\."        { return DOT; }
 
 #[1-9]+[0-9]*= {
-                yylval->i = atoi(yytext+1);
+                yytext[yyleng-1] = '3';
+                yylval->p = create_symbol_and_copy(yyleng, yytext);
                 return REFERENCE; }
 
-#[1-9]+[0-9]*# { yylval->i = atoi(yytext+1);
-                 return DEREFERENCE; }
+#[1-9]+[0-9]*# {
+
+                 void* tree = yyget_extra(yyscanner);
+                 yylval->p = create_symbol_and_copy(yyleng, yytext);
+
+                 if(tree) {
+                      void* tmp = mapget(tree, yylval->p, NULL);
+                      if(tmp) yylval->p = cdr(tmp);
+                 }
+
+                 return ATOM;
+}
 
 
 "//"[^\n]*      { /* Ignore single-line comment */ }

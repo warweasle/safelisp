@@ -584,6 +584,7 @@ return ATOM;}
     return ATOM;
 }
 
+
 [0-9a-zA-Z_+*/<>=!?$%&~^][a-zA-Z0-9_+*/<>=!?$%&~^.-]*         { 
 
 // Convert to uppercase
@@ -593,9 +594,11 @@ for(i=0; i<yyleng; i++) {
     yytext[i] = toupper(yytext[i]);
 }
 
-
-
 yylval->p = create_symbol_and_copy(yyleng, yytext);
+if(yytext[0] == ':') {
+    to_string(yylval->p)->type = TYPE_KEYWORD;
+}
+
 return ATOM;
 }
 

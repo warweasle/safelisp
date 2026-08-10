@@ -51,6 +51,7 @@ extern "C" {
     TYPE_CONS = 1,
     TYPE_TRUE,
     TYPE_SYMBOL,
+    TYPE_KEYWORD,
     TYPE_NPROG,
     TYPE_NATIVE,
     TYPE_NATIVE_INT,

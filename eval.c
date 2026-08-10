@@ -1742,19 +1742,37 @@ void* eval_list(void* list, void* env) {
     case N_BREAK:
       {
 
-	void* pair = cassoc("*BREAK*", cdr(env));
+	void* pair = cassoc("#BREAK#", cdr(env));
 	if(!pair) {
 	  return ERROR("LOGICAL-ERROR", "BREAK outside of LOOP!!!");
 	}
-	
+
 	if(cdr(list) && car(cdr(list))) {
 	  cdr(pair) = eval(car(cdr(list)), env);
 	}
 	else {
 	  cdr(pair) = create_true_type();
 	}
-	
+
 	return cdr(pair);
+      }
+      break;
+
+    case N_CONTINUE:
+      {
+	// (CONTINUE) -- skips the rest of the CURRENT PASS through <>'s
+	// body list, jumping straight back to the start (same shape as
+	// BREAK's #BREAK# binding, checked by N_LOOP right after each
+	// eval() -- see N_LOOP). Unlike BREAK, there's no value to carry;
+	// setting the binding to TRUE is purely a signal to reset i.
+	void* pair = cassoc("#CONTINUE#", cdr(env));
+	if(!pair) {
+	  return ERROR("LOGICAL-ERROR", "CONTINUE outside of LOOP!!!");
+	}
+
+	cdr(pair) = create_true_type();
+
+	return NULL;
       }
       break;
       
@@ -1769,14 +1787,30 @@ void* eval_list(void* list, void* env) {
 	// the TYPE_LAMBDA/apply_callable fix: nothing here is reachable from
 	// env, so there is nothing to restore, and a future non-local exit
 	// (a restart) can safely unwind through this frame without leaking
-	// a stale *BREAK* binding onto shared state.
-	void* newenv = cons(car(env), cons(cons(create_symbol("*BREAK*"), NULL), cdr(env)));
+	// a stale #BREAK#/#CONTINUE# binding onto shared state.
+	void* newenv = cons(car(env),
+			    cons(cons(create_symbol("#BREAK#"), NULL),
+				 cons(cons(create_symbol("#CONTINUE#"), NULL), cdr(env))));
+
+	void* breakPair = cassoc("#BREAK#", cdr(newenv));
+	void* continuePair = cassoc("#CONTINUE#", cdr(newenv));
 
 	void* i = start;
-	void* ret = cdr(cassoc("*BREAK*", cdr(newenv)));
+	void* ret = cdr(breakPair);
 	while(!ret) {
 	  eval(car(i), newenv);
-	  ret = cdr(cassoc("*BREAK*", cdr(newenv)));
+	  ret = cdr(breakPair);
+	  if(ret) break;
+
+	  if(cdr(continuePair)) {
+	    // CONTINUE fired during this form -- skip whatever's left of
+	    // the body list for this pass and jump straight back to the
+	    // start, same as running off the end naturally. Clear the
+	    // binding so it doesn't fire again next pass on its own.
+	    cdr(continuePair) = NULL;
+	    i = start;
+	    continue;
+	  }
 
 	  if(cdr(i)) i = cdr(i);
 	  else       i = start;
@@ -1823,12 +1857,12 @@ void* eval_list(void* list, void* env) {
 	  return apply_callable(recovery, args, ARGS_VALUES, env, env);
 	}
 
-	// Fresh env cell, same pattern as N_LOOP's *BREAK* frame -- never
+	// Fresh env cell, same pattern as N_LOOP's #BREAK# frame -- never
 	// mutates the caller's env, so there is nothing to leak or restore
 	// if this dynamic extent ends via a normal return. TYPE_RESTART
 	// (rather than the generic TYPE_POINTER) tags this binding so
 	// AVAILABLERESTARTS can walk cdr(env) and pick out restart entries
-	// unambiguously, distinct from *BREAK* and any other dynamic binding
+	// unambiguously, distinct from #BREAK# and any other dynamic binding
 	// that might share this same list.
 	void* newenv = cons(car(env),
 			     cons(cons(to_string(name), create_quotetype(TYPE_RESTART, frame)),
@@ -1901,7 +1935,7 @@ void* eval_list(void* list, void* env) {
 	// (AVAILABLERESTARTS) -- names of every currently-active restart,
 	// innermost first, matching cassoc's own search order. Walks
 	// cdr(env) the same way WITH-RESTART/INVOKE-RESTART do, filtering
-	// on the TYPE_RESTART tag so *BREAK* and any other dynamic binding
+	// on the TYPE_RESTART tag so #BREAK# and any other dynamic binding
 	// sharing this list is skipped.
 	void* ret = NULL;
 	void* last = NULL;

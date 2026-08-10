@@ -110,6 +110,7 @@ extern "C" {
 	N_CNR,
 	N_LOOP,
 	N_BREAK,
+	N_CONTINUE,
 	N_WHILE,
 	N_READ,
 	N_MAP,

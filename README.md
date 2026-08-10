@@ -351,7 +351,17 @@ SafeLisp deliberately uses `==` for equality. There is no ambiguous assignment-v
   (?... ((== N 3) (BREAK N))))
 ```
 
-There is currently no `continue` form.
+`CONTINUE` skips the rest of the current pass through the loop body and starts over from the beginning:
+
+```lisp
+(<> (SET N (+ N 1))
+    (?... (((== N 10) (BREAK NULL))))
+    (?? (== 0 (MOD N 2))
+        (CONTINUE))
+    (PRINT N)) // prints 1 3 5 7 9
+```
+
+`BREAK` and `CONTINUE` are only meaningful inside `<>`; `<?>` doesn't support either.
 
 ### Blocks
 
@@ -577,8 +587,6 @@ If the code inside `WITHRESTART` produces an ordinary error (whether from `ERROR
 => (RECOVERED FILE-NOT-FOUND ("missing.txt"))
 ```
 
-This is not yet a full Common Lisp-style condition system.
-
 ---
 
 ## Evaluation and I/O
@@ -688,11 +696,6 @@ The language is intentionally compact and designed to feel approachable to C pro
 - Complete native C data types
 - Add an optional restricted foreign-function interface
 - Add an explicitly enabled unsafe/volatile mode for trusted code
-- Expand the minimal restart mechanism into a fuller condition system
-  - condition classes
-  - signaling
-  - handlers
-  - richer restart metadata
 
 ---
 

@@ -40,11 +40,26 @@ float_number_types ("f"|"d"|"ld")
 #[1-9]+[0-9]*# {
 
                  void* tree = yyget_extra(yyscanner);
-                 yylval->p = create_symbol_and_copy(yyleng, yytext);
+                 void* placeholder = create_symbol_and_copy(yyleng, yytext);
+                 yylval->p = placeholder;
 
                  if(tree) {
-                      void* tmp = mapget(tree, yylval->p, NULL);
-                      if(tmp) yylval->p = cdr(tmp);
+                      // mapget_pair, not mapget -- need to tell "label
+                      // not resolved yet" apart from "resolved to NULL",
+                      // and mapget alone can't (it returns the stored
+                      // value directly, so NULL means either).
+                      void* pair = mapget_pair(tree, placeholder, NULL);
+                      if(pair) {
+                           yylval->p = cdr(pair);
+                      }
+                      else {
+                           // Not resolved yet -- leave #X# as this
+                           // placeholder symbol, AND record it in the
+                           // tree under its own name so #X='s eventual
+                           // backpatch walk (in safelisp_parser.y) has
+                           // a consistent value to search for.
+                           mapadd(tree, placeholder, placeholder, NULL);
+                      }
                  }
 
                  return ATOM;

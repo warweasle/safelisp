@@ -16,8 +16,52 @@
   typedef void* yyscan_t;
    }
 %code {
-  
+
   void yyerror(YYLTYPE* yyllocp, yyscan_t unused, void** out_data, const char* msg);
+
+  // A #X# seen before its own #X= resolved is left in the tree (see
+  // safelisp_parser.l) as a plain symbol named "#X#", sitting wherever it
+  // was used -- a placeholder. Once #X='s value is fully built, walk it
+  // and replace every occurrence of that SAME symbol object (checked by
+  // name, since a fresh symbol object is built per occurrence) with the
+  // real value. Recurses through every cons-shaped type sharing
+  // cons_cell's layout; anything else (atoms) has no sub-structure to
+  // search.
+  static void backpatch_references(void* node, const char* placeholder_name, void* real_value) {
+    if(!node) return;
+
+    switch(get_type(node)) {
+    case TYPE_CONS:
+    case TYPE_QUOTE:
+    case TYPE_BACKTICK:
+    case TYPE_COMMA:
+    case TYPE_SPLICE:
+    case TYPE_ERROR:
+    case TYPE_VALUES:
+    case TYPE_LAMBDA:
+    case TYPE_MACRO:
+      {
+	void* c = to_cons(node)->car;
+	if(is_type(c, TYPE_SYMBOL) && strcmp(to_string(c)->str, placeholder_name) == 0) {
+	  to_cons(node)->car = real_value;
+	}
+	else {
+	  backpatch_references(c, placeholder_name, real_value);
+	}
+
+	void* d = to_cons(node)->cdr;
+	if(is_type(d, TYPE_SYMBOL) && strcmp(to_string(d)->str, placeholder_name) == 0) {
+	  to_cons(node)->cdr = real_value;
+	}
+	else {
+	  backpatch_references(d, placeholder_name, real_value);
+	}
+      }
+      break;
+    default:
+      break;
+    }
+  }
 
  }
 
@@ -37,7 +81,7 @@
 %%
 
 start: sexpr {$$ = $1;
-   *out_data = $1; 
+   *out_data = $1;
    YYACCEPT;
  };
 
@@ -57,10 +101,23 @@ sexpr: ATOM      {$$ = $1;}
    }
 | REFERENCE sexpr {
 
-  mapadd(yyget_extra(scanner), $1, $2, NULL);
+  // $1's symbol text is "#N3" (safelisp_parser.l's #X= rule overwrites
+  // the trailing '=' with '3' to build it) -- but every #X# lexer rule,
+  // and the tree entry a placeholder puts itself under, uses "#N#".
+  // Reconstruct that name so the tree key matches, and so the search
+  // below is looking for what's actually there.
+  size_t label_len = strlen(to_string($1)->str);
+  char* label_name = (char*) GC_malloc(label_len + 1);
+  strcpy(label_name, to_string($1)->str);
+  label_name[label_len - 1] = '#';
 
-  
-  
+  backpatch_references($2, label_name, $2);
+
+  // mapset, not mapadd -- an unresolved #X# used before this #X= may
+  // have already added a placeholder entry under this same key; mapset
+  // updates it in place instead of inserting a duplicate.
+  mapset(yyget_extra(scanner), create_symbol(label_name), $2, NULL);
+
   $$ = $2;
    }
 ;

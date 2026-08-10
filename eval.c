@@ -508,6 +508,7 @@ void* eval_list(void* list, void* env) {
 
 	for(cc i=cdr(list); i; i=cdr(i)) {
 	  void* tmp = eval(car(i), env);
+	  if(is_error(tmp)) return tmp;
 
 	  if(ret) {
 	    cc c = cons(tmp, NULL);
@@ -515,12 +516,12 @@ void* eval_list(void* list, void* env) {
 	    next = c;
 	  }
 	  else {
-	  
+
 	    ret = cons(tmp, NULL);
 	    next = ret;
 	  }
 	}
-	
+
 	return ret;
       }
       break;

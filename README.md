@@ -37,6 +37,7 @@ SafeLisp is its own language rather than an attempt to exactly implement Common 
 - `LET` bindings with `let*` behavior
 - Assignment with `SET`
 - Quoting, quasiquoting, unquoting, and splicing
+- Shared and circular structure via `#N=`/`#N#`, read and printed correctly
 - Simple unhygienic macros with `MAC`
 - Sequencing with `...`, `1...` and `N...`
 - Left-to-right evaluation, except where special forms define otherwise
@@ -135,8 +136,8 @@ SafeLisp also supports quasiquote, unquote, and splice:
 
 ```lisp
 `(a b c)
-`(a ,(list hello world) c)
-`(a ,@(list hello world) c)
+`(a ,(list 'hello 'world) c)
+`(a ,@(list 'hello 'world) c)
 ```
 
 Example results:
@@ -145,12 +146,34 @@ Example results:
 `(a b c)
 => (A B C)
 
-`(a ,(list hello world) c)
+`(a ,(list 'hello 'world) c)
 => (A (HELLO WORLD) C)
 
-`(a ,@(list hello world) c)
+`(a ,@(list 'hello 'world) c)
 => (A HELLO WORLD C)
 ```
+
+---
+
+## Shared and Circular Structure
+
+`#N=` labels a value; `#N#` refers back to it. Reusing the same label refers to the exact same object, not a copy:
+
+```lisp
+'(#1=(1 2) #1#)
+=> (#1=(1 2) #1#)
+```
+
+A label can refer to itself, producing a real circular structure:
+
+```lisp
+'#1=(1 #1# 3)
+=> #1=(1 #1# 3)
+```
+
+`#N=` must appear before any `#N#` that resolves to it, with one exception: a `#N#` used inside the very value `#N=` is labeling is allowed, since it resolves once that value is complete -- this is what makes a real cycle possible.
+
+`PRINT`/`TOSTRING` detect any structure reachable more than once (shared or circular) and print it with `#N=`/`#N#`, so the printed form can always be read back in to reconstruct the original structure -- including a genuine cycle, which would otherwise print forever.
 
 ---
 
@@ -586,6 +609,7 @@ The lexer currently recognizes these native forms and operations:
 ```text
 SET LET LAMBDA MAC
 QUOTE / '  BACKTICK / `  COMMA / ,  SPLICE / ,@
+REFERENCE / #N=  DEREFERENCE / #N#
 EVAL READ PRINT TOSTRING TYPE TYPE?
 ... 1...
 ```

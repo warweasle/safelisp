@@ -1,0 +1,7 @@
+(... (SET N 0)
+     (SET COUNT 0)
+     (PRINT (<> (SET N (+ N 1))
+                (?... (((== N 10) (BREAK COUNT))))
+                (?? (== 0 (MOD N 2))
+                    (CONTINUE))
+                (SET COUNT (+ COUNT 1)))))

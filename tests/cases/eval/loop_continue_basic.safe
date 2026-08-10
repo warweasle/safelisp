@@ -1,0 +1,7 @@
+(... (SET N 0)
+     (SET SUM 0)
+     (PRINT (<> (SET N (+ N 1))
+                (?... (((== N 6) (BREAK SUM))))
+                (?? (== 0 (MOD N 2))
+                    (CONTINUE))
+                (SET SUM (+ SUM N)))))

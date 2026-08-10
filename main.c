@@ -45,6 +45,54 @@ static void* load_prelude(const char* path, void* env) {
   return ret;
 }
 
+// Turns one SDL_Event into Lisp source text and feeds it through the real
+// reader (tread), the same way load_prelude feeds a file through it --
+// swap *INPUT* to a temporary stream, tread() one form, restore *INPUT*.
+// fmemopen gives tread() a real FILE* backed by a string instead of an
+// actual file, which is all yyset_in needs; nothing about the reader
+// itself has to know its input didn't come from disk. Returns the parsed
+// form (NOT yet evaluated -- the caller decides when to eval()), or NULL
+// for an event type this doesn't translate (caller should skip those).
+static void* event_to_form(SDL_Event* e, void* env) {
+
+  char text[64];
+
+  switch(e->type) {
+  case SDL_EVENT_KEY_DOWN:
+    snprintf(text, sizeof(text), "(KEYDOWN %d)", (int) e->key.key);
+    break;
+  case SDL_EVENT_KEY_UP:
+    snprintf(text, sizeof(text), "(KEYUP %d)", (int) e->key.key);
+    break;
+  case SDL_EVENT_QUIT:
+    snprintf(text, sizeof(text), "(QUIT)");
+    break;
+  default:
+    return NULL;
+  }
+
+  FILE* stream = fmemopen(text, strlen(text), "r");
+  if(!stream) {
+    return ERROR("UNKNOWN-ERROR", "fmemopen failed for SDL event!");
+  }
+
+  void* inputBinding = cassoc("*INPUT*", cdr(env));
+  if(!inputBinding || !cdr(inputBinding)) {
+    fclose(stream);
+    return ERROR("INPUT-BINDING-ERROR", "Could not find *INPUT* var!");
+  }
+
+  void* savedInput = cdr(inputBinding);
+  cdr(inputBinding) = create_pointer_type(stream, TYPE_POINTER);
+
+  void* form = tread(env);
+
+  cdr(inputBinding) = savedInput;
+  fclose(stream);
+
+  return form;
+}
+
 int main(int argc, char* argv[]) {
 
   // qix's entry point -- opens the editor's main window. safelisp's own
@@ -84,6 +132,15 @@ int main(int argc, char* argv[]) {
     SDL_Event e;
     while(SDL_PollEvent(&e)) {
       if(e.type == SDL_EVENT_QUIT) running = 0;
+
+      void* form = event_to_form(&e, env);
+      if(form) {
+	void* result = eval(form, env);
+	if(is_error(result)) {
+	  print(stderr, result, 10);
+	  fputc('\n', stderr);
+	}
+      }
     }
 
     SDL_SetRenderDrawColor(renderer, 40, 80, 160, 255);

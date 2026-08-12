@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <SDL3/SDL.h>
 #include "safelisp.h"
 
 // Loads and evaluates every top-level form in a prelude file, using the
@@ -44,8 +45,60 @@ static void* load_prelude(const char* path, void* env) {
   return ret;
 }
 
+// Turns one SDL_Event into Lisp source text and feeds it through the real
+// reader (tread), the same way load_prelude feeds a file through it --
+// swap *INPUT* to a temporary stream, tread() one form, restore *INPUT*.
+// fmemopen gives tread() a real FILE* backed by a string instead of an
+// actual file, which is all yyset_in needs; nothing about the reader
+// itself has to know its input didn't come from disk. Returns the parsed
+// form (NOT yet evaluated -- the caller decides when to eval()), or NULL
+// for an event type this doesn't translate (caller should skip those).
+static void* event_to_form(SDL_Event* e, void* env) {
+
+  char text[64];
+
+  switch(e->type) {
+  case SDL_EVENT_KEY_DOWN:
+    snprintf(text, sizeof(text), "(KEYDOWN %d)", (int) e->key.key);
+    break;
+  case SDL_EVENT_KEY_UP:
+    snprintf(text, sizeof(text), "(KEYUP %d)", (int) e->key.key);
+    break;
+  case SDL_EVENT_QUIT:
+    snprintf(text, sizeof(text), "(QUIT)");
+    break;
+  default:
+    return NULL;
+  }
+
+  FILE* stream = fmemopen(text, strlen(text), "r");
+  if(!stream) {
+    return ERROR("UNKNOWN-ERROR", "fmemopen failed for SDL event!");
+  }
+
+  void* inputBinding = cassoc("*INPUT*", cdr(env));
+  if(!inputBinding || !cdr(inputBinding)) {
+    fclose(stream);
+    return ERROR("INPUT-BINDING-ERROR", "Could not find *INPUT* var!");
+  }
+
+  void* savedInput = cdr(inputBinding);
+  cdr(inputBinding) = create_pointer_type(stream, TYPE_POINTER);
+
+  void* form = tread(env);
+
+  cdr(inputBinding) = savedInput;
+  fclose(stream);
+
+  return form;
+}
+
 int main(int argc, char* argv[]) {
 
+  // qix's entry point -- opens the editor's main window. safelisp's own
+  // env/prelude are still initialized here since qix will script itself
+  // with safelisp, but this is no longer the stdin-driven interpreter
+  // loop main.c used to be (see git history on oceanwasp for that).
   void* env = init_safelisp(stdin, stdout);
 
   void* preludeResult = load_prelude("prelude.safe", env);
@@ -54,15 +107,50 @@ int main(int argc, char* argv[]) {
     fputc('\n', stderr);
   }
 
-  // Call the parser
-  void* atom = tread(env);
+  if(!SDL_Init(SDL_INIT_VIDEO)) {
+    fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+    return 1;
+  }
 
-  // Eval
-  atom = eval(atom, env);
+  SDL_Window* window = SDL_CreateWindow("qix", 1024, 768, 0);
+  if(!window) {
+    fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
+    SDL_Quit();
+    return 1;
+  }
 
-  // Print
-  print(stdout, atom, 10);
-  fputc('\n', stdout);
+  SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
+  if(!renderer) {
+    fprintf(stderr, "SDL_CreateRenderer failed: %s\n", SDL_GetError());
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 1;
+  }
+
+  int running = 1;
+  while(running) {
+    SDL_Event e;
+    while(SDL_PollEvent(&e)) {
+      if(e.type == SDL_EVENT_QUIT) running = 0;
+
+      void* form = event_to_form(&e, env);
+      if(form) {
+	void* result = eval(form, env);
+	if(is_error(result)) {
+	  print(stderr, result, 10);
+	  fputc('\n', stderr);
+	}
+      }
+    }
+
+    SDL_SetRenderDrawColor(renderer, 40, 80, 160, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderPresent(renderer);
+  }
+
+  SDL_DestroyRenderer(renderer);
+  SDL_DestroyWindow(window);
+  SDL_Quit();
 
   return 0;
 }

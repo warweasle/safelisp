@@ -1,6 +1,7 @@
 CC=gcc
-CFLAGS=-Wall -g -O3 -Wno-stringop-truncation -pthread  
-LDFLAGS=-pthread -lgc -lgmp -lm
+PKGS=glib-2.0 cairo pango pangocairo gdk-pixbuf-2.0 sdl3
+CFLAGS=-Wall -g -O3 -Wno-stringop-truncation -pthread $(shell pkg-config --cflags $(PKGS))
+LDFLAGS=-pthread -lgc -lgmp -lm $(shell pkg-config --libs $(PKGS)) -lGL
 LEX=flex
 YACC=bison
 YFLAGS=-d
